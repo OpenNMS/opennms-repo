@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 18;
+use Test::More tests => 20;
 BEGIN { use_ok('OpenNMS::YUM::RPM') };
 
 #########################
@@ -40,3 +40,5 @@ ok($rpm->is_newer_than($olderrpm));
 ok(!$rpm->is_older_than($olderrpm));
 ok($olderrpm->is_older_than($rpm));
 ok(!$olderrpm->is_newer_than($rpm));
+ok($rpm->equals($rpm));
+ok(!$rpm->equals($olderrpm));

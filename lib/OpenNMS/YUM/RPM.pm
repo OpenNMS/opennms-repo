@@ -7,6 +7,7 @@ use warnings;
 use Carp;
 #use Cwd qw(abs_path);
 use Cwd;
+use File::Basename;
 
 =head1 NAME
 
@@ -110,12 +111,24 @@ sub abs_path() {
 	return Cwd::abs_path($self->path);
 }
 
-sub is_in_repo {
-	my $self      = shift;
-	my $compareto = Cwd::abs_path(shift);
-	my $self_path = $self->abs_path;
+sub relative_path($) {
+	my $self = shift;
+	my $base = Cwd::abs_path(shift);
 
-	return $self_path =~ /^${compareto}$/ || $self_path =~ /^${compareto}\//;
+	if ($self->abs_path =~ /^${base}\/?(.*)$/) {
+		return $1;
+	}
+	return undef;
+}
+
+sub relative_directory($) {
+	my $self = shift;
+	my $base = shift;
+}
+
+sub is_in_repo {
+	my $self = shift;
+	return defined $self->relative_path(shift);
 }
 
 sub full_version {
@@ -166,6 +179,13 @@ sub compare_to {
 	return _compare_version($compareto->version, $self->version);
 }
 
+sub equals($) {
+	my $self      = shift;
+	my $compareto = shift;
+
+	return $self->compare_to($compareto) == 0;
+}
+
 sub is_newer_than($) {
 	my $self      = shift;
 	my $compareto = shift;
@@ -178,6 +198,36 @@ sub is_older_than($) {
 	my $compareto = shift;
 
 	return $self->compare_to($compareto) == -1;
+}
+
+sub copy($) {
+	my $self = shift;
+	my $to   = shift;
+	return File::Copy::copy($self->abs_path, $self->_get_filename_for_target($to));
+}
+
+sub link($) {
+	my $self = shift;
+	my $to   = shift;
+
+	if (-e $to) {
+		unlink $to;
+	}
+
+	link($self->abs_path, $self->_get_filename_for_target($to));
+}
+
+sub _get_filename_for_target($) {
+	my $self = shift;
+	my $to   = shift;
+
+	if (-d $to) {
+		if ($to !~ /\/$/) {
+			$to .= "/";
+		}
+		$to = $to . basename($self->path);
+	}
+	return $to;
 }
 
 sub _compare_version {

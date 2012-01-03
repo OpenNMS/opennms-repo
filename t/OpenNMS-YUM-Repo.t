@@ -5,7 +5,9 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 1;
+use Data::Dumper;
+use OpenNMS::YUM::RPM;
+use Test::More tests => 18;
 BEGIN { use_ok('OpenNMS::YUM::Repo') };
 
 #########################
@@ -13,30 +15,46 @@ BEGIN { use_ok('OpenNMS::YUM::Repo') };
 # Insert your test code below, the Test::More module is use()ed here so read
 # its man page ( perldoc Test::More ) for help writing this test script.
 
-#my ($rpm);
-#
-#$rpm = OpenNMS::YUM::RPM->new();
-#is($rpm, undef, "Check for invalid RPM when no path is provided.");
-#
-#$rpm = OpenNMS::YUM::RPM->new("t/opennms-1.6.11-1.noarch.rpm");
-#isa_ok($rpm, 'OpenNMS::YUM::RPM');
-#
-#is($rpm->name,    "opennms", 'Package name is "opennms".');
-#is($rpm->epoch,   undef,     'Epoch should be undefined.');
-#is($rpm->version, '1.6.11',  'Version should be 1.6.11.');
-#is($rpm->release, 1,         'Release should be 1.');
-#is($rpm->arch,    'noarch',  'Architecture should be "noarch".');
-#
-#ok($rpm->is_in_repo("t"), 'RPM should be in t/.');
-#ok($rpm->is_in_repo("t/../t"), 'is_in_path should handle relative paths');
-#
-#$olderrpm = OpenNMS::YUM::RPM->new("t/opennms-1.6.10-1.noarch.rpm");
-#
-#is($rpm->compare_to($olderrpm), 1);
-#is($olderrpm->compare_to($rpm), -1);
-#is($rpm->compare_to($olderrpm, 0), 1);
-#is($olderrpm->compare_to($rpm, 0), -1);
-#ok($rpm->is_newer_than($olderrpm));
-#ok(!$rpm->is_older_than($olderrpm));
-#ok($olderrpm->is_older_than($rpm));
-#ok(!$olderrpm->is_newer_than($rpm));
+my $stable_ro = OpenNMS::YUM::Repo->new("t/repo", "stable", "common");
+isa_ok($stable_ro, 'OpenNMS::YUM::Repo');
+
+is($stable_ro->base, "t/repo");
+is($stable_ro->release, "stable");
+is($stable_ro->platform, "common");
+
+my $stable_copy = $stable_ro->copy("t/newrepo");
+ok(-d "t/newrepo");
+ok(-d "t/newrepo/stable/common");
+ok(-f "t/newrepo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
+
+$stable_copy->delete();
+ok(! -d "t/newrepo/stable/common");
+
+my $stable_common   = OpenNMS::YUM::Repo->new("t/repo", "stable", "common")->copy("t/newrepo");
+my $stable_rhel5    = OpenNMS::YUM::Repo->new("t/repo", "stable", "rhel5")->copy("t/newrepo");
+my $bleeding_common = OpenNMS::YUM::Repo->new("t/repo", "bleeding", "common")->copy("t/newrepo");
+my $bleeding_rhel5  = OpenNMS::YUM::Repo->new("t/repo", "bleeding", "rhel5")->copy("t/newrepo");
+
+my $rpmlist = $stable_common->get_rpms();
+is(scalar(@$rpmlist), 1);
+
+my $rpm = $rpmlist->[0];
+isa_ok($rpm, 'OpenNMS::YUM::RPM');
+is($rpm->name, 'opennms');
+
+$bleeding_common->install_rpm($rpm, $rpm->relative_path($stable_common->abs_path));
+ok(-f "t/newrepo/bleeding/common/opennms/opennms-1.8.16-1.noarch.rpm");
+
+$rpmlist = $bleeding_common->get_rpms();
+is(scalar(@$rpmlist), 2);
+
+$rpm = $bleeding_common->find_newest_rpm_by_name("opennms");
+is($rpm->name, "opennms");
+is($rpm->version, "1.11.0");
+
+$rpmlist = $stable_rhel5->get_rpms();
+is(scalar(@$rpmlist), 1);
+
+$rpm = $rpmlist->[0];
+$bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
+ok(-l "t/newrepo/bleeding/rhel5/opennms/iplike-2.0.2-1.i386.rpm");

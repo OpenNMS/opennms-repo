@@ -7,6 +7,13 @@ use warnings;
 use Carp;
 #use Cwd qw(abs_path);
 use Cwd;
+use File::Basename;
+use File::Copy qw();
+use File::Find;
+use File::Path;
+use File::Spec;
+
+use OpenNMS::YUM::RPM;
 
 =head1 NAME
 
@@ -48,6 +55,8 @@ sub new {
 		return undef;
 	}
 
+	$base =~ s/\/$//;
+
 	$self->{BASE}     = $base;
 	$self->{RELEASE}  = $release;
 	$self->{PLATFORM} = $platform;
@@ -72,6 +81,107 @@ sub platform {
 	my $self = shift;
 	if (@_) { $self->{PLATFORM} = shift }
 	return $self->{PLATFORM};
+}
+
+sub path() {
+	my $self = shift;
+	return $self->releasedir . "/" . $self->platform;
+}
+
+sub releasedir() {
+	my $self = shift;
+	return $self->base . "/" . $self->release;
+}
+
+sub abs_path() {
+	my $self = shift;
+	return Cwd::abs_path($self->path);
+}
+
+sub copy {
+	my $self = shift;
+	my $newbase = shift;
+	if (not defined $newbase) {
+		return undef;
+	}
+
+	my $rsync = `which rsync 2>/dev/null`;
+	if ($? != 0) {
+		carp "Unable to locate rsync!";
+		return undef;
+	}
+	chomp($rsync);
+
+	my $repo = OpenNMS::YUM::Repo->new($newbase, $self->release, $self->platform);
+	mkpath($repo->path);
+	system($rsync, "-avr", $self->path . "/", $repo->path . "/");
+
+	return $repo;
+}
+
+sub delete {
+	my $self = shift;
+
+	rmtree($self->path) or die "Unable to remove " . $self->path;
+	rmdir($self->releasedir);
+	rmdir($self->base);
+	return 1;
+}
+
+sub get_rpms {
+	my $self = shift;
+
+	my $rpms = [];
+	find({ wanted => sub {
+		return unless ($File::Find::name =~ /\.rpm$/);
+		return unless (-e $File::Find::name);
+		my $rpm = OpenNMS::YUM::RPM->new($File::Find::name);
+		push(@{$rpms}, $rpm);
+	}, no_chdir => 1}, $self->path);
+	return $rpms;
+}
+
+sub install_rpm($$) {
+	my $self   = shift;
+	my $rpm    = shift;
+	my $topath = shift;
+
+	return $rpm->copy($self->abs_path . "/" . $topath);
+}
+
+sub link_rpm($$) {
+	my $self   = shift;
+	my $rpm    = shift;
+	my $topath = shift;
+
+	return $rpm->link($self->abs_path . "/" . $topath);
+}
+
+sub find_newest_rpm_by_name {
+	my $self      = shift;
+	my $name      = shift;
+
+	my $rpm = undef;
+	my $rpms = $self->get_rpms();
+	for my $local_rpm (@{$rpms}) {
+		next unless ($local_rpm->name eq $name);
+
+		if (not defined $rpm or $local_rpm->is_newer_than($rpm)) {
+			$rpm = $local_rpm;
+		}
+	}
+	return $rpm;
+}
+
+sub share_rpm($$) {
+	my $self      = shift;
+	my $from_repo = shift;
+	my $rpm       = shift;
+	my $topath    = dirname($rpm->relative_path($from_repo->abs_path));
+
+	print STDERR "topath = $topath\n";
+	return 0;
+
 }
 
 1;
