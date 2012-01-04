@@ -1,6 +1,8 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl OpenNMS-YUM.t'
 
+$|++;
+
 #########################
 
 # change 'tests => 1' to 'tests => last_test_to_print';
@@ -53,10 +55,10 @@ ok(-e 't/opennms-1.8.16-1.noarch.rpm');
 unlink "t/opennms-1.8.16-1.noarch.rpm";
 
 
-$rpm->link("t/test2.rpm");
+$rpm->symlink("t/test2.rpm");
 ok(-l "t/test2.rpm");
 unlink "t/test2.rpm";
 
-$rpm->link("t");
+$rpm->symlink("t");
 ok(-l "t/opennms-1.11.0-0.20111220.1.noarch.rpm");
 unlink("t/opennms-1.11.0-0.20111220.1.noarch.rpm");

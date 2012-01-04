@@ -92,7 +92,7 @@ sub platform {
 
 sub path() {
 	my $self = shift;
-	return File::Spec->catfile($self->releasedir, $self->platform);
+	return File::Spec->catfile($self->base, $self->release, $self->platform);
 }
 
 sub releasedir() {
@@ -103,6 +103,11 @@ sub releasedir() {
 sub abs_path() {
 	my $self = shift;
 	return Cwd::abs_path($self->path);
+}
+
+sub to_string() {
+	my $self = shift;
+	return $self->path;
 }
 
 sub copy {
@@ -152,6 +157,15 @@ sub _rpmset {
 	
 }
 
+sub _add_to_rpmset($) {
+	my $self = shift;
+	my $rpm  = shift;
+
+	if (exists $self->{RPMSET}) {
+		$self->_rpmset->add($rpm);
+	}
+}
+
 sub find_all_rpms {
 	my $self = shift;
 
@@ -170,36 +184,52 @@ sub find_newest_rpm_by_name {
 	return $self->_rpmset->find_newest_by_name($name);
 }
 
+sub copy_rpm($$) {
+	my $self   = shift;
+	my $rpm    = shift;
+	my $topath = shift;
+
+	$self->dirty(1);
+
+	my $newrpm = $rpm->copy($topath);
+	$self->_add_to_rpmset($newrpm);
+	return $newrpm;
+}
+
+sub symlink_rpm($$) {
+	my $self   = shift;
+	my $rpm    = shift;
+	my $topath = shift;
+
+	$self->dirty(1);
+
+	my $newrpm = $rpm->symlink($topath);
+	$self->_add_to_rpmset($newrpm);
+	return $newrpm;
+}
+
 sub install_rpm($$) {
 	my $self   = shift;
 	my $rpm    = shift;
 	my $topath = shift;
 
-	$self->dirty(1);
-
-	return $rpm->copy(File::Spec->catfile($self->abs_path, $topath));
-}
-
-sub link_rpm($$) {
-	my $self   = shift;
-	my $rpm    = shift;
-	my $topath = shift;
-
-	$self->dirty(1);
-
-	return $rpm->link(File::Spec->catfile($self->abs_path, $topath));
+	my $finalpath = File::Spec->catfile($self->abs_path, $topath);
+	mkpath($finalpath);
+	$self->copy_rpm($rpm, $finalpath);
 }
 
 sub share_rpm($$) {
 	my $self      = shift;
 	my $from_repo = shift;
 	my $rpm       = shift;
-	my $topath    = File::Spec->catfile($self->path, dirname($rpm->relative_path($from_repo->abs_path)));
+
+	my $topath_r   = dirname($rpm->relative_path($from_repo->abs_path));
+	my $abs_topath = File::Spec->catfile($self->abs_path, $topath_r);
 
 	my $local_rpm = $self->find_newest_rpm_by_name($rpm->name);
 
 	if ($rpm->is_newer_than($local_rpm)) {
-		$self->link_rpm($rpm, $topath);
+		$self->symlink_rpm($rpm, $abs_topath);
 	}
 }
 
@@ -231,7 +261,7 @@ sub _hash() {
 sub add(@) {
 	my $self = shift;
 
-	my @rpms;
+	my @rpms = ();
 	for my $item (@_) {
 		if (ref($item) eq "ARRAY") {
 			push(@rpms, @{$item});
@@ -241,6 +271,8 @@ sub add(@) {
 	}
 	for my $rpm (@rpms) {
 		push(@{$self->_hash->{$rpm->name}}, $rpm);
+		my %seen = ();
+		#@{$self->_hash->{$rpm->name}} = sort { $b->compare_to($a) } grep { ! $seen{$rpm->path}++ } @{$self->_hash->{$rpm->name}};
 		@{$self->_hash->{$rpm->name}} = sort { $b->compare_to($a) } @{$self->_hash->{$rpm->name}};
 	}
 }

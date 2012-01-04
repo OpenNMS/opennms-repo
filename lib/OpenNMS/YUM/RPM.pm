@@ -51,6 +51,7 @@ sub new {
 		return undef;
 	}
 
+	$path = Cwd::abs_path($path);
 	$self->{PATH} = $path;
 	$path =~ s/\'/\\\'/g;
 	my $output = `rpm -q --queryformat='\%{name}|\%{epoch}|\%{version}|\%{release}|\%{arch}' -p '$path'`;
@@ -237,21 +238,25 @@ sub is_older_than($) {
 sub copy($) {
 	my $self = shift;
 	my $to   = shift;
-	return File::Copy::copy($self->abs_path, $self->_get_filename_for_target($to));
+
+	my $filename = $self->_get_filename_for_target($to);
+	my $ret = File::Copy::copy($self->abs_path, $filename);
+	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
 }
 
-sub link($) {
+sub symlink($) {
 	my $self = shift;
 	my $to   = shift;
 
-	if (-e $to) {
-		unlink $to;
+	my $filename = $self->_get_filename_for_target($to);
+	my $from = File::Spec->abs2rel($self->abs_path, dirname($filename));
+
+	if (-e $filename) {
+		unlink $filename;
 	}
 
-	my $from = File::Spec->abs2rel($self->abs_path, $to);
-	$to = $self->_get_filename_for_target($to);
-
-	return symlink($from, $self->_get_filename_for_target($to));
+	my $ret = symlink($from, $filename);
+	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
 }
 
 sub to_string() {
