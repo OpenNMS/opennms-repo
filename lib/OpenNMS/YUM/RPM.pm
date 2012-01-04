@@ -8,6 +8,7 @@ use Carp;
 #use Cwd qw(abs_path);
 use Cwd;
 use File::Basename;
+use File::Copy qw();
 
 =head1 NAME
 
@@ -214,7 +215,7 @@ sub link($) {
 		unlink $to;
 	}
 
-	link($self->abs_path, $self->_get_filename_for_target($to));
+	return symlink($self->abs_path, $self->_get_filename_for_target($to));
 }
 
 sub _get_filename_for_target($) {
