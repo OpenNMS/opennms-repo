@@ -10,7 +10,7 @@ $|++;
 use File::Path;
 use Data::Dumper;
 use OpenNMS::YUM::RPM;
-use Test::More tests => 33;
+use Test::More tests => 37;
 BEGIN {
 	use_ok('OpenNMS::YUM::Repo');
 };
@@ -57,7 +57,12 @@ $bleeding_common->install_rpm($rpm, "opennms");
 ok(-f "t/newrepo/bleeding/common/opennms/opennms-1.8.16-1.noarch.rpm");
 
 $rpmlist = $bleeding_common->find_all_rpms();
+is(scalar(@{$rpmlist}), 2);
 
+# make sure that we don't get duplicate entries in the RPM set if we
+# install an existing RPM
+$bleeding_common->install_rpm($rpm, "opennms");
+$rpmlist = $bleeding_common->find_all_rpms();
 is(scalar(@{$rpmlist}), 2);
 
 $rpm = $bleeding_common->find_newest_rpm_by_name("opennms");
@@ -73,6 +78,15 @@ ok(-l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
 
 $rpmlist = $bleeding_rhel5->find_newest_rpms();
 is(scalar(@{$rpmlist}), 1);
+
+$rpmlist = $bleeding_rhel5->find_all_rpms();
+is(scalar(@{$rpmlist}), 2);
+
+$bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
+ok(-l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
+
+$rpmlist = $bleeding_rhel5->find_all_rpms();
+is(scalar(@{$rpmlist}), 2);
 
 ##### RPMSet Tests #####
 

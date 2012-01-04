@@ -237,6 +237,8 @@ sub share_rpm($$) {
 
 package OpenNMS::YUM::Repo::RPMSet;
 
+use Data::Dumper;
+
 sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
@@ -269,11 +271,24 @@ sub add(@) {
 			push(@rpms, $item);
 		}
 	}
+
+	my %seen = ();
 	for my $rpm (@rpms) {
+		$self->remove($rpm);
 		push(@{$self->_hash->{$rpm->name}}, $rpm);
-		my %seen = ();
-		#@{$self->_hash->{$rpm->name}} = sort { $b->compare_to($a) } grep { ! $seen{$rpm->path}++ } @{$self->_hash->{$rpm->name}};
 		@{$self->_hash->{$rpm->name}} = sort { $b->compare_to($a) } @{$self->_hash->{$rpm->name}};
+	}
+}
+
+sub remove($) {
+	my $self = shift;
+	my $rpm  = shift;
+
+	my $entries = $self->_hash->{$rpm->name};
+	for my $i (0 .. $#{$entries}) {
+		if ($entries->[$i]->abs_path eq $rpm->abs_path) {
+			return delete $entries->[$i];
+		}
 	}
 }
 
