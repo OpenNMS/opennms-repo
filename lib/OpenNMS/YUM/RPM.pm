@@ -8,6 +8,7 @@ use Carp;
 #use Cwd qw(abs_path);
 use Cwd;
 use File::Basename;
+use File::Copy qw();
 
 =head1 NAME
 
@@ -217,7 +218,7 @@ sub link($) {
 	my $from = File::Spec->abs2rel($self->abs_path, $to);
 	$to = $self->_get_filename_for_target($to);
 
-	symlink($from, $self->_get_filename_for_target($to));
+	return symlink($from, $self->_get_filename_for_target($to));
 }
 
 sub to_string() {

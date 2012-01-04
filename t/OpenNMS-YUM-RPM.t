@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 20;
+use Test::More tests => 24;
 BEGIN { use_ok('OpenNMS::YUM::RPM') };
 
 #########################
@@ -42,3 +42,21 @@ ok($olderrpm->is_older_than($rpm));
 ok(!$olderrpm->is_newer_than($rpm));
 ok($rpm->equals($rpm));
 ok(!$rpm->equals($olderrpm));
+
+
+$olderrpm->copy("t/test.rpm");
+ok(-e 't/test.rpm');
+unlink "t/test.rpm";
+
+$olderrpm->copy("t");
+ok(-e 't/opennms-1.8.16-1.noarch.rpm');
+unlink "t/opennms-1.8.16-1.noarch.rpm";
+
+
+$rpm->link("t/test2.rpm");
+ok(-l "t/test2.rpm");
+unlink "t/test2.rpm";
+
+$rpm->link("t");
+ok(-l "t/opennms-1.11.0-0.20111220.1.noarch.rpm");
+unlink("t/opennms-1.11.0-0.20111220.1.noarch.rpm");
