@@ -135,33 +135,39 @@ sub delete {
 	return 1;
 }
 
-sub get_rpms {
+sub _rpmset {
 	my $self = shift;
 
-	my $rpms = [];
-	find({ wanted => sub {
-		return unless ($File::Find::name =~ /\.rpm$/);
-		return unless (-e $File::Find::name);
-		my $rpm = OpenNMS::YUM::RPM->new($File::Find::name);
-		push(@{$rpms}, $rpm);
-	}, no_chdir => 1}, $self->path);
-	return $rpms;
+	if (not exists $self->{RPMSET}) {
+		my $rpms = [];
+		find({ wanted => sub {
+			return unless ($File::Find::name =~ /\.rpm$/);
+			return unless (-e $File::Find::name);
+			my $rpm = OpenNMS::YUM::RPM->new($File::Find::name);
+			push(@{$rpms}, $rpm);
+		}, no_chdir => 1}, $self->path);
+		$self->{RPMSET} = OpenNMS::YUM::Repo::RPMSet->new($rpms);
+	}
+	return $self->{RPMSET};
+	
+}
+
+sub find_all_rpms {
+	my $self = shift;
+
+	return $self->_rpmset->find_all();
+}
+
+sub find_newest_rpms {
+	my $self = shift;
+	return $self->_rpmset->find_newest();
 }
 
 sub find_newest_rpm_by_name {
 	my $self      = shift;
 	my $name      = shift;
 
-	my $rpm = undef;
-	my $rpms = $self->get_rpms();
-	for my $local_rpm (@{$rpms}) {
-		next unless ($local_rpm->name eq $name);
-
-		if (not defined $rpm or $local_rpm->is_newer_than($rpm)) {
-			$rpm = $local_rpm;
-		}
-	}
-	return $rpm;
+	return $self->_rpmset->find_newest_by_name($name);
 }
 
 sub install_rpm($$) {
@@ -198,6 +204,83 @@ sub share_rpm($$) {
 }
 
 1;
+
+package OpenNMS::YUM::Repo::RPMSet;
+
+sub new {
+	my $proto = shift;
+	my $class = ref($proto) || $proto;
+	my $self  = {};
+
+	$self->{RPMS} = {};
+
+	bless($self);
+
+	if (@_) {
+		$self->add(@_);
+	}
+
+	return $self;
+}
+
+sub _hash() {
+	my $self = shift;
+	return $self->{RPMS};
+}
+
+sub add(@) {
+	my $self = shift;
+
+	my @rpms;
+	for my $item (@_) {
+		if (ref($item) eq "ARRAY") {
+			push(@rpms, @{$item});
+		} else {
+			push(@rpms, $item);
+		}
+	}
+	for my $rpm (@rpms) {
+		push(@{$self->_hash->{$rpm->name}}, $rpm);
+		@{$self->_hash->{$rpm->name}} = sort { $b->compare_to($a) } @{$self->_hash->{$rpm->name}};
+	}
+}
+
+sub set(@) {
+	my $self = shift;
+	$self->{RPMS} = {};
+	$self->add(@_);
+}
+
+sub find_all() {
+	my $self = shift;
+	my @ret = ();
+	for my $key (sort keys %{$self->_hash}) {
+		push(@ret, @{$self->_hash->{$key}});
+	}
+	return \@ret;
+}
+
+sub find_newest() {
+	my $self = shift;
+	my @ret = ();
+	for my $key (sort keys %{$self->_hash}) {
+		push(@ret, $self->_hash->{$key}->[0]);
+	}
+	return \@ret;
+}
+
+sub find_by_name($) {
+	my $self = shift;
+	my $name = shift;
+	return $self->_hash->{$name};
+}
+
+sub find_newest_by_name($) {
+	my $self = shift;
+	my $name = shift;
+	return $self->find_by_name($name)->[0];
+}
+
 __END__
 # Below is stub documentation for your module. You'd better edit it!
 
