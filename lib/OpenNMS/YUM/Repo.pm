@@ -5,8 +5,8 @@ use strict;
 use warnings;
 
 use Carp;
-#use Cwd qw(abs_path);
 use Cwd;
+use Data::Dumper;
 use File::Basename;
 use File::Copy qw();
 use File::Find;
@@ -66,9 +66,34 @@ sub new {
 	return $self;
 }
 
+sub find_repos($) {
+	my $class = shift;
+	my $base = shift;
+
+	my @repos;
+	my @repodirs;
+
+	find({ wanted => sub {
+		if (-d $File::Find::name and $File::Find::name =~ /\/repodata$/) {
+			push(@repodirs, dirname($File::Find::name));
+		}
+	}, no_chdir => 1 }, $base);
+
+	for my $repodir (@repodirs) {
+		$repodir = File::Spec->abs2rel($repodir, $base);
+		my @parts = File::Spec->splitdir($repodir);
+		if (scalar(@parts) != 2) {
+			carp "not sure how to determine release and platform for $base/$repodir";
+			next;
+		}
+		push(@repos, OpenNMS::YUM::Repo->new($base, $parts[0], $parts[1]));
+	}
+	return \@repos;
+}
+
 sub dirty {
 	my $self = shift;
-	if ($@) { $self->{DIRTY} = shift }
+	if (@_) { $self->{DIRTY} = shift }
 	return $self->{DIRTY};
 }
 
@@ -100,6 +125,11 @@ sub releasedir() {
 	return File::Spec->catfile($self->base, $self->release);
 }
 
+sub abs_base() {
+	my $self = shift;
+	return Cwd::abs_path($self->base);
+}
+
 sub abs_path() {
 	my $self = shift;
 	return Cwd::abs_path($self->path);
@@ -126,9 +156,40 @@ sub copy {
 
 	my $repo = OpenNMS::YUM::Repo->new($newbase, $self->release, $self->platform);
 	mkpath($repo->path);
-	system($rsync, "-avr", $self->path . "/", $repo->path . "/");
+
+	my $selfpath = $self->abs_path;
+	my $repopath = $repo->abs_path;
+
+	my $source_fs = $self->_get_fs_for_path($selfpath);
+	my $dest_fs   = $self->_get_fs_for_path($repopath);
+
+	if (defined $source_fs and defined $dest_fs and $source_fs eq $dest_fs) {
+		system($rsync, "-avr", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+	} else {
+		system($rsync, "-avr", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+	}
 
 	return $repo;
+}
+
+sub _get_fs_for_path($) {
+	my $self = shift;
+	my $path = shift;
+
+	my $df = `which df 2>/dev/null`;
+	if ($? == 0) {
+		chomp($df);
+		open(OUTPUT, "df -h '$path' |") or croak "unable to run 'df -h $path': $!";
+		<OUTPUT>;
+		my $output = <OUTPUT>;
+		close(OUTPUT);
+
+		my @entries = split(/\s+/, $output);
+		if ($entries[0] =~ /^\//) {
+			return $entries[0];
+		}
+	}
+	return undef;
 }
 
 sub delete {
@@ -138,6 +199,11 @@ sub delete {
 	rmdir($self->releasedir);
 	rmdir($self->base);
 	return 1;
+}
+
+sub clear_cache() {
+	my $self = shift;
+	return delete $self->{RPMSET};
 }
 
 sub _rpmset {
@@ -177,11 +243,33 @@ sub find_newest_rpms {
 	return $self->_rpmset->find_newest();
 }
 
+sub find_obsolete_rpms {
+	my $self = shift;
+	return $self->_rpmset->find_obsolete();
+}
+
 sub find_newest_rpm_by_name {
 	my $self      = shift;
 	my $name      = shift;
 
 	return $self->_rpmset->find_newest_by_name($name);
+}
+
+sub delete_obsolete_rpms {
+	my $self = shift;
+	my $sub  = shift || sub { 1 };
+
+	my $count = 0;
+	for my $rpm (@{$self->find_obsolete_rpms}) {
+		if ($sub->($rpm)) {
+			$self->dirty(1);
+			$rpm->delete;
+			$count++;
+		}
+	}
+	$self->clear_cache();
+
+	return $count;
 }
 
 sub copy_rpm($$) {
@@ -192,6 +280,18 @@ sub copy_rpm($$) {
 	$self->dirty(1);
 
 	my $newrpm = $rpm->copy($topath);
+	$self->_add_to_rpmset($newrpm);
+	return $newrpm;
+}
+
+sub link_rpm($$) {
+	my $self   = shift;
+	my $rpm    = shift;
+	my $topath = shift;
+
+	$self->dirty(1);
+
+	my $newrpm = $rpm->link($topath);
 	$self->_add_to_rpmset($newrpm);
 	return $newrpm;
 }
@@ -228,9 +328,45 @@ sub share_rpm($$) {
 
 	my $local_rpm = $self->find_newest_rpm_by_name($rpm->name);
 
-	if ($rpm->is_newer_than($local_rpm)) {
-		$self->symlink_rpm($rpm, $abs_topath);
+	if (not defined $local_rpm or $rpm->is_newer_than($local_rpm)) {
+		$self->link_rpm($rpm, $abs_topath);
+		return 1;
 	}
+	return 0;
+}
+
+sub share_all_rpms($) {
+	my $self      = shift;
+	my $from_repo = shift;
+
+	my $count = 0;
+	for my $rpm (@{$from_repo->find_newest_rpms()}) {
+		$count += $self->share_rpm($from_repo, $rpm);
+	}
+	return $count;
+}
+
+sub cachedir() {
+	my $self = shift;
+	return File::Spec->catfile($self->abs_base, "caches", $self->release, $self->platform);
+}
+
+sub index_if_necessary() {
+	my $self = shift;
+
+	if ($self->dirty) {
+		mkpath($self->cachedir);
+		my @command = ('createrepo',
+                        '--outputdir', $self->abs_path,
+                        '--cachedir', $self->cachedir,
+                        $self->abs_path);
+		system(@command) == 0 or croak "createrepo failed! $!";
+		$self->dirty(0);
+	} else {
+		return 0;
+	}
+
+	return 1;
 }
 
 1;
@@ -325,7 +461,23 @@ sub find_by_name($) {
 sub find_newest_by_name($) {
 	my $self = shift;
 	my $name = shift;
-	return $self->find_by_name($name)->[0];
+	my $found = $self->find_by_name($name);
+	return defined $found? $found->[0] : undef;
+}
+
+sub find_obsolete() {
+	my $self = shift;
+	my @ret = grep { $self->is_obsolete($_) } @{$self->find_all()};
+	return \@ret;
+}
+
+sub is_obsolete($) {
+	my $self = shift;
+	my $rpm  = shift;
+
+	my $newest = $self->find_newest_by_name($rpm->name);
+	return 0 unless (defined $newest);
+	return $newest->is_newer_than($rpm);
 }
 
 __END__

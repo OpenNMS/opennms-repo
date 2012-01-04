@@ -235,12 +235,30 @@ sub is_older_than($) {
 	return $self->compare_to($compareto) == -1;
 }
 
+sub delete() {
+	my $self = shift;
+	return unlink($self->abs_path);
+}
+
 sub copy($) {
 	my $self = shift;
 	my $to   = shift;
 
 	my $filename = $self->_get_filename_for_target($to);
+
+	unlink $filename if (-e $filename);
 	my $ret = File::Copy::copy($self->abs_path, $filename);
+	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
+}
+
+sub link($) {
+	my $self = shift;
+	my $to   = shift;
+
+	my $filename = $self->_get_filename_for_target($to);
+
+	unlink $filename if (-e $filename);
+	my $ret = link($self->abs_path, $filename);
 	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
 }
 
@@ -251,10 +269,7 @@ sub symlink($) {
 	my $filename = $self->_get_filename_for_target($to);
 	my $from = File::Spec->abs2rel($self->abs_path, dirname($filename));
 
-	if (-e $filename) {
-		unlink $filename;
-	}
-
+	unlink $filename if (-e $filename);
 	my $ret = symlink($from, $filename);
 	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
 }

@@ -10,7 +10,7 @@ $|++;
 use File::Path;
 use Data::Dumper;
 use OpenNMS::YUM::RPM;
-use Test::More tests => 37;
+use Test::More tests => 48;
 BEGIN {
 	use_ok('OpenNMS::YUM::Repo');
 };
@@ -74,7 +74,7 @@ is(scalar(@{$rpmlist}), 1);
 
 $rpm = $rpmlist->[0];
 $bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
-ok(-l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
+ok(-f "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm" and not -l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
 
 $rpmlist = $bleeding_rhel5->find_newest_rpms();
 is(scalar(@{$rpmlist}), 1);
@@ -83,7 +83,7 @@ $rpmlist = $bleeding_rhel5->find_all_rpms();
 is(scalar(@{$rpmlist}), 2);
 
 $bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
-ok(-l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
+ok(-f "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm" and not -l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
 
 $rpmlist = $bleeding_rhel5->find_all_rpms();
 is(scalar(@{$rpmlist}), 2);
@@ -115,6 +115,37 @@ is(scalar(@{$rpmset->find_all()}), 0);
 $rpmset->set(OpenNMS::YUM::RPM->new("t/newrepo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm"));
 is(scalar(@{$rpmset->find_all()}), 1);
 is($rpmset->find_all()->[0]->name, "opennms");
+
+$rpm = OpenNMS::YUM::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
+$rpmset->set(OpenNMS::YUM::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
+ok($rpmset->is_obsolete($rpm));
+
+$rpmset->add($rpm);
+$rpmlist = $rpmset->find_obsolete();
+
+is(scalar(@{$rpmlist}), 1);
+is($rpmlist->[0]->version, "1.0.7");
+
+$rpmlist = $bleeding_rhel5->find_obsolete_rpms();
+
+is(scalar(@{$rpmlist}), 1);
+is($rpmlist->[0]->version, "1.0.7");
+
+is($bleeding_rhel5->delete_obsolete_rpms(sub { return 0 }), 0);
+ok(-e "t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
+is($bleeding_rhel5->delete_obsolete_rpms(), 1);
+ok(! -e "t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
+is($bleeding_common->delete_obsolete_rpms(sub { $_[0]->name ne "opennms" }), 0);
+
+$stable_rhel5->delete;
+$bleeding_rhel5->delete;
+$stable_rhel5   = OpenNMS::YUM::Repo->new("t/repo", "stable", "rhel5")->copy("t/newrepo");
+$bleeding_rhel5 = OpenNMS::YUM::Repo->new("t/repo", "bleeding", "rhel5")->copy("t/newrepo");
+
+$bleeding_rhel5->share_all_rpms($stable_rhel5);
+
+$rpmlist = $bleeding_rhel5->find_all_rpms();
+is(scalar(@{$rpmlist}), 2);
 
 $stable_common->delete;
 $stable_rhel5->delete;
