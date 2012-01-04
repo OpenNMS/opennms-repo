@@ -57,4 +57,4 @@ is(scalar(@$rpmlist), 1);
 
 $rpm = $rpmlist->[0];
 $bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
-ok(-l "t/newrepo/bleeding/rhel5/opennms/iplike-2.0.2-1.i386.rpm");
+ok(-l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");

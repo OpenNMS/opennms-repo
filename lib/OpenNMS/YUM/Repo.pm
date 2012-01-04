@@ -85,12 +85,12 @@ sub platform {
 
 sub path() {
 	my $self = shift;
-	return $self->releasedir . "/" . $self->platform;
+	return File::Spec->catfile($self->releasedir, $self->platform);
 }
 
 sub releasedir() {
 	my $self = shift;
-	return $self->base . "/" . $self->release;
+	return File::Spec->catfile($self->base, $self->release);
 }
 
 sub abs_path() {
@@ -146,7 +146,7 @@ sub install_rpm($$) {
 	my $rpm    = shift;
 	my $topath = shift;
 
-	return $rpm->copy($self->abs_path . "/" . $topath);
+	return $rpm->copy(File::Spec->catfile($self->abs_path, $topath));
 }
 
 sub link_rpm($$) {
@@ -154,7 +154,7 @@ sub link_rpm($$) {
 	my $rpm    = shift;
 	my $topath = shift;
 
-	return $rpm->link($self->abs_path . "/" . $topath);
+	return $rpm->link(File::Spec->catfile($self->abs_path, $topath));
 }
 
 sub find_newest_rpm_by_name {
@@ -177,11 +177,13 @@ sub share_rpm($$) {
 	my $self      = shift;
 	my $from_repo = shift;
 	my $rpm       = shift;
-	my $topath    = dirname($rpm->relative_path($from_repo->abs_path));
+	my $topath    = File::Spec->catfile($self->path, dirname($rpm->relative_path($from_repo->abs_path)));
 
-	print STDERR "topath = $topath\n";
-	return 0;
+	my $local_rpm = $self->find_newest_rpm_by_name($rpm->name);
 
+	if ($rpm->is_newer_than($local_rpm)) {
+		$rpm->link($topath);
+	}
 }
 
 1;

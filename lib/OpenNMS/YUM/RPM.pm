@@ -214,7 +214,15 @@ sub link($) {
 		unlink $to;
 	}
 
-	link($self->abs_path, $self->_get_filename_for_target($to));
+	my $from = File::Spec->abs2rel($self->abs_path, $to);
+	$to = $self->_get_filename_for_target($to);
+
+	symlink($from, $self->_get_filename_for_target($to));
+}
+
+sub to_string() {
+	my $self = shift;
+	return $self->name . '-' . $self->full_version . ' (' . $self->abs_path . ')';
 }
 
 sub _get_filename_for_target($) {
