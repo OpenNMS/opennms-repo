@@ -57,12 +57,19 @@ sub new {
 
 	$base =~ s/\/$//;
 
+	$self->{DIRTY}    = 0;
 	$self->{BASE}     = $base;
 	$self->{RELEASE}  = $release;
 	$self->{PLATFORM} = $platform;
 
 	bless($self);
 	return $self;
+}
+
+sub dirty {
+	my $self = shift;
+	if ($@) { $self->{DIRTY} = shift }
+	return $self->{DIRTY};
 }
 
 sub base {
@@ -141,22 +148,6 @@ sub get_rpms {
 	return $rpms;
 }
 
-sub install_rpm($$) {
-	my $self   = shift;
-	my $rpm    = shift;
-	my $topath = shift;
-
-	return $rpm->copy(File::Spec->catfile($self->abs_path, $topath));
-}
-
-sub link_rpm($$) {
-	my $self   = shift;
-	my $rpm    = shift;
-	my $topath = shift;
-
-	return $rpm->link(File::Spec->catfile($self->abs_path, $topath));
-}
-
 sub find_newest_rpm_by_name {
 	my $self      = shift;
 	my $name      = shift;
@@ -173,6 +164,26 @@ sub find_newest_rpm_by_name {
 	return $rpm;
 }
 
+sub install_rpm($$) {
+	my $self   = shift;
+	my $rpm    = shift;
+	my $topath = shift;
+
+	$self->dirty(1);
+
+	return $rpm->copy(File::Spec->catfile($self->abs_path, $topath));
+}
+
+sub link_rpm($$) {
+	my $self   = shift;
+	my $rpm    = shift;
+	my $topath = shift;
+
+	$self->dirty(1);
+
+	return $rpm->link(File::Spec->catfile($self->abs_path, $topath));
+}
+
 sub share_rpm($$) {
 	my $self      = shift;
 	my $from_repo = shift;
@@ -182,7 +193,7 @@ sub share_rpm($$) {
 	my $local_rpm = $self->find_newest_rpm_by_name($rpm->name);
 
 	if ($rpm->is_newer_than($local_rpm)) {
-		$rpm->link($topath);
+		$self->link_rpm($rpm, $topath);
 	}
 }
 

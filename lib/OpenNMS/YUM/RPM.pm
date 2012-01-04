@@ -33,6 +33,8 @@ things.
 
 our $VERSION = '0.01';
 
+my $COMPARE_TO_CACHE = {};
+
 =head1 CONSTRUCTOR
 
 =cut
@@ -145,20 +147,24 @@ sub compare_to {
 	my $compareto  = shift;
 	my $use_rpmver = shift || 1;
 
+	my $compareversion = $compareto->full_version;
+	my $selfversion    = $self->full_version;
+
+	if (exists $COMPARE_TO_CACHE->{$compareversion}->{$selfversion}) {
+		return $COMPARE_TO_CACHE->{$compareversion}->{$selfversion};
+	}
+
 	my $rpmver = `which rpmver 2>/dev/null`;
 	chomp($rpmver);
 	if ($? == 0 && $use_rpmver) {
 		# we have rpmver, defer to it
 
-		my $compareversion = $compareto->full_version;
-		my $selfversion    = $self->full_version;
-
 		if (system("$rpmver '$compareversion' '=' '$selfversion'") == 0) {
-			return 0;
+			return _cache_comparison($compareversion, $selfversion, 0);
 		}
 		my $retval = (system("$rpmver '$compareversion' '<' '$selfversion'") >> 8);
-		return 1 if ($retval == 0);
-		return -1;
+		return _cache_comparison($compareversion, $selfversion, 1) if ($retval == 0);
+		return _cache_comparison($compareversion, $selfversion, -1);
 	}
 
 	# otherwise, attempt to parse ourselves, this will probably
@@ -166,18 +172,45 @@ sub compare_to {
 
 	carp "rpmver not found, attempting to parse manually. This is generally a bad idea.";
 
-	return 1 unless (defined $compareto);
+	return _cache_comparison($compareversion, $selfversion, 1) unless (defined $compareto);
 
 	if ($compareto->epoch_int != $self->epoch_int) {
 		# if the compared is lower than the self, return 1 (after)
-		return ($compareto->epoch_int < $self->epoch_int) ? 1 : -1;
+		return _cache_comparison($compareversion, $selfversion, ($compareto->epoch_int < $self->epoch_int) ? 1 : -1);
 	}
 
 	if ($compareto->version eq $self->version) {
-		return _compare_version($compareto->release, $self->release);
+		return _cache_comparison($compareversion, $selfversion, _compare_version($compareto->release, $self->release));
 	}
 
-	return _compare_version($compareto->version, $self->version);
+	return _cache_comparison($compareversion, $selfversion, _compare_version($compareto->version, $self->version));
+}
+
+sub _compare_version {
+	my $ver_a = shift;
+	my $ver_b = shift;
+
+	my @a = split(!/[[:alnum:]]/, $ver_a);
+	my @b = split(!/[[:alnum:]]/, $ver_b);
+
+	my $length_a = length(@a);
+	my $length_b = length(@b);
+
+	my $length = ($length_a >= $length_b)? $length_a : $length_b;
+
+	for my $i (0 .. $length) {
+		next if ($a[$i] eq $b[$i]);
+		return ($a[$i] lt $b[$i]) ? 1 : -1;
+	}
+}
+
+sub _cache_comparison {
+	my $compareversion = shift;
+	my $selfversion    = shift;
+	my $result         = shift;
+
+	$COMPARE_TO_CACHE->{$compareversion}->{$selfversion} = $result;
+	return $result;
 }
 
 sub equals($) {
@@ -237,24 +270,6 @@ sub _get_filename_for_target($) {
 		$to = $to . basename($self->path);
 	}
 	return $to;
-}
-
-sub _compare_version {
-	my $ver_a = shift;
-	my $ver_b = shift;
-
-	my @a = split(!/[[:alnum:]]/, $ver_a);
-	my @b = split(!/[[:alnum:]]/, $ver_b);
-
-	my $length_a = length(@a);
-	my $length_b = length(@b);
-
-	my $length = ($length_a >= $length_b)? $length_a : $length_b;
-
-	for my $i (0 .. $length) {
-		next if ($a[$i] eq $b[$i]);
-		return ($a[$i] lt $b[$i]) ? 1 : -1;
-	}
 }
 
 1;
