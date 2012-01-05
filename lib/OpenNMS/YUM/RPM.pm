@@ -209,6 +209,17 @@ sub full_version {
 	return $self->epoch_int . ":" . $self->version . "-" . $self->release;
 }
 
+=head2 * display_version
+
+Returns the complete version string, just like full_version, expect it excludes
+the epoch if there is no epoch in the RPM.
+
+=cut
+
+sub display_version {
+	my $self = shift;
+	return $self->epoch_int? $self->full_version : $self->version . "-" . $self->release;
+}
 
 =head2 * compare_to($rpm)
 
