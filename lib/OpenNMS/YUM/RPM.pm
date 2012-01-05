@@ -31,7 +31,7 @@ things.
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.5';
 
 my $CACHE_HITS = 0;
 my $CACHE_MISSES = 0;

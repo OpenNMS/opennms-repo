@@ -37,7 +37,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.5';
 
 =head1 CONSTRUCTOR
 
@@ -296,7 +296,7 @@ Delete the repository from the filesystem.
 sub delete {
 	my $self = shift;
 
-	rmtree($self->path) or die "Unable to remove " . $self->path;
+	rmtree($self->path) or croak "Unable to remove " . $self->path;
 	rmdir($self->releasedir);
 	rmdir($self->base);
 	return 1;
@@ -530,21 +530,48 @@ sub cachedir() {
 	return File::Spec->catfile($self->abs_base, "caches", $self->release, $self->platform);
 }
 
-=head2 * index
+=head2 * index({options})
 
 Create the YUM indexes for this repository.
 
+Takes as argument a hash reference containing optional configuration.
+
+Supported options:
+
+=over 2
+
+=item * signing_id - the GPG ID to sign the repository index as.
+
+=item * signing_password - the GPG password to sign the repository index with.
+
+=back
+
+If either of the signing options are not passed, we do not sign the repository.
+
 =cut
 
-sub index() {
-	my $self = shift;
+sub index($) {
+	my $self    = shift;
+	my $options = shift;
 
 	mkpath($self->cachedir);
-	my @command = ('createrepo',
+	my @command = ('createrepo', '-q',
 		'--outputdir', $self->abs_path,
 		'--cachedir', $self->cachedir,
 		$self->abs_path);
 	system(@command) == 0 or croak "createrepo failed! $!";
+
+	my $id       = $options->{'signing_id'};
+	my $password = $options->{'signing_password'};
+
+	if (defined $id and defined $password) {
+		my $repodata = File::Spec->catfile($self->abs_path, 'repodata');
+		system("gpg --passphrase '$password' --batch --yes -a --export '$id' > $repodata/repomd.xml.key") == 0 or croak "unable to write public key to $repodata/repomd.xml.key: $!";
+		system("gpg --passphrase '$password' --batch --yes -a --default-key '$id' --detach-sign $repodata/repomd.xml") == 0 or croak "unable to detach-sign $repodata/repomd.xml with GPG id '$id': $!";
+	} else {
+		print "no gpg stuffs\n";
+	}
+
 	$self->dirty(0);
 	return 1;
 }
@@ -554,13 +581,16 @@ sub index() {
 Create the YUM indexes for this repository, if any
 changes have been made.
 
+Takes the same options as the index method.
+
 =cut
 
-sub index_if_necessary() {
-	my $self = shift;
+sub index_if_necessary($) {
+	my $self    = shift;
+	my $options = shift;
 
 	if ($self->dirty) {
-		$self->index;
+		$self->index($options);
 	} else {
 		return 0;
 	}
