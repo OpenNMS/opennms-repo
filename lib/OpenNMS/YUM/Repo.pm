@@ -37,7 +37,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = '0.5';
+our $VERSION = '0.6';
 
 =head1 CONSTRUCTOR
 
@@ -265,6 +265,36 @@ sub copy {
 	}
 
 	return $repo;
+}
+
+=head2 * replace
+
+Given a target repository, replace the target repository with the contents of the
+current repository.
+
+=cut
+
+sub replace {
+	my $self        = shift;
+	my $target_repo = shift;
+
+	croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
+	croak "platforms do not match! (" . $self->platform . " != " . $target_repo->platform . ")" if ($self->platform ne $target_repo->platform);
+
+	my $self_path   = $self->abs_path;
+	my $target_path = $target_repo->abs_path;
+
+	croak "paths match -- this should not be" if ($self_path eq $target_path);
+
+	File::Copy::move($target_path, $target_path . '.bak') or croak "failed to rename $target_path to $target_path.bak: $!";
+	File::Copy::move($self_path, $target_path) or croak "failed to rename $self_path to $target_path: $!";
+
+	rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
+
+	rmdir($self->releasedir);
+	rmdir($self->base);
+
+	return OpenNMS::YUM::Repo->new($target_repo->abs_base, $self->release, $self->platform);
 }
 
 sub _get_fs_for_path($) {

@@ -10,7 +10,7 @@ $|++;
 use File::Path;
 use Data::Dumper;
 use OpenNMS::YUM::RPM;
-use Test::More tests => 48;
+use Test::More tests => 51;
 BEGIN {
 	use_ok('OpenNMS::YUM::Repo');
 };
@@ -146,6 +146,15 @@ $bleeding_rhel5->share_all_rpms($stable_rhel5);
 
 $rpmlist = $bleeding_rhel5->find_all_rpms();
 is(scalar(@{$rpmlist}), 2);
+
+my $copy = $bleeding_rhel5->copy("t/copy");
+$rpm = OpenNMS::YUM::RPM->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
+$copy->install_rpm($rpm, "opennms");
+$bleeding_rhel5 = $copy->replace($bleeding_rhel5);
+ok(! -d "t/copy");
+$rpm = $bleeding_rhel5->find_newest_rpm_by_name("opennms");
+ok(defined $rpm);
+is($rpm->version, "1.8.16");
 
 $stable_common->delete;
 $stable_rhel5->delete;
