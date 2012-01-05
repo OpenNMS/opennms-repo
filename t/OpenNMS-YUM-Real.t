@@ -10,7 +10,9 @@ $|++;
 use File::Path;
 use Data::Dumper;
 use OpenNMS::YUM::RPM;
-use Test::More tests => 3;
+#use Test::More tests => 3;
+use Test::More skip_all => "This was just for prototyping our real script.";
+
 BEGIN {
 	use_ok('OpenNMS::YUM::Repo');
 };
@@ -80,5 +82,11 @@ for my $repo (@testrepos) {
 	print STDERR "\nindexing " . $repo->to_string . "... ";
 	print STDERR $repo->index_if_necessary ? "ok" : "skipped";
 }
+
+my $stats = OpenNMS::YUM::RPM->stats();
+for my $key (sort keys %$stats) {
+	print STDERR "\n$key: " . $stats->{$key};
+}
+print STDERR "\n\n";
 
 #rmtree($temprepo);

@@ -33,11 +33,21 @@ things.
 
 our $VERSION = '0.01';
 
+my $CACHE_HITS = 0;
+my $CACHE_MISSES = 0;
 my $COMPARE_TO_CACHE = {};
 
 =head1 CONSTRUCTOR
 
 =cut
+
+sub stats {
+	my $class = shift;
+	return {
+		cache_hits => $CACHE_HITS,
+		cache_misses => $CACHE_MISSES
+	};
+}
 
 sub new {
 	my $proto = shift;
@@ -152,6 +162,7 @@ sub compare_to {
 	my $selfversion    = $self->full_version;
 
 	if (exists $COMPARE_TO_CACHE->{$compareversion}->{$selfversion}) {
+		$CACHE_HITS++;
 		return $COMPARE_TO_CACHE->{$compareversion}->{$selfversion};
 	}
 
@@ -210,6 +221,7 @@ sub _cache_comparison {
 	my $selfversion    = shift;
 	my $result         = shift;
 
+	$CACHE_MISSES++;
 	$COMPARE_TO_CACHE->{$compareversion}->{$selfversion} = $result;
 	return $result;
 }
