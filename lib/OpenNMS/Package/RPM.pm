@@ -11,6 +11,8 @@ use File::Basename;
 use File::Copy qw();
 use Expect;
 
+use OpenNMS::Package::RPM::Version;
+
 =head1 NAME
 
 OpenNMS::Package::RPM - Perl extension for manipulating RPMs
@@ -32,11 +34,7 @@ things.
 
 =cut
 
-our $VERSION = '0.9';
-
-my $CACHE_HITS = 0;
-my $CACHE_MISSES = 0;
-my $COMPARE_TO_CACHE = {};
+our $VERSION = '1.1';
 
 =head1 CONSTRUCTOR
 
@@ -65,8 +63,10 @@ sub new {
 	my $output = `rpm -q --queryformat='\%{name}|\%{epoch}|\%{version}|\%{release}|\%{arch}' -p '$path'`;
 	chomp($output);
 	if ($? == 0) {
-		($self->{NAME}, $self->{EPOCH}, $self->{VERSION}, $self->{RELEASE}, $self->{ARCH}) = split(/\|/, $output);
-		$self->{EPOCH} = undef if ($self->{EPOCH} eq "(none)");
+		my ($name, $epoch, $version, $release, $arch) = split(/\|/, $output);
+		$epoch = undef if ($epoch eq "(none)");
+		$self->{NAME} = $name;
+		$self->{VERSION} = OpenNMS::Package::RPM::Version->new($version, $release, $arch, $epoch);
 	} else {
 		carp "File was invalid! ($output)";
 		return undef;
@@ -89,6 +89,17 @@ sub name {
 	return $self->{NAME};
 }
 
+=head2 * rpm_version
+
+The RPM version, in an OpenNMS::Package::RPM::Version object.
+
+=cut
+
+sub rpm_version {
+	my $self = shift;
+	return $self->{VERSION};
+}
+
 =head2 * epoch
 
 The epoch of the RPM.  If no epoch is set, returns undef.
@@ -97,7 +108,7 @@ The epoch of the RPM.  If no epoch is set, returns undef.
 
 sub epoch {
 	my $self = shift;
-	return $self->{EPOCH};
+	return $self->rpm_version->epoch;
 }
 
 =head2 * epoch_int
@@ -108,8 +119,7 @@ The epoch of the RPM.  If no epoch is set, returns the default epoch, 0.
 
 sub epoch_int() {
 	my $self = shift;
-	return 0 unless (defined $self->epoch);
-	return $self->epoch;
+	return $self->rpm_version->epoch_int;
 }
 
 =head2 * version
@@ -121,7 +131,7 @@ upstream software that was packaged.
 
 sub version {
 	my $self = shift;
-	return $self->{VERSION};
+	return $self->rpm_version->version;
 }
 
 =head2 * release
@@ -134,7 +144,7 @@ that is packaged.
 
 sub release {
 	my $self = shift;
-	return $self->{RELEASE};
+	return $self->rpm_version->release;
 }
 
 =head2 * arch
@@ -145,7 +155,7 @@ The architecture of the RPM. (e.g., "noarch", "i386", etc.)
 
 sub arch {
 	my $self = shift;
-	return $self->{ARCH};
+	return $self->rpm_version->arch;
 }
 
 =head2 * path
@@ -207,7 +217,7 @@ Returns the complete version string of the RPM, in the form: C<epoch:version-rel
 
 sub full_version {
 	my $self = shift;
-	return $self->epoch_int . ":" . $self->version . "-" . $self->release;
+	return $self->rpm_version->full_version;
 }
 
 =head2 * display_version
@@ -219,7 +229,7 @@ the epoch if there is no epoch in the RPM.
 
 sub display_version {
 	my $self = shift;
-	return $self->epoch_int? $self->full_version : $self->version . "-" . $self->release;
+	return $self->rpm_version->display_version;
 }
 
 =head2 * compare_to($rpm)
@@ -241,72 +251,10 @@ sub compare_to {
 		return $compareto->name cmp $self->name;
 	}
 
-	my $compareversion = $compareto->full_version;
-	my $selfversion    = $self->full_version;
+	my $compareversion = $compareto->rpm_version;
+	my $selfversion    = $self->rpm_version;
 
-	if (exists $COMPARE_TO_CACHE->{$compareversion}->{$selfversion}) {
-		$CACHE_HITS++;
-		return $COMPARE_TO_CACHE->{$compareversion}->{$selfversion};
-	}
-
-	my $rpmver = `which rpmver 2>/dev/null`;
-	chomp($rpmver);
-	if ($? == 0 && $use_rpmver) {
-		# we have rpmver, defer to it
-
-		if (system("$rpmver '$compareversion' '=' '$selfversion'") == 0) {
-			return _cache_comparison($compareversion, $selfversion, 0);
-		}
-		my $retval = (system("$rpmver '$compareversion' '<' '$selfversion'") >> 8);
-		return _cache_comparison($compareversion, $selfversion, 1) if ($retval == 0);
-		return _cache_comparison($compareversion, $selfversion, -1);
-	}
-
-	# otherwise, attempt to parse ourselves, this will probably
-	# not handle all corner cases
-
-	carp "rpmver not found, attempting to parse manually. This is generally a bad idea.";
-
-	return _cache_comparison($compareversion, $selfversion, 1) unless (defined $compareto);
-
-	if ($compareto->epoch_int != $self->epoch_int) {
-		# if the compared is lower than the self, return 1 (after)
-		return _cache_comparison($compareversion, $selfversion, ($compareto->epoch_int < $self->epoch_int) ? 1 : -1);
-	}
-
-	if ($compareto->version eq $self->version) {
-		return _cache_comparison($compareversion, $selfversion, _compare_version($compareto->release, $self->release));
-	}
-
-	return _cache_comparison($compareversion, $selfversion, _compare_version($compareto->version, $self->version));
-}
-
-sub _compare_version {
-	my $ver_a = shift;
-	my $ver_b = shift;
-
-	my @a = split(!/[[:alnum:]]/, $ver_a);
-	my @b = split(!/[[:alnum:]]/, $ver_b);
-
-	my $length_a = length(@a);
-	my $length_b = length(@b);
-
-	my $length = ($length_a >= $length_b)? $length_a : $length_b;
-
-	for my $i (0 .. $length) {
-		next if ($a[$i] eq $b[$i]);
-		return ($a[$i] lt $b[$i]) ? 1 : -1;
-	}
-}
-
-sub _cache_comparison {
-	my $compareversion = shift;
-	my $selfversion    = shift;
-	my $result         = shift;
-
-	$CACHE_MISSES++;
-	$COMPARE_TO_CACHE->{$compareversion}->{$selfversion} = $result;
-	return $result;
+	return $selfversion->compare_to($compareversion);
 }
 
 =head2 * equals($rpm)
@@ -471,14 +419,6 @@ sub _get_filename_for_target($) {
 		$to = $to . basename($self->path);
 	}
 	return $to;
-}
-
-sub stats {
-	my $class = shift;
-	return {
-		cache_hits => $CACHE_HITS,
-		cache_misses => $CACHE_MISSES
-	};
 }
 
 1;

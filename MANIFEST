@@ -13,4 +13,5 @@ t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm
 lib/OpenNMS/Util.pm
 lib/OpenNMS/Package.pm
 lib/OpenNMS/Package/RPM.pm
+lib/OpenNMS/Package/RPM/Version.pm
 lib/OpenNMS/Package/Repo.pm
