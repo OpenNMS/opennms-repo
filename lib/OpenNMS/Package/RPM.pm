@@ -1,4 +1,4 @@
-package OpenNMS::YUM::RPM;
+package OpenNMS::Package::RPM;
 
 use 5.008008;
 use strict;
@@ -13,13 +13,13 @@ use Expect;
 
 =head1 NAME
 
-OpenNMS::YUM::RPM - Perl extension for manipulating RPMs
+OpenNMS::Package::RPM - Perl extension for manipulating RPMs
 
 =head1 SYNOPSIS
 
-  use OpenNMS::YUM::RPM;
+  use OpenNMS::Package::RPM;
 
-  my $rpm = OpenNMS::YUM::RPM->new("path/to/foo.rpm");
+  my $rpm = OpenNMS::Package::RPM->new("path/to/foo.rpm");
   if ($rpm->is_in_repo("path/to")) {
     print "all good!"
   }
@@ -40,9 +40,9 @@ my $COMPARE_TO_CACHE = {};
 
 =head1 CONSTRUCTOR
 
-OpenNMS::YUM::RPM->new($path)
+OpenNMS::Package::RPM->new($path)
 
-Given a path to an RPM file, create a new OpenNMS::YUM::RPM object.
+Given a path to an RPM file, create a new OpenNMS::Package::RPM object.
 The RPM file must exist.
 
 =cut
@@ -377,7 +377,7 @@ sub copy($) {
 
 	unlink $filename if (-e $filename);
 	my $ret = File::Copy::copy($self->abs_path, $filename);
-	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
+	return $ret? OpenNMS::Package::RPM->new($filename) : undef;
 }
 
 =head2 * link($target_path)
@@ -394,7 +394,7 @@ sub link($) {
 
 	unlink $filename if (-e $filename);
 	my $ret = link($self->abs_path, $filename);
-	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
+	return $ret? OpenNMS::Package::RPM->new($filename) : undef;
 }
 
 =head2 * symlink($target_path)
@@ -413,7 +413,7 @@ sub symlink($) {
 
 	unlink $filename if (-e $filename);
 	my $ret = symlink($from, $filename);
-	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
+	return $ret? OpenNMS::Package::RPM->new($filename) : undef;
 }
 
 =head2 * sign($id, $password)

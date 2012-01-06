@@ -1,4 +1,4 @@
-package OpenNMS::YUM::Repo;
+package OpenNMS::Package::Repo;
 
 use 5.008008;
 use strict;
@@ -15,15 +15,15 @@ use File::Spec;
 use File::Temp qw(tempdir);
 
 use OpenNMS::Util;
-use OpenNMS::YUM::RPM;
+use OpenNMS::Package::RPM;
 
 =head1 NAME
 
-OpenNMS::YUM::Repo - Perl extension that represents a YUM repository
+OpenNMS::Package::Repo - Perl extension that represents a YUM repository
 
 =head1 SYNOPSIS
 
-  use OpenNMS::YUM::Repo;
+  use OpenNMS::Package::Repo;
 
 =head1 DESCRIPTION
 
@@ -97,7 +97,7 @@ sub new {
 =head2 * find_repos($base)
 
 Search for repositories, given a base path.  Returns a list
-of OpenNMS::YUM::Repo objects representing the repositories found.
+of OpenNMS::Package::Repo objects representing the repositories found.
 
 =cut
 
@@ -121,7 +121,7 @@ sub find_repos($) {
 			carp "not sure how to determine release and platform for $base/$repodir";
 			next;
 		}
-		push(@repos, OpenNMS::YUM::Repo->new($base, $parts[0], $parts[1]));
+		push(@repos, OpenNMS::Package::Repo->new($base, $parts[0], $parts[1]));
 	}
 	return \@repos;
 }
@@ -231,7 +231,7 @@ sub to_string() {
 =head2 * copy
 
 Given a new base path, copy this repository to the new path using rsync.
-Returns an OpenNMS::YUM::Repo object, representing this new base path.
+Returns an OpenNMS::Package::Repo object, representing this new base path.
 
 If possible, it will create the new repository using hard links.
 
@@ -251,7 +251,7 @@ sub copy {
 	}
 	chomp($rsync);
 
-	my $repo = OpenNMS::YUM::Repo->new($newbase, $self->release, $self->platform);
+	my $repo = OpenNMS::Package::Repo->new($newbase, $self->release, $self->platform);
 	mkpath($repo->path);
 
 	my $selfpath = $self->abs_path;
@@ -312,7 +312,7 @@ sub replace {
 	rmdir($self->releasedir);
 	rmdir($self->base);
 
-	return OpenNMS::YUM::Repo->new($target_repo->abs_base, $self->release, $self->platform);
+	return OpenNMS::Package::Repo->new($target_repo->abs_base, $self->release, $self->platform);
 }
 
 sub _get_fs_for_path($) {
@@ -358,10 +358,10 @@ sub _rpmset {
 		find({ wanted => sub {
 			return unless ($File::Find::name =~ /\.rpm$/);
 			return unless (-e $File::Find::name);
-			my $rpm = OpenNMS::YUM::RPM->new($File::Find::name);
+			my $rpm = OpenNMS::Package::RPM->new($File::Find::name);
 			push(@{$rpms}, $rpm);
 		}, no_chdir => 1}, $self->path);
-		$self->{RPMSET} = OpenNMS::YUM::Repo::RPMSet->new($rpms);
+		$self->{RPMSET} = OpenNMS::Package::Repo::RPMSet->new($rpms);
 	}
 	return $self->{RPMSET};
 	
@@ -379,7 +379,7 @@ sub _add_to_rpmset($) {
 =head2 * find_all_rpms
 
 Locate all RPMs in the repository.  Returns a list of
-L<OpenNMS::YUM::RPM> objects.
+L<OpenNMS::Package::RPM> objects.
 
 =cut
 
@@ -393,7 +393,7 @@ sub find_all_rpms {
 
 Locate the newest version of each RPM in the repository (based
 on the name of the RPM, not filesystem details).  Returns a list
-of L<OpenNMS::YUM::RPM> objects.
+of L<OpenNMS::Package::RPM> objects.
 
 =cut
 
@@ -405,7 +405,7 @@ sub find_newest_rpms {
 =head2 * find_obsolete_rpms
 
 Locate all but the newest version of each RPM in the repository.
-Returns a list of L<OpenNMS::YUM::RPM> objects.
+Returns a list of L<OpenNMS::Package::RPM> objects.
 
 =cut
 
@@ -416,7 +416,7 @@ sub find_obsolete_rpms {
 
 =head2 * find_newest_rpm_by_name
 
-Given an RPM name, returns the newest L<OpenNMS::YUM::RPM> object
+Given an RPM name, returns the newest L<OpenNMS::Package::RPM> object
 by that name in the repository.  If no RPM by that name exists, returns undef.
 
 =cut
@@ -650,7 +650,7 @@ sub index_if_necessary($) {
 
 1;
 
-package OpenNMS::YUM::Repo::RPMSet;
+package OpenNMS::Package::Repo::RPMSet;
 
 use Data::Dumper;
 

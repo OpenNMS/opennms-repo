@@ -1,4 +1,4 @@
-package OpenNMS::YUM;
+package OpenNMS::Package;
 
 use 5.008008;
 use strict;
@@ -7,23 +7,6 @@ use warnings;
 require Exporter;
 
 our @ISA = qw(Exporter);
-
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
-
-# This allows declaration	use OpenNMS::YUM ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
-our @EXPORT = qw(
-	
-);
 
 our $VERSION = '1.0';
 
@@ -36,15 +19,15 @@ __END__
 
 =head1 NAME
 
-OpenNMS::YUM - Top-level namespace for OpenNMS repository code.
+OpenNMS::Package - Top-level namespace for OpenNMS package-management code.
 
 =head1 SYNOPSIS
 
-  use OpenNMS::YUM;
+  use OpenNMS::Package;
 
 =head1 DESCRIPTION
 
-By default, OpenNMS::YUM does nothing.
+By default, OpenNMS::Package does nothing.
 
 =head1 AUTHOR
 

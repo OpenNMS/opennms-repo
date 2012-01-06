@@ -1,30 +1,18 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl OpenNMS-YUM.t'
-
 $|++;
-
-#########################
-
-# change 'tests => 1' to 'tests => last_test_to_print';
 
 use File::Path;
 use Data::Dumper;
-use OpenNMS::YUM::RPM;
+use OpenNMS::Package::RPM;
 use Test::More tests => 51;
 BEGIN {
-	use_ok('OpenNMS::YUM::Repo');
+	use_ok('OpenNMS::Package::Repo');
 };
-import OpenNMS::YUM::Repo::RPMSet;
-
-#########################
-
-# Insert your test code below, the Test::More module is use()ed here so read
-# its man page ( perldoc Test::More ) for help writing this test script.
+import OpenNMS::Package::Repo::RPMSet;
 
 rmtree("t/newrepo");
 
-my $stable_ro = OpenNMS::YUM::Repo->new("t/repo", "stable", "common");
-isa_ok($stable_ro, 'OpenNMS::YUM::Repo');
+my $stable_ro = OpenNMS::Package::Repo->new("t/repo", "stable", "common");
+isa_ok($stable_ro, 'OpenNMS::Package::Repo');
 
 is($stable_ro->base, "t/repo");
 is($stable_ro->release, "stable");
@@ -38,16 +26,16 @@ ok(-f "t/newrepo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
 $stable_copy->delete();
 ok(! -d "t/newrepo/stable/common");
 
-my $stable_common   = OpenNMS::YUM::Repo->new("t/repo", "stable", "common")->copy("t/newrepo");
-my $stable_rhel5    = OpenNMS::YUM::Repo->new("t/repo", "stable", "rhel5")->copy("t/newrepo");
-my $bleeding_common = OpenNMS::YUM::Repo->new("t/repo", "bleeding", "common")->copy("t/newrepo");
-my $bleeding_rhel5  = OpenNMS::YUM::Repo->new("t/repo", "bleeding", "rhel5")->copy("t/newrepo");
+my $stable_common   = OpenNMS::Package::Repo->new("t/repo", "stable", "common")->copy("t/newrepo");
+my $stable_rhel5    = OpenNMS::Package::Repo->new("t/repo", "stable", "rhel5")->copy("t/newrepo");
+my $bleeding_common = OpenNMS::Package::Repo->new("t/repo", "bleeding", "common")->copy("t/newrepo");
+my $bleeding_rhel5  = OpenNMS::Package::Repo->new("t/repo", "bleeding", "rhel5")->copy("t/newrepo");
 
 my $rpmlist = $stable_common->find_all_rpms();
 is(scalar(@{$rpmlist}), 1);
 
 my $rpm = $rpmlist->[0];
-isa_ok($rpm, 'OpenNMS::YUM::RPM');
+isa_ok($rpm, 'OpenNMS::Package::RPM');
 is($rpm->name, 'opennms');
 
 $rpmlist = $bleeding_common->find_all_rpms();
@@ -90,14 +78,14 @@ is(scalar(@{$rpmlist}), 2);
 
 ##### RPMSet Tests #####
 
-my $rpmset = OpenNMS::YUM::Repo::RPMSet->new();
-isa_ok($rpmset, 'OpenNMS::YUM::Repo::RPMSet');
+my $rpmset = OpenNMS::Package::Repo::RPMSet->new();
+isa_ok($rpmset, 'OpenNMS::Package::Repo::RPMSet');
 
 is(scalar(@{$rpmset->find_all()}), 0);
 
-$rpmset->add(OpenNMS::YUM::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm"));
-$rpmset->add(OpenNMS::YUM::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
-$rpmset->add(OpenNMS::YUM::RPM->new("t/newrepo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm"));
+$rpmset->add(OpenNMS::Package::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm"));
+$rpmset->add(OpenNMS::Package::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
+$rpmset->add(OpenNMS::Package::RPM->new("t/newrepo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm"));
 
 is(scalar(@{$rpmset->find_all()}), 3);
 is(scalar(@{$rpmset->find_newest()}), 2);
@@ -112,12 +100,12 @@ is($rpmset->find_newest_by_name("opennms")->version, "1.8.16");
 
 $rpmset->set();
 is(scalar(@{$rpmset->find_all()}), 0);
-$rpmset->set(OpenNMS::YUM::RPM->new("t/newrepo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm"));
+$rpmset->set(OpenNMS::Package::RPM->new("t/newrepo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm"));
 is(scalar(@{$rpmset->find_all()}), 1);
 is($rpmset->find_all()->[0]->name, "opennms");
 
-$rpm = OpenNMS::YUM::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
-$rpmset->set(OpenNMS::YUM::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
+$rpm = OpenNMS::Package::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
+$rpmset->set(OpenNMS::Package::RPM->new("t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
 ok($rpmset->is_obsolete($rpm));
 
 $rpmset->add($rpm);
@@ -139,8 +127,8 @@ is($bleeding_common->delete_obsolete_rpms(sub { $_[0]->name ne "opennms" }), 0);
 
 $stable_rhel5->delete;
 $bleeding_rhel5->delete;
-$stable_rhel5   = OpenNMS::YUM::Repo->new("t/repo", "stable", "rhel5")->copy("t/newrepo");
-$bleeding_rhel5 = OpenNMS::YUM::Repo->new("t/repo", "bleeding", "rhel5")->copy("t/newrepo");
+$stable_rhel5   = OpenNMS::Package::Repo->new("t/repo", "stable", "rhel5")->copy("t/newrepo");
+$bleeding_rhel5 = OpenNMS::Package::Repo->new("t/repo", "bleeding", "rhel5")->copy("t/newrepo");
 
 $bleeding_rhel5->share_all_rpms($stable_rhel5);
 
@@ -148,7 +136,7 @@ $rpmlist = $bleeding_rhel5->find_all_rpms();
 is(scalar(@{$rpmlist}), 2);
 
 my $copy = $bleeding_rhel5->copy("t/copy");
-$rpm = OpenNMS::YUM::RPM->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
+$rpm = OpenNMS::Package::RPM->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
 $copy->install_rpm($rpm, "opennms");
 $bleeding_rhel5 = $copy->replace($bleeding_rhel5);
 ok(! -d "t/copy");
