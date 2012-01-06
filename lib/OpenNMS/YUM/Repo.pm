@@ -596,8 +596,8 @@ sub index($) {
 
 	if (defined $id and defined $password) {
 		my $repodata = File::Spec->catfile($self->abs_path, 'repodata');
-		system("gpg --passphrase '$password' --batch --yes -a --export '$id' > $repodata/repomd.xml.key") == 0 or croak "unable to write public key to $repodata/repomd.xml.key: $!";
-		system("gpg --passphrase '$password' --batch --yes -a --default-key '$id' --detach-sign $repodata/repomd.xml") == 0 or croak "unable to detach-sign $repodata/repomd.xml with GPG id '$id': $!";
+		gpg_write_key($id, $password, File::Spec->catfile($repodata, 'repomd.xml.key'));
+		gpg_detach_sign_file($id, $password, File::Spec->catfile($repodata, 'repomd.xml'));
 	} else {
 		print "no gpg stuffs\n";
 	}

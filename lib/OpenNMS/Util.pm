@@ -4,6 +4,7 @@ use 5.008008;
 use strict;
 use warnings;
 
+use Carp;
 require Exporter;
 
 our @ISA = qw(Exporter);
@@ -34,9 +35,11 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 	read_properties
 	slurp
+	gpg_write_key
+	gpg_detach_sign_file
 );
 
-our $VERSION = '0.5';
+our $VERSION = '0.7';
 
 =head1 METHODS
 
@@ -62,6 +65,12 @@ sub read_properties {
 	return $return; 
 }	       
 
+=head2 * slurp($file)
+
+Reads the contents of a file and returns it as a string.
+
+=cut
+
 sub slurp {
 	my $file = shift;
 	open (FILEIN, $file) or die "unable to read from $file: $!";
@@ -69,6 +78,38 @@ sub slurp {
 	my $ret = <FILEIN>;
 	close (FILEIN);
 	return $ret;
+}
+
+=head2 * gpg_write_key($id, $password, $file)
+
+Given a GPG ID and password, and an output file, writes
+the ASCII-armored version of the GPG key to the given file.
+
+=cut
+
+sub gpg_write_key {
+	my $id       = shift;
+	my $password = shift;
+	my $output   = shift;
+
+	system("gpg --passphrase '$password' --batch --yes -a --export '$id' > $output") == 0 or croak "unable to write public key for '$id' to '$output': $!";
+	return 1;
+}
+
+=head2 * gpg_detach_sign_file($id, $password, $file)
+
+Given a GPG ID and password, and a file, detach-signs the
+specified file. This creates a file named C<$file.asc>.
+
+=cut
+
+sub gpg_detach_sign_file {
+	my $id       = shift;
+	my $password = shift;
+	my $file     = shift;
+
+	system("gpg --passphrase '$password' --batch --yes -a --default-key '$id' --detach-sign $file") == 0 or croak "unable to detach-sign '$file' with GPG id '$id': $!";
+	return 1;
 }
 
 1;
