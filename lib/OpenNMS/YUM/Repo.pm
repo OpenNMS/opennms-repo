@@ -39,7 +39,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = '0.8';
+our $VERSION = '1.0';
 
 =head1 CONSTRUCTOR
 
@@ -433,8 +433,8 @@ sub find_newest_rpm_by_name {
 Removes all but the newest RPMs from the repository.
 
 Optionally, takes a subroutine reference.  Each obsolete RPM
-object is passed to this subroutine and if it returns true (1),
-that RPM will be deleted.
+object is passed to this subroutine, along with the repository
+object,  and if it returns true (1), that RPM will be deleted.
 
 Examples:
 
@@ -452,6 +452,10 @@ Only delete obsolete RPMs in a filesystem path containing the text "monkey".
 
 Only delete obsolete RPMs whose version starts with 1.
 
+=item $repo-E<gt>delete_obsolete_rpms(sub { $_[1]-E<gt>release =~ /unstable/ })
+
+Only delete obsolete RPMs in the "unstable" repository.
+
 =back
 
 =cut
@@ -462,7 +466,7 @@ sub delete_obsolete_rpms {
 
 	my $count = 0;
 	for my $rpm (@{$self->find_obsolete_rpms}) {
-		if ($sub->($rpm)) {
+		if ($sub->($rpm, $self)) {
 			$self->dirty(1);
 			$rpm->delete;
 			$count++;
