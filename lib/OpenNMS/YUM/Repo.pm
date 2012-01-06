@@ -12,7 +12,9 @@ use File::Copy qw();
 use File::Find;
 use File::Path;
 use File::Spec;
+use File::Temp qw(tempdir);
 
+use OpenNMS::Util;
 use OpenNMS::YUM::RPM;
 
 =head1 NAME
@@ -37,7 +39,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = '0.61';
+our $VERSION = '0.8';
 
 =head1 CONSTRUCTOR
 
@@ -265,6 +267,22 @@ sub copy {
 	}
 
 	return $repo;
+}
+
+=head2 * create_temporary
+
+Creates a temporary repository that is a copy of the current repository.
+This temporary repository is automatically deleted on exit of the calling
+program.
+
+=cut
+
+sub create_temporary {
+	my $self = shift;
+
+	# create a temporary directory at the same level as the current base
+	my $newbase = tempdir('.repoXXXXXX', DIR => $self->abs_base, CLEANUP => 1);
+	return $self->copy($newbase);
 }
 
 =head2 * replace
@@ -598,8 +616,6 @@ sub index($) {
 		my $repodata = File::Spec->catfile($self->abs_path, 'repodata');
 		gpg_write_key($id, $password, File::Spec->catfile($repodata, 'repomd.xml.key'));
 		gpg_detach_sign_file($id, $password, File::Spec->catfile($repodata, 'repomd.xml'));
-	} else {
-		print "no gpg stuffs\n";
 	}
 
 	$self->dirty(0);
