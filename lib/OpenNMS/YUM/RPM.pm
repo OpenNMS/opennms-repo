@@ -9,6 +9,7 @@ use Carp;
 use Cwd;
 use File::Basename;
 use File::Copy qw();
+use Expect;
 
 =head1 NAME
 
@@ -31,7 +32,7 @@ things.
 
 =cut
 
-our $VERSION = '0.5';
+our $VERSION = '0.9';
 
 my $CACHE_HITS = 0;
 my $CACHE_MISSES = 0;
@@ -413,6 +414,39 @@ sub symlink($) {
 	unlink $filename if (-e $filename);
 	my $ret = symlink($from, $filename);
 	return $ret? OpenNMS::YUM::RPM->new($filename) : undef;
+}
+
+=head2 * sign($id, $password)
+
+Given a GPG id and password, sign (or resign) the RPM.
+
+=cut
+
+sub sign ($$) {
+	my $self         = shift;
+	my $gpg_id       = shift;
+	my $gpg_password = shift;
+
+	my $rpmsign = `which rpmsign 2>/dev/null`;
+	if ($? != 0) {
+		carp "Unable to locate \`rpmsign\`!";
+		return 0;
+	}
+	chomp($rpmsign);
+
+	my $expect = Expect->new();
+	$expect->raw_pty(1);
+	$expect->spawn($rpmsign, '--quiet', "--define=_gpg_name $gpg_id", '--resign', $self->abs_path) or die "Can't spawn $rpmsign: $!";
+
+	$expect->expect(60, [
+		qr/Enter pass phrase:\s*/ => sub {
+			my $exp = shift;
+			$exp->send($gpg_password . "\n");
+			exp_continue;
+		}
+	]);
+	$expect->soft_close();
+	return $expect->exitstatus() == 0;
 }
 
 =head2 * to_string
