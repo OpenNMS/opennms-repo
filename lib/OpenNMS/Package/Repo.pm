@@ -414,17 +414,48 @@ sub find_obsolete_rpms {
 	return $self->_rpmset->find_obsolete();
 }
 
-=head2 * find_newest_rpm_by_name
+=head2 * find_newest_rpm_by_name($name, $arch)
 
 Given an RPM name, returns the newest L<OpenNMS::Package::RPM> object
-by that name in the repository.  If no RPM by that name exists, returns undef.
+by that name and architecture in the repository.
+If no RPM by that name exists, returns undef.
 
 =cut
 
 sub find_newest_rpm_by_name {
 	my $self      = shift;
 	my $name      = shift;
+	my $arch      = shift;
 
+	my $newest = $self->_rpmset->find_newest_by_name($name);
+	return undef unless (defined $newest);
+
+	if (not defined $arch) {
+		carp "WARNING: No architecture specified. This is probably not what you want.\n";
+		return $newest->[0];
+	} else {
+		for my $rpm (@$newest) {
+			if ($rpm->arch eq $arch) {
+				return $rpm;
+			}
+		}
+		return undef;
+	}
+}
+
+=head2 * find_newest_rpms_by_name
+
+Given an RPM name, returns the newest list f L<OpenNMS::Package::RPM> objects
+for each architecture by that name in the repository.  If no RPM by that name
+exists, returns undef.
+
+=cut
+
+sub find_newest_rpms_by_name {
+	my $self      = shift;
+	my $name      = shift;
+
+	carp "find_newest_rpm_by_name is deprecated, use find_newest_rpms_by_name instead\n";
 	return $self->_rpmset->find_newest_by_name($name);
 }
 
@@ -549,7 +580,7 @@ sub share_rpm($$) {
 	my $topath_r   = dirname($rpm->relative_path($from_repo->abs_path));
 	my $abs_topath = File::Spec->catfile($self->abs_path, $topath_r);
 
-	my $local_rpm = $self->find_newest_rpm_by_name($rpm->name);
+	my $local_rpm = $self->find_newest_rpm_by_name($rpm->name, $rpm->arch);
 
 	if (not defined $local_rpm or $rpm->is_newer_than($local_rpm)) {
 		$self->link_rpm($rpm, $abs_topath);
@@ -726,7 +757,10 @@ sub find_newest() {
 	my $self = shift;
 	my @ret = ();
 	for my $key (sort keys %{$self->_hash}) {
-		push(@ret, $self->_hash->{$key}->[0]);
+		my $newest = $self->find_newest_by_name($key);
+		if (defined $newest) {
+			push(@ret, @{$newest});
+		}
 	}
 	return \@ret;
 }
@@ -741,7 +775,19 @@ sub find_newest_by_name($) {
 	my $self = shift;
 	my $name = shift;
 	my $found = $self->find_by_name($name);
-	return defined $found? $found->[0] : undef;
+	if (defined $found) {
+		my $last_version = $found->[0]->rpm_version;
+		my @newest = ();
+		for my $rpm (@$found) {
+			my $version = $rpm->rpm_version;
+			if ($version->equals($last_version)) {
+				push(@newest, $rpm);
+			}
+			$last_version = $version;
+		}
+		return \@newest;
+	}
+	return undef;
 }
 
 sub find_obsolete() {
@@ -756,7 +802,12 @@ sub is_obsolete($) {
 
 	my $newest = $self->find_newest_by_name($rpm->name);
 	return 0 unless (defined $newest);
-	return $newest->is_newer_than($rpm);
+	for my $newest_rpm (@$newest) {
+		if ($newest_rpm->is_newer_than($rpm) and $newest_rpm->arch eq $rpm->arch) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 __END__

@@ -3,7 +3,7 @@ $|++;
 use File::Path;
 use Data::Dumper;
 use OpenNMS::Package::RPM;
-use Test::More tests => 51;
+use Test::More tests => 53;
 BEGIN {
 	use_ok('OpenNMS::Package::Repo');
 };
@@ -53,7 +53,7 @@ $bleeding_common->install_rpm($rpm, "opennms");
 $rpmlist = $bleeding_common->find_all_rpms();
 is(scalar(@{$rpmlist}), 2);
 
-$rpm = $bleeding_common->find_newest_rpm_by_name("opennms");
+($rpm) = $bleeding_common->find_newest_rpm_by_name("opennms", "noarch");
 is($rpm->name, "opennms");
 is($rpm->version, "1.11.0");
 
@@ -65,16 +65,16 @@ $bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
 ok(-f "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm" and not -l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
 
 $rpmlist = $bleeding_rhel5->find_newest_rpms();
-is(scalar(@{$rpmlist}), 1);
+is(scalar(@{$rpmlist}), 2);
 
 $rpmlist = $bleeding_rhel5->find_all_rpms();
-is(scalar(@{$rpmlist}), 2);
+is(scalar(@{$rpmlist}), 3);
 
 $bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
 ok(-f "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm" and not -l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
 
 $rpmlist = $bleeding_rhel5->find_all_rpms();
-is(scalar(@{$rpmlist}), 2);
+is(scalar(@{$rpmlist}), 3);
 
 ##### RPMSet Tests #####
 
@@ -91,12 +91,16 @@ is(scalar(@{$rpmset->find_all()}), 3);
 is(scalar(@{$rpmset->find_newest()}), 2);
 
 is(scalar(@{$rpmset->find_by_name("iplike")}), 2);
-is($rpmset->find_newest_by_name("iplike")->name, "iplike");
-is($rpmset->find_newest_by_name("iplike")->version, "2.0.2");
+$rpm = $rpmset->find_newest_by_name("iplike");
+ok(defined $rpm);
+is($rpm->[0]->name, "iplike");
+is($rpm->[0]->version, "2.0.2");
 
 is(scalar(@{$rpmset->find_by_name("opennms")}), 1);
-is($rpmset->find_newest_by_name("opennms")->name, "opennms");
-is($rpmset->find_newest_by_name("opennms")->version, "1.8.16");
+$rpm = $rpmset->find_newest_by_name("opennms");
+ok(defined $rpm);
+is($rpm->[0]->name, "opennms");
+is($rpm->[0]->version, "1.8.16");
 
 $rpmset->set();
 is(scalar(@{$rpmset->find_all()}), 0);
@@ -133,14 +137,14 @@ $bleeding_rhel5 = OpenNMS::Package::Repo->new("t/repo", "bleeding", "rhel5")->co
 $bleeding_rhel5->share_all_rpms($stable_rhel5);
 
 $rpmlist = $bleeding_rhel5->find_all_rpms();
-is(scalar(@{$rpmlist}), 2);
+is(scalar(@{$rpmlist}), 3);
 
 my $copy = $bleeding_rhel5->copy("t/copy");
 $rpm = OpenNMS::Package::RPM->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
 $copy->install_rpm($rpm, "opennms");
 $bleeding_rhel5 = $copy->replace($bleeding_rhel5);
 ok(! -d "t/copy");
-$rpm = $bleeding_rhel5->find_newest_rpm_by_name("opennms");
+$rpm = $bleeding_rhel5->find_newest_rpm_by_name("opennms", "noarch");
 ok(defined $rpm);
 is($rpm->version, "1.8.16");
 
