@@ -29,10 +29,9 @@ my $COMPARE_TO_CACHE = {};
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Package::RPM::Version->new($version, $release, $arch, [$epoch])
+OpenNMS::Package::RPM::Version->new($version, $release, [$epoch])
 
-Given a version, release, architecture, and optional epoch, create
-a version object.
+Given a version, release, and optional epoch, create a version object.
 
 =cut
 
@@ -43,17 +42,15 @@ sub new {
 
 	my $version = shift;
 	my $release = shift;
-	my $arch    = shift;
 	my $epoch   = shift;
 
-	if (not defined $version or not defined $release or not defined $arch) {
-		carp "You must pass at least a version, release, and architecture!";
+	if (not defined $version or not defined $release) {
+		carp "You must pass at least a version and release!";
 		return undef;
 	}
 
 	$self->{VERSION} = $version;
 	$self->{RELEASE} = $release;
-	$self->{ARCH}    = $arch;
 	$self->{EPOCH}   = $epoch;
 
 	bless($self);
@@ -110,26 +107,15 @@ sub release {
 	return $self->{RELEASE};
 }
 
-=head2 * arch
-
-The architecture. (e.g., "noarch", "i386", etc.)
-
-=cut
-
-sub arch {
-	my $self = shift;
-	return $self->{ARCH};
-}
-
 =head2 * full_version
 
-Returns the complete version string, in the form: C<epoch:version-release.arch>
+Returns the complete version string, in the form: C<epoch:version-release>
 
 =cut
 
 sub full_version {
 	my $self = shift;
-	return $self->epoch_int . ':' . $self->version . '-' . $self->release . '.' . $self->arch;
+	return $self->epoch_int . ':' . $self->version . '-' . $self->release;
 }
 
 =head2 * display_version
@@ -141,7 +127,7 @@ the epoch if there is no epoch in the version.
 
 sub display_version {
 	my $self = shift;
-	return $self->epoch_int? $self->full_version : $self->version . '-' . $self->release . '.' . $self->arch;
+	return $self->epoch_int? $self->full_version : $self->version . '-' . $self->release;
 }
 
 =head2 * compare_to($version)
@@ -197,10 +183,6 @@ sub compare_to {
 
 	if ($compareto->release ne $self->release) {
 		return _cache_comparison($compareversion, $selfversion, _compare_version($compareto->release, $self->release));
-	}
-
-	if ($compareto->arch ne $self->arch) {
-		return _cache_comparison($compareversion, $selfversion, $compareto->arch cmp $self->arch);
 	}
 
 	return _cache_comparison($compareversion, $selfversion, 0);

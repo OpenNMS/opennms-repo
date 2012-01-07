@@ -66,7 +66,8 @@ sub new {
 		my ($name, $epoch, $version, $release, $arch) = split(/\|/, $output);
 		$epoch = undef if ($epoch eq "(none)");
 		$self->{NAME} = $name;
-		$self->{VERSION} = OpenNMS::Package::RPM::Version->new($version, $release, $arch, $epoch);
+		$self->{ARCH} = $arch;
+		$self->{VERSION} = OpenNMS::Package::RPM::Version->new($version, $release, $epoch);
 	} else {
 		carp "File was invalid! ($output)";
 		return undef;
@@ -155,7 +156,7 @@ The architecture of the RPM. (e.g., "noarch", "i386", etc.)
 
 sub arch {
 	my $self = shift;
-	return $self->rpm_version->arch;
+	return $self->{ARCH};
 }
 
 =head2 * path
