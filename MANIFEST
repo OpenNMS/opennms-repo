@@ -7,6 +7,7 @@ t/OpenNMS-Package-RPM.t
 t/OpenNMS-Package-Repo.t
 t/OpenNMS-Package-Real.t
 t/repo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm
+t/repo/bleeding/rhel5/opennms/x86_64/iplike-1.0.7-1.x86_64.rpm
 t/repo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm
 t/repo/stable/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm
 t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm
