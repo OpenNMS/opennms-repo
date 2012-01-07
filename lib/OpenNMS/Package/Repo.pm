@@ -776,14 +776,13 @@ sub find_newest_by_name($) {
 	my $name = shift;
 	my $found = $self->find_by_name($name);
 	if (defined $found) {
-		my $last_version = $found->[0]->rpm_version;
+		my $arches = {};
 		my @newest = ();
 		for my $rpm (@$found) {
-			my $version = $rpm->rpm_version;
-			if ($version->equals($last_version)) {
+			if (not exists $arches->{$rpm->arch}) {
 				push(@newest, $rpm);
+				$arches->{$rpm->arch}++;
 			}
-			$last_version = $version;
 		}
 		return \@newest;
 	}
