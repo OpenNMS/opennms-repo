@@ -1,4 +1,4 @@
-package OpenNMS::Release::RPMVersion;
+package OpenNMS::Release::DebVersion;
 
 use 5.008008;
 use strict;
@@ -10,27 +10,27 @@ use base qw(OpenNMS::Release::Version);
 
 =head1 NAME
 
-OpenNMS::Release::RPMVersion - Perl extension for manipulating RPM Versions
+OpenNMS::Release::DebVersion - Perl extension for manipulating Debian Versions
 
 =head1 SYNOPSIS
 
-  use OpenNMS::Release::RPMVersion;
+  use OpenNMS::Release::DebVersion;
 
 
 =head1 DESCRIPTION
 
-This is just a perl module for manipulating RPM versions.
+This is just a perl module for manipulating Debian versions.
 
 =cut
 
 our $VERSION = '0.1';
-our $RPMVER  = undef;
+our $DPKG    = undef;
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::RPMVersion->new($version, $release, [$epoch])
+OpenNMS::Release::RPMVersion->new($version, $release)
 
-Given a version, release, and optional epoch, create a version object.
+Given a version and release, create a Debian version object.
 
 =cut
 
@@ -44,12 +44,12 @@ sub new {
 
 	my $self    = bless($class->SUPER::new($version, $release, $epoch), $class);
 
-	if (not defined $RPMVER) {
-		$RPMVER = `which rpmver 2>/dev/null`;
+	if (not defined $DPKG) {
+		$DPKG = `which dpkg 2>/dev/null`;
 		if ($? != 0) {
-			croak "Unable to locate \`rpmver\` executable: $!\n";
+			croak "Unable to locate \`dpkg\` executable: $!\n";
 		}
-		chomp($RPMVER);
+		chomp($DPKG);
 	}
 
 	return $self;
@@ -77,10 +77,11 @@ sub _compare_to {
 		return 0;
 	}
 
-	if (system("$RPMVER '$thisversion' '=' '$thatversion'") == 0) {
+	# dpkg --compare-versions 1.8.19-2 gt 1.9.19-0.20111213.1
+	if (system("$DPKG --compare-versions '$thisversion' 'eq' '$thatversion'") == 0) {
 		return 0;
 	}
-	if (system("$RPMVER '$thisversion' '<' '$thatversion'") == 0) {
+	if (system("$DPKG --compare-versions '$thisversion' 'lt' '$thatversion'") == 0) {
 		return -1;
 	} else {
 		return 1;

@@ -29,9 +29,9 @@ my $COMPARE_TO_CACHE = {};
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::Version->new($version, $release)
+OpenNMS::Release::Version->new($version, $release, [$epoch])
 
-Given a version and release, create a version object.
+Given a version, release, and epoch, create a version object.
 
 =cut
 
@@ -42,6 +42,7 @@ sub new {
 
 	my $version = shift;
 	my $release = shift;
+	my $epoch   = shift;
 
 	if (not defined $version or not defined $release) {
 		carp "You must pass at least a version and release!";
@@ -50,12 +51,36 @@ sub new {
 
 	$self->{VERSION} = $version;
 	$self->{RELEASE} = $release;
+	$self->{EPOCH}   = $epoch;
 
 	bless($self);
 	return $self;
 }
 
 =head1 METHODS
+
+=head2 * epoch
+
+The epoch.  If no epoch is set, returns undef.
+
+=cut
+
+sub epoch {
+	my $self = shift;
+	return $self->{EPOCH};
+}
+
+=head2 * epoch_int
+
+The epoch.  If no epoch is set, returns the default epoch, 0.
+
+=cut
+
+sub epoch_int() {
+	my $self = shift;
+	return 0 unless (defined $self->epoch);
+	return $self->epoch;
+}
 
 =head2 * version
 
@@ -84,24 +109,25 @@ sub release {
 
 =head2 * full_version
 
-Returns the complete version string, in the form: C<version-release>
+Returns the complete version string, in the form: C<epoch:version-release>
 
 =cut
 
 sub full_version {
 	my $self = shift;
-	return $self->version . '-' . $self->release;
+	return $self->epoch_int . ':' . $self->version . '-' . $self->release;
 }
 
 =head2 * display_version
 
-Returns the complete version string in a form suitable for display.
+Returns the complete version string, just like full_version, expect it excludes
+the epoch if there is no epoch in the version.
 
 =cut
 
 sub display_version {
 	my $self = shift;
-	return $self->full_version;
+	return $self->epoch_int? $self->full_version : $self->version . '-' . $self->release;
 }
 
 =head2 * _compare_to($version)
@@ -116,6 +142,10 @@ sub _compare_to {
 	my $that = shift;
 
 	return 1 unless (defined $that);
+
+	if ($this->epoch_int != $that->epoch_int) {
+		return _compare_version($this->epoch_int, $that->epoch_int);
+	}
 
 	if ($this->version ne $that->version) {
 		return _compare_version($this->version, $that->version);
