@@ -2,19 +2,19 @@ $|++;
 
 use File::Path;
 use Data::Dumper;
-use OpenNMS::Package::RPM;
+use OpenNMS::Release::RPM;
 #use Test::More tests => 3;
 use Test::More skip_all => "This was just for prototyping our real script.";
 
 BEGIN {
-	use_ok('OpenNMS::Package::Repo');
+	use_ok('OpenNMS::Release::Repo');
 };
-import OpenNMS::Package::Repo::RPMSet;
+import OpenNMS::Release::Repo::RPMSet;
 
 our @ORDER = qw(obsolete stable testing unstable snapshot bleeding);
 our $temprepo = "/opt/temprepo";
 
-my $repos = OpenNMS::Package::Repo->find_repos("/opt/yum");
+my $repos = OpenNMS::Release::Repo->find_repos("/opt/yum");
 is(scalar(@$repos), 114);
 
 my @testrepos;
@@ -22,7 +22,7 @@ for my $repo (@$repos) {
 #	next unless ($repo->platform eq "common" or $repo->platform eq "rhel5");
 #	next unless (grep { $_ eq $repo->release } @ORDER);
 	#push(@testrepos, $repo->copy($temprepo));
-	push(@testrepos, OpenNMS::Package::Repo->new($temprepo, $repo->release, $repo->platform));
+	push(@testrepos, OpenNMS::Release::Repo->new($temprepo, $repo->release, $repo->platform));
 }
 is(scalar(@testrepos), 114);
 
@@ -68,7 +68,7 @@ for my $repo (@testrepos) {
 	print STDERR $repo->index_if_necessary ? "ok" : "skipped";
 }
 
-my $stats = OpenNMS::Package::RPM->stats();
+my $stats = OpenNMS::Release::RPM->stats();
 for my $key (sort keys %$stats) {
 	print STDERR "\n$key: " . $stats->{$key};
 }

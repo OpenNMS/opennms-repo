@@ -1,4 +1,4 @@
-package OpenNMS::Package::RPM;
+package OpenNMS::Release::RPM;
 
 use 5.008008;
 use strict;
@@ -11,17 +11,17 @@ use File::Basename;
 use File::Copy qw();
 use Expect;
 
-use OpenNMS::Package::RPM::Version;
+use OpenNMS::Release::RPM::Version;
 
 =head1 NAME
 
-OpenNMS::Package::RPM - Perl extension for manipulating RPMs
+OpenNMS::Release::RPM - Perl extension for manipulating RPMs
 
 =head1 SYNOPSIS
 
-  use OpenNMS::Package::RPM;
+  use OpenNMS::Release::RPM;
 
-  my $rpm = OpenNMS::Package::RPM->new("path/to/foo.rpm");
+  my $rpm = OpenNMS::Release::RPM->new("path/to/foo.rpm");
   if ($rpm->is_in_repo("path/to")) {
     print "all good!"
   }
@@ -38,9 +38,9 @@ our $VERSION = '1.1';
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Package::RPM->new($path)
+OpenNMS::Release::RPM->new($path)
 
-Given a path to an RPM file, create a new OpenNMS::Package::RPM object.
+Given a path to an RPM file, create a new OpenNMS::Release::RPM object.
 The RPM file must exist.
 
 =cut
@@ -67,7 +67,7 @@ sub new {
 		$epoch = undef if ($epoch eq "(none)");
 		$self->{NAME} = $name;
 		$self->{ARCH} = $arch;
-		$self->{VERSION} = OpenNMS::Package::RPM::Version->new($version, $release, $epoch);
+		$self->{VERSION} = OpenNMS::Release::RPM::Version->new($version, $release, $epoch);
 	} else {
 		carp "File was invalid! ($output)";
 		return undef;
@@ -92,7 +92,7 @@ sub name {
 
 =head2 * rpm_version
 
-The RPM version, in an OpenNMS::Package::RPM::Version object.
+The RPM version, in an OpenNMS::Release::RPM::Version object.
 
 =cut
 
@@ -326,7 +326,7 @@ sub copy($) {
 
 	unlink $filename if (-e $filename);
 	my $ret = File::Copy::copy($self->abs_path, $filename);
-	return $ret? OpenNMS::Package::RPM->new($filename) : undef;
+	return $ret? OpenNMS::Release::RPM->new($filename) : undef;
 }
 
 =head2 * link($target_path)
@@ -343,7 +343,7 @@ sub link($) {
 
 	unlink $filename if (-e $filename);
 	my $ret = link($self->abs_path, $filename);
-	return $ret? OpenNMS::Package::RPM->new($filename) : undef;
+	return $ret? OpenNMS::Release::RPM->new($filename) : undef;
 }
 
 =head2 * symlink($target_path)
@@ -362,7 +362,7 @@ sub symlink($) {
 
 	unlink $filename if (-e $filename);
 	my $ret = symlink($from, $filename);
-	return $ret? OpenNMS::Package::RPM->new($filename) : undef;
+	return $ret? OpenNMS::Release::RPM->new($filename) : undef;
 }
 
 =head2 * sign($id, $password)

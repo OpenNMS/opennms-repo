@@ -1,4 +1,4 @@
-package OpenNMS::Package;
+package OpenNMS::Release;
 
 use 5.008008;
 use strict;
@@ -19,15 +19,15 @@ __END__
 
 =head1 NAME
 
-OpenNMS::Package - Top-level namespace for OpenNMS package-management code.
+OpenNMS::Release - Top-level namespace for OpenNMS package-management code.
 
 =head1 SYNOPSIS
 
-  use OpenNMS::Package;
+  use OpenNMS::Release;
 
 =head1 DESCRIPTION
 
-By default, OpenNMS::Package does nothing.
+By default, OpenNMS::Release does nothing.
 
 =head1 AUTHOR
 

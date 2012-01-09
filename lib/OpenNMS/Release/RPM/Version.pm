@@ -1,4 +1,4 @@
-package OpenNMS::Package::RPM::Version;
+package OpenNMS::Release::RPM::Version;
 
 use 5.008008;
 use strict;
@@ -8,11 +8,11 @@ use Carp;
 
 =head1 NAME
 
-OpenNMS::Package::RPM::Version - Perl extension for manipulating RPM Versions
+OpenNMS::Release::RPM::Version - Perl extension for manipulating RPM Versions
 
 =head1 SYNOPSIS
 
-  use OpenNMS::Package::RPM::Version;
+  use OpenNMS::Release::RPM::Version;
 
 
 =head1 DESCRIPTION
@@ -29,7 +29,7 @@ my $COMPARE_TO_CACHE = {};
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Package::RPM::Version->new($version, $release, [$epoch])
+OpenNMS::Release::RPM::Version->new($version, $release, [$epoch])
 
 Given a version, release, and optional epoch, create a version object.
 
