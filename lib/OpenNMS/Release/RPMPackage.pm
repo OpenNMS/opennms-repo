@@ -35,7 +35,8 @@ things.
 
 =cut
 
-our $VERSION = '1.1';
+our $VERSION = '2.0';
+our $RPMSIGN = undef;
 
 =head1 CONSTRUCTOR
 
@@ -56,6 +57,15 @@ sub new {
 	if (not defined $path) {
 		carp "You did not provide a path!";
 		return undef;
+	}
+
+	if (not defined $RPMSIGN) {
+		my $rpmsign = `which rpmsign 2>/dev/null`;
+		if ($? != 0) {
+			croak "Unable to locate \`rpmsign`!";
+		}
+		chomp($rpmsign);
+		$RPMSIGN = $rpmsign;
 	}
 
 	my $escaped_path = $path;
@@ -86,16 +96,9 @@ sub sign ($$) {
 	my $gpg_id       = shift;
 	my $gpg_password = shift;
 
-	my $rpmsign = `which rpmsign 2>/dev/null`;
-	if ($? != 0) {
-		carp "Unable to locate \`rpmsign\`!";
-		return 0;
-	}
-	chomp($rpmsign);
-
 	my $expect = Expect->new();
 	$expect->raw_pty(1);
-	$expect->spawn($rpmsign, '--quiet', "--define=_gpg_name $gpg_id", '--resign', $self->path) or die "Can't spawn $rpmsign: $!";
+	$expect->spawn($RPMSIGN, '--quiet', "--define=_gpg_name $gpg_id", '--resign', $self->path) or die "Can't spawn $RPMSIGN: $!";
 
 	$expect->expect(60, [
 		qr/Enter pass phrase:\s*/ => sub {
