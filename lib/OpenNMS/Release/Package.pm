@@ -111,7 +111,7 @@ sub arch {
 	return $self->{ARCH};
 }
 
-=hea=head2 * path
+=head2 * path
 
 The path to the package. This will always be initialized as the absolute path
 to the package file.
