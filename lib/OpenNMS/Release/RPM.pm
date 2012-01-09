@@ -11,7 +11,7 @@ use File::Basename;
 use File::Copy qw();
 use Expect;
 
-use OpenNMS::Release::RPM::Version;
+use OpenNMS::Release::RPMVersion;
 
 =head1 NAME
 
@@ -67,7 +67,7 @@ sub new {
 		$epoch = undef if ($epoch eq "(none)");
 		$self->{NAME} = $name;
 		$self->{ARCH} = $arch;
-		$self->{VERSION} = OpenNMS::Release::RPM::Version->new($version, $release, $epoch);
+		$self->{VERSION} = OpenNMS::Release::RPMVersion->new($version, $release, $epoch);
 	} else {
 		carp "File was invalid! ($output)";
 		return undef;
@@ -92,7 +92,7 @@ sub name {
 
 =head2 * rpm_version
 
-The RPM version, in an OpenNMS::Release::RPM::Version object.
+The RPM version, in an OpenNMS::Release::RPMVersion object.
 
 =cut
 

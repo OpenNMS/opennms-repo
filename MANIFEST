@@ -5,7 +5,7 @@ README
 t/OpenNMS-Release.t
 t/OpenNMS-Release-Version.t
 t/OpenNMS-Release-RPMSet.t
-t/OpenNMS-Release-RPM-Version.t
+t/OpenNMS-Release-RPMVersion.t
 t/OpenNMS-Release-YumRepo.t
 t/OpenNMS-Release-Real.t
 t/OpenNMS-Release-RPM.t
@@ -20,6 +20,6 @@ lib/OpenNMS/Release/Repo.pm
 lib/OpenNMS/Release/YumRepo.pm
 lib/OpenNMS/Release/RPM.pm
 lib/OpenNMS/Release/RPMSet.pm
+lib/OpenNMS/Release/RPMVersion.pm
 lib/OpenNMS/Release/AptRepo.pm
-lib/OpenNMS/Release/RPM/Version.pm
 lib/OpenNMS/Release/Version.pm
