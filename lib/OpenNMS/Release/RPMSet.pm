@@ -5,7 +5,6 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use OpenNMS::Release::RPM;
 
 sub new {
 	my $proto = shift;

@@ -5,7 +5,7 @@ BEGIN {
 	my $rpm = `which rpm 2>/dev/null`;
 	if ($? == 0) {
 		plan tests => 22;
-		use_ok('OpenNMS::Release::RPM');
+		use_ok('OpenNMS::Release::RPMPackage');
 	} else {
 		plan skip_all => '`rpm` not found, skipping RPM tests.';
 	}
@@ -13,11 +13,11 @@ BEGIN {
 
 my ($rpm);
 
-$rpm = OpenNMS::Release::RPM->new();
+$rpm = OpenNMS::Release::RPMPackage->new();
 is($rpm, undef, "Check for invalid RPM when no path is provided.");
 
-$rpm = OpenNMS::Release::RPM->new("t/repo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm");
-isa_ok($rpm, 'OpenNMS::Release::RPM');
+$rpm = OpenNMS::Release::RPMPackage->new("t/repo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm");
+isa_ok($rpm, 'OpenNMS::Release::RPMPackage');
 
 is($rpm->name,    'opennms',      'Package name is "opennms".');
 is($rpm->epoch,   undef,          'Epoch should be undefined.');
@@ -28,7 +28,7 @@ is($rpm->arch,    'noarch',       'Architecture should be "noarch".');
 ok($rpm->is_in_repo('t'), 'RPM should be in t/.');
 ok($rpm->is_in_repo('t/../t'), 'is_in_path should handle relative paths');
 
-$olderrpm = OpenNMS::Release::RPM->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
+$olderrpm = OpenNMS::Release::RPMPackage->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
 
 is($rpm->compare_to($olderrpm), 1);
 is($olderrpm->compare_to($rpm), -1);

@@ -15,7 +15,7 @@ use File::Spec;
 use File::Temp qw(tempdir);
 
 use OpenNMS::Util;
-use OpenNMS::Release::RPM;
+use OpenNMS::Release::RPMPackage;
 use OpenNMS::Release::RPMSet;
 
 use base qw(OpenNMS::Release::Repo);
@@ -360,7 +360,7 @@ sub _rpmset {
 		find({ wanted => sub {
 			return unless ($File::Find::name =~ /\.rpm$/);
 			return unless (-e $File::Find::name);
-			my $rpm = OpenNMS::Release::RPM->new($File::Find::name);
+			my $rpm = OpenNMS::Release::RPMPackage->new($File::Find::name);
 			push(@{$rpms}, $rpm);
 		}, no_chdir => 1}, $self->path);
 		$self->{RPMSET} = OpenNMS::Release::RPMSet->new($rpms);
@@ -381,7 +381,7 @@ sub _add_to_rpmset($) {
 =head2 * find_all_rpms
 
 Locate all RPMs in the repository.  Returns a list of
-L<OpenNMS::Release::RPM> objects.
+L<OpenNMS::Release::RPMPackage> objects.
 
 =cut
 
@@ -395,7 +395,7 @@ sub find_all_rpms {
 
 Locate the newest version of each RPM in the repository (based
 on the name of the RPM, not filesystem details).  Returns a list
-of L<OpenNMS::Release::RPM> objects.
+of L<OpenNMS::Release::RPMPackage> objects.
 
 =cut
 
@@ -407,7 +407,7 @@ sub find_newest_rpms {
 =head2 * find_obsolete_rpms
 
 Locate all but the newest version of each RPM in the repository.
-Returns a list of L<OpenNMS::Release::RPM> objects.
+Returns a list of L<OpenNMS::Release::RPMPackage> objects.
 
 =cut
 
@@ -418,7 +418,7 @@ sub find_obsolete_rpms {
 
 =head2 * find_newest_rpm_by_name($name, $arch)
 
-Given an RPM name, returns the newest L<OpenNMS::Release::RPM> object
+Given an RPM name, returns the newest L<OpenNMS::Release::RPMPackage> object
 by that name and architecture in the repository.
 If no RPM by that name exists, returns undef.
 
@@ -447,7 +447,7 @@ sub find_newest_rpm_by_name {
 
 =head2 * find_newest_rpms_by_name
 
-Given an RPM name, returns the newest list f L<OpenNMS::Release::RPM> objects
+Given an RPM name, returns the newest list f L<OpenNMS::Release::RPMPackage> objects
 for each architecture by that name in the repository.  If no RPM by that name
 exists, returns undef.
 

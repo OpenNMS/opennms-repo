@@ -7,7 +7,7 @@ BEGIN {
 	my $rpm = `which rpm 2>/dev/null`;
 	if ($? == 0) {
 		plan tests => 40;
-		use_ok('OpenNMS::Release::RPM');
+		use_ok('OpenNMS::Release::RPMPackage');
 		use_ok('OpenNMS::Release::YumRepo');
 	} else {
 		plan skip_all => '`rpm` not found, skipping RPM tests.';
@@ -39,7 +39,7 @@ my $rpmlist = $stable_common->find_all_rpms();
 is(scalar(@{$rpmlist}), 1);
 
 my $rpm = $rpmlist->[0];
-isa_ok($rpm, 'OpenNMS::Release::RPM');
+isa_ok($rpm, 'OpenNMS::Release::RPMPackage');
 is($rpm->name, 'opennms');
 
 $rpmlist = $bleeding_common->find_all_rpms();
@@ -113,7 +113,7 @@ $rpm = $bleeding_rhel5->find_newest_rpm_by_name('iplike', 'x86_64');
 is($rpm->version, '1.0.7');
 
 my $copy = $bleeding_rhel5->copy("t/copy");
-$rpm = OpenNMS::Release::RPM->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
+$rpm = OpenNMS::Release::RPMPackage->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
 $copy->install_rpm($rpm, "opennms");
 $bleeding_rhel5 = $copy->replace($bleeding_rhel5);
 ok(! -d "t/copy");
