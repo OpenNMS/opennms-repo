@@ -33,13 +33,13 @@ is(scalar(@{$rpmset->find_by_name("iplike")}), 2);
 $rpm = $rpmset->find_newest_by_name("iplike");
 ok(defined $rpm);
 is($rpm->[0]->name, "iplike");
-is($rpm->[0]->version, "2.0.2");
+is($rpm->[0]->version->version, "2.0.2");
 
 is(scalar(@{$rpmset->find_by_name("opennms")}), 1);
 $rpm = $rpmset->find_newest_by_name("opennms");
 ok(defined $rpm);
 is($rpm->[0]->name, "opennms");
-is($rpm->[0]->version, "1.8.16");
+is($rpm->[0]->version->version, "1.8.16");
 
 $rpmset->set();
 is(scalar(@{$rpmset->find_all()}), 0);
@@ -55,7 +55,7 @@ $rpmset->add($rpm);
 $rpmlist = $rpmset->find_obsolete();
 
 is(scalar(@{$rpmlist}), 1);
-is($rpmlist->[0]->version, "1.0.7");
+is($rpmlist->[0]->version->version, "1.0.7");
 
 $rpmset->set();
 $rpmset->add(OpenNMS::Release::RPMPackage->new('t/repo/bleeding/rhel5/opennms/x86_64/iplike-1.0.7-1.x86_64.rpm'));
@@ -67,6 +67,6 @@ is(scalar(@{$rpmset->find_newest()}), 2);
 
 $rpmlist = $rpmset->find_newest();
 is($rpmlist->[0]->arch, 'i386');
-is($rpmlist->[0]->version, '2.0.2');
+is($rpmlist->[0]->version->version, '2.0.2');
 is($rpmlist->[1]->arch, 'x86_64');
-is($rpmlist->[1]->version, '1.0.7');
+is($rpmlist->[1]->version->version, '1.0.7');

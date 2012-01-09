@@ -5,11 +5,12 @@ use strict;
 use warnings;
 
 use Carp;
-#use Cwd qw(abs_path);
 use Cwd;
 use File::Basename;
 use File::Copy qw();
 use Expect;
+
+use base qw(OpenNMS::Release::Package);
 
 use OpenNMS::Release::RPMVersion;
 
@@ -57,330 +58,22 @@ sub new {
 		return undef;
 	}
 
-	$path = Cwd::abs_path($path);
-	$self->{PATH} = $path;
-	$path =~ s/\'/\\\'/g;
-	my $output = `rpm -q --queryformat='\%{name}|\%{epoch}|\%{version}|\%{release}|\%{arch}' -p '$path'`;
+	my $escaped_path = $path;
+	$escaped_path =~ s/\'/\\\'/g;
+	my $output = `rpm -q --queryformat='\%{name}|\%{epoch}|\%{version}|\%{release}|\%{arch}' -p '$escaped_path'`;
 	chomp($output);
 	if ($? == 0) {
 		my ($name, $epoch, $version, $release, $arch) = split(/\|/, $output);
 		$epoch = undef if ($epoch eq "(none)");
-		$self->{NAME} = $name;
-		$self->{ARCH} = $arch;
-		$self->{VERSION} = OpenNMS::Release::RPMVersion->new($version, $release, $epoch);
+		$version = OpenNMS::Release::RPMVersion->new($version, $release, $epoch);
+		return bless($class->SUPER::new($path, $name, $version, $arch), $class);
 	} else {
 		carp "File was invalid! ($output)";
 		return undef;
 	}
-
-	bless($self);
-	return $self;
 }
 
 =head1 METHODS
-
-=head2 * name
-
-The name of the RPM, i.e., "opennms".
-
-=cut
-
-sub name {
-	my $self = shift;
-	return $self->{NAME};
-}
-
-=head2 * rpm_version
-
-The RPM version, in an OpenNMS::Release::RPMVersion object.
-
-=cut
-
-sub rpm_version {
-	my $self = shift;
-	return $self->{VERSION};
-}
-
-=head2 * epoch
-
-The epoch of the RPM.  If no epoch is set, returns undef.
-
-=cut
-
-sub epoch {
-	my $self = shift;
-	return $self->rpm_version->epoch;
-}
-
-=head2 * epoch_int
-
-The epoch of the RPM.  If no epoch is set, returns the default epoch, 0.
-
-=cut
-
-sub epoch_int() {
-	my $self = shift;
-	return $self->rpm_version->epoch_int;
-}
-
-=head2 * version
-
-The version of the RPM. This is generally the same as the version of the
-upstream software that was packaged.
-
-=cut
-
-sub version {
-	my $self = shift;
-	return $self->rpm_version->version;
-}
-
-=head2 * release
-
-The release of the RPM. This is generally a number determined by the packager
-to track changes to the RPM, independent of version changes in the software
-that is packaged.
-
-=cut
-
-sub release {
-	my $self = shift;
-	return $self->rpm_version->release;
-}
-
-=head2 * arch
-
-The architecture of the RPM. (e.g., "noarch", "i386", etc.)
-
-=cut
-
-sub arch {
-	my $self = shift;
-	return $self->{ARCH};
-}
-
-=head2 * path
-
-The path to the RPM. This will always be initialized as the absolute path
-to the RPM file.
-
-=cut
-
-sub path {
-	my $self = shift;
-	return $self->{PATH};
-}
-
-=head2 * abs_path
-
-The absolute path to the RPM. (Deprecated)
-
-=cut
-
-sub abs_path() {
-	my $self = shift;
-	return Cwd::abs_path($self->path);
-}
-
-=head2 * relative_path($base)
-
-Given a base directory, returns the path of this RPM, relative to that base path.
-
-=cut
-
-sub relative_path($) {
-	my $self = shift;
-	my $base = Cwd::abs_path(shift);
-
-	if ($self->abs_path =~ /^${base}\/?(.*)$/) {
-		return $1;
-	}
-	return undef;
-}
-
-=head2 * is_in_repo($path)
-
-Given a repository path, returns true if the RPM is contained in the given
-repository path.
-
-=cut
-
-sub is_in_repo {
-	my $self = shift;
-	return defined $self->relative_path(shift);
-}
-
-=head2 * full_version
-
-Returns the complete version string of the RPM, in the form: C<epoch:version-release>
-
-=cut
-
-sub full_version {
-	my $self = shift;
-	return $self->rpm_version->full_version;
-}
-
-=head2 * display_version
-
-Returns the complete version string, just like full_version, expect it excludes
-the epoch if there is no epoch in the RPM.
-
-=cut
-
-sub display_version {
-	my $self = shift;
-	return $self->rpm_version->display_version;
-}
-
-=head2 * compare_to($rpm)
-
-Given an RPM, performs a cmp-style comparison on the RPMs' name and version, for
-use in sorting.
-
-=cut
-
-# -1 = self before(compared)
-#  0 = equal
-#  1 = self after(compared)
-sub compare_to {
-	my $this = shift;
-	my $that = shift;
-
-	return 1 unless (defined $that);
-
-	if ($this->name ne $that->name) {
-		return $this->name cmp $that->name;
-	}
-
-	my $thisversion = $this->rpm_version;
-	my $thatversion = $that->rpm_version;
-
-	my $ret = $thisversion->compare_to($thatversion);
-
-	if ($ret == 0 and $this->arch ne $that->arch) {
-		return $this->arch cmp $that->arch;
-	}
-
-	return $ret;
-}
-
-=head2 * equals($rpm)
-
-Given an RPM, returns true if both RPMs have the same name and version.
-
-=cut
-
-sub equals($) {
-	my $this = shift;
-	my $that = shift;
-
-	return $this->compare_to($that) == 0;
-}
-
-=head2 * is_newer_than($rpm)
-
-Given an RPM, returns true if the current RPM is newer than the
-given RPM, and they have the same name.
-
-=cut
-
-sub is_newer_than($) {
-	my $this = shift;
-	my $that = shift;
-
-	if ($this->name ne $that->name) {
-		croak "You can't compare 2 different package names with is_newer_than! (" . $this->name . " != " . $that->name .")";
-	}
-	if ($this->arch ne $that->arch) {
-		croak "You can't compare 2 different package architectures with is_newer_than! (" . $this->to_string . " != " . $that->to_string .")";
-	}
-	return $this->compare_to($that) == 1;
-}
-
-=head2 * is_older_than($rpm)
-
-Given an RPM, returns true if the current RPM is older than the
-given RPM, and they have the same name.
-
-=cut
-
-sub is_older_than($) {
-	my $this = shift;
-	my $that = shift;
-
-	if ($this->name ne $that->name) {
-		croak "You can't compare 2 different package names with is_older_than! (" . $this->name . " != " . $that->name .")";
-	}
-	if ($this->arch ne $that->arch) {
-		croak "You can't compare 2 different package architectures with is_older_than! (" . $this->to_string . " != " . $that->to_string .")";
-	}
-	return $this->compare_to($that) == -1;
-}
-
-=head2 * delete
-
-Delete the RPM from the filesystem.
-
-=cut
-
-sub delete() {
-	my $self = shift;
-	return unlink($self->abs_path);
-}
-
-=head2 * copy($target_path)
-
-Given a target path, copy the current RPM to that path.
-
-=cut
-
-sub copy($) {
-	my $self = shift;
-	my $to   = shift;
-
-	my $filename = $self->_get_filename_for_target($to);
-
-	unlink $filename if (-e $filename);
-	my $ret = File::Copy::copy($self->abs_path, $filename);
-	return $ret? OpenNMS::Release::RPMPackage->new($filename) : undef;
-}
-
-=head2 * link($target_path)
-
-Given a target path, hard link the current RPM to that path.
-
-=cut
-
-sub link($) {
-	my $self = shift;
-	my $to   = shift;
-
-	my $filename = $self->_get_filename_for_target($to);
-
-	unlink $filename if (-e $filename);
-	my $ret = link($self->abs_path, $filename);
-	return $ret? OpenNMS::Release::RPMPackage->new($filename) : undef;
-}
-
-=head2 * symlink($target_path)
-
-Given a target path, symlink the current RPM to that path, relative to
-the source RPM's location.
-
-=cut
-
-sub symlink($) {
-	my $self = shift;
-	my $to   = shift;
-
-	my $filename = $self->_get_filename_for_target($to);
-	my $from = File::Spec->abs2rel($self->abs_path, dirname($filename));
-
-	unlink $filename if (-e $filename);
-	my $ret = symlink($from, $filename);
-	return $ret? OpenNMS::Release::RPMPackage->new($filename) : undef;
-}
 
 =head2 * sign($id, $password)
 
@@ -402,7 +95,7 @@ sub sign ($$) {
 
 	my $expect = Expect->new();
 	$expect->raw_pty(1);
-	$expect->spawn($rpmsign, '--quiet', "--define=_gpg_name $gpg_id", '--resign', $self->abs_path) or die "Can't spawn $rpmsign: $!";
+	$expect->spawn($rpmsign, '--quiet', "--define=_gpg_name $gpg_id", '--resign', $self->path) or die "Can't spawn $rpmsign: $!";
 
 	$expect->expect(60, [
 		qr/Enter pass phrase:\s*/ => sub {
@@ -413,30 +106,6 @@ sub sign ($$) {
 	]);
 	$expect->soft_close();
 	return $expect->exitstatus() == 0;
-}
-
-=head2 * to_string
-
-Returns a string representation of the RPM, suitable for printing.
-
-=cut
-
-sub to_string() {
-	my $self = shift;
-	return $self->name . '-' . $self->full_version . ' (' . $self->abs_path . ')';
-}
-
-sub _get_filename_for_target($) {
-	my $self = shift;
-	my $to   = shift;
-
-	if (-d $to) {
-		if ($to !~ /\/$/) {
-			$to .= "/";
-		}
-		$to = $to . basename($self->path);
-	}
-	return $to;
 }
 
 1;

@@ -54,7 +54,7 @@ sub remove($) {
 	my $deleted = 0;
 	my $entries = $self->_hash->{$rpm->name}->{$rpm->arch};
 	for my $i (0 .. $#{$entries}) {
-		if ($entries->[$i]->abs_path eq $rpm->abs_path) {
+		if ($entries->[$i]->path eq $rpm->path) {
 			$deleted = delete $entries->[$i];
 		}
 	}
