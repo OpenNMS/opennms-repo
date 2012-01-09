@@ -244,18 +244,25 @@ use in sorting.
 #  0 = equal
 #  1 = self after(compared)
 sub compare_to {
-	my $self       = shift;
-	my $compareto  = shift;
-	my $use_rpmver = shift || 1;
+	my $this = shift;
+	my $that = shift;
 
-	if ($compareto->name ne $self->name) {
-		return $compareto->name cmp $self->name;
+	return 1 unless (defined $that);
+
+	if ($this->name ne $that->name) {
+		return $this->name cmp $that->name;
 	}
 
-	my $compareversion = $compareto->rpm_version;
-	my $selfversion    = $self->rpm_version;
+	my $thisversion = $this->rpm_version;
+	my $thatversion = $that->rpm_version;
 
-	return $selfversion->compare_to($compareversion);
+	my $ret = $thisversion->compare_to($thatversion);
+
+	if ($ret == 0 and $this->arch ne $that->arch) {
+		return $this->arch cmp $that->arch;
+	}
+
+	return $ret;
 }
 
 =head2 * equals($rpm)
@@ -265,10 +272,10 @@ Given an RPM, returns true if both RPMs have the same name and version.
 =cut
 
 sub equals($) {
-	my $self      = shift;
-	my $compareto = shift;
+	my $this = shift;
+	my $that = shift;
 
-	return $self->compare_to($compareto) == 0;
+	return $this->compare_to($that) == 0;
 }
 
 =head2 * is_newer_than($rpm)
@@ -279,11 +286,13 @@ given RPM, and they have the same name.
 =cut
 
 sub is_newer_than($) {
-	my $self      = shift;
-	my $compareto = shift;
+	my $this = shift;
+	my $that = shift;
 
-	return 0 if ($self->name ne $compareto->name);
-	return $self->compare_to($compareto) == 1;
+	if ($this->name ne $that->name) {
+		croak "You can't compare 2 different package names with is_newer_than! (" . $this->name . " != " . $that->name .")";
+	}
+	return $this->compare_to($that) == 1;
 }
 
 =head2 * is_older_than($rpm)
@@ -294,11 +303,13 @@ given RPM, and they have the same name.
 =cut
 
 sub is_older_than($) {
-	my $self     = shift;
-	my $compareto = shift;
+	my $this = shift;
+	my $that = shift;
 
-	return 0 if ($self->name ne $compareto->name);
-	return $self->compare_to($compareto) == -1;
+	if ($this->name ne $that->name) {
+		croak "You can't compare 2 different package names with is_newer_than! (" . $this->name . " != " . $that->name .")";
+	}
+	return $this->compare_to($that) == -1;
 }
 
 =head2 * delete

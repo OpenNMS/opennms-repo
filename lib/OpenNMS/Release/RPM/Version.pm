@@ -6,6 +6,8 @@ use warnings;
 
 use Carp;
 
+use base qw(OpenNMS::Release::Version);
+
 =head1 NAME
 
 OpenNMS::Release::RPM::Version - Perl extension for manipulating RPM Versions
@@ -22,6 +24,7 @@ This is just a perl module for manipulating RPM versions.
 =cut
 
 our $VERSION = '0.1';
+our $RPMVER  = undef;
 
 my $CACHE_HITS = 0;
 my $CACHE_MISSES = 0;
@@ -38,22 +41,23 @@ Given a version, release, and optional epoch, create a version object.
 sub new {
 	my $proto   = shift;
 	my $class   = ref($proto) || $proto;
-	my $self    = {};
 
 	my $version = shift;
 	my $release = shift;
 	my $epoch   = shift;
 
-	if (not defined $version or not defined $release) {
-		carp "You must pass at least a version and release!";
-		return undef;
+	my $self    = bless($class->SUPER::new($version, $release), $class);
+
+	$self->{EPOCH} = $epoch;
+
+	if (not defined $RPMVER) {
+		$RPMVER = `which rpmver 2>/dev/null`;
+		if ($? != 0) {
+			croak "Unable to locate \`rpmver\` executable: $!\n";
+		}
+		chomp($RPMVER);
 	}
 
-	$self->{VERSION} = $version;
-	$self->{RELEASE} = $release;
-	$self->{EPOCH}   = $epoch;
-
-	bless($self);
 	return $self;
 }
 
@@ -82,31 +86,6 @@ sub epoch_int() {
 	return $self->epoch;
 }
 
-=head2 * version
-
-The version. This is generally the same as the version of the
-upstream software that was packaged.
-
-=cut
-
-sub version {
-	my $self = shift;
-	return $self->{VERSION};
-}
-
-=head2 * release
-
-The release. This is generally a number determined by the packager
-to track changes to the RPM, independent of version changes in the software
-that is packaged.
-
-=cut
-
-sub release {
-	my $self = shift;
-	return $self->{RELEASE};
-}
-
 =head2 * full_version
 
 Returns the complete version string, in the form: C<epoch:version-release>
@@ -130,7 +109,7 @@ sub display_version {
 	return $self->epoch_int? $self->full_version : $self->version . '-' . $self->release;
 }
 
-=head2 * compare_to($version)
+=head2 * _compare_to($version)
 
 Given a version, performs a cmp-style comparison, for use in sorting.
 
@@ -139,144 +118,25 @@ Given a version, performs a cmp-style comparison, for use in sorting.
 # -1 = self before(compared)
 #  0 = equal
 #  1 = self after(compared)
-sub compare_to {
-	my $self       = shift;
-	my $compareto  = shift;
-	my $use_rpmver = shift || 1;
+sub _compare_to {
+	my $this = shift;
+	my $that = shift;
 
-	my $compareversion = $compareto->full_version;
-	my $selfversion    = $self->full_version;
+	my $thisversion = $this->full_version;
+	my $thatversion = $that->full_version;
 
-	if (exists $COMPARE_TO_CACHE->{$compareversion}->{$selfversion}) {
-		$CACHE_HITS++;
-		return $COMPARE_TO_CACHE->{$compareversion}->{$selfversion};
+	if ($thisversion eq $thatversion) {
+		return 0;
 	}
 
-	my $rpmver = `which rpmver 2>/dev/null`;
-	chomp($rpmver);
-	if ($? == 0 && $use_rpmver) {
-		# we have rpmver, defer to it
-
-		if (system("$rpmver '$compareversion' '=' '$selfversion'") == 0) {
-			return _cache_comparison($compareversion, $selfversion, 0);
-		}
-		my $retval = (system("$rpmver '$compareversion' '<' '$selfversion'") >> 8);
-		return _cache_comparison($compareversion, $selfversion, 1) if ($retval == 0);
-		return _cache_comparison($compareversion, $selfversion, -1);
+	if (system("$RPMVER '$thisversion' '=' '$thatversion'") == 0) {
+		return 0;
 	}
-
-	# otherwise, attempt to parse ourselves, this will probably
-	# not handle all corner cases
-
-	carp "rpmver not found, attempting to parse manually. This is generally a bad idea.";
-
-	return _cache_comparison($compareversion, $selfversion, 1) unless (defined $compareto);
-
-	if ($compareto->epoch_int != $self->epoch_int) {
-		# if the compared is lower than the self, return 1 (after)
-		return _cache_comparison($compareversion, $selfversion, ($compareto->epoch_int < $self->epoch_int) ? 1 : -1);
+	if (system("$RPMVER '$thisversion' '<' '$thatversion'") == 0) {
+		return -1;
+	} else {
+		return 1;
 	}
-
-	if ($compareto->version ne $self->version) {
-		return _cache_comparison($compareversion, $selfversion, _compare_version($compareto->version, $self->version));
-	}
-
-	if ($compareto->release ne $self->release) {
-		return _cache_comparison($compareversion, $selfversion, _compare_version($compareto->release, $self->release));
-	}
-
-	return _cache_comparison($compareversion, $selfversion, 0);
-}
-
-sub _compare_version {
-	my $ver_a = shift;
-	my $ver_b = shift;
-
-	my @a = split(!/[[:alnum:]]/, $ver_a);
-	my @b = split(!/[[:alnum:]]/, $ver_b);
-
-	my $length_a = length(@a);
-	my $length_b = length(@b);
-
-	my $length = ($length_a >= $length_b)? $length_a : $length_b;
-
-	for my $i (0 .. $length) {
-		next if ($a[$i] eq $b[$i]);
-		my $comparison = $a[$i] cmp $b[$i];
-		return $comparison if ($comparison != 0);
-	}
-
-	return 0;
-}
-
-sub _cache_comparison {
-	my $compareversion = shift;
-	my $selfversion    = shift;
-	my $result         = shift;
-
-	$CACHE_MISSES++;
-	$COMPARE_TO_CACHE->{$compareversion}->{$selfversion} = $result;
-	return $result;
-}
-
-=head2 * equals($version)
-
-Given a version object, returns true if both versions are the same.
-
-=cut
-
-sub equals($) {
-	my $self      = shift;
-	my $compareto = shift;
-
-	return $self->compare_to($compareto) == 0;
-}
-
-=head2 * is_newer_than($version)
-
-Given a version object, returns true if the current version is newer than the
-given version.
-
-=cut
-
-sub is_newer_than($) {
-	my $self      = shift;
-	my $compareto = shift;
-
-	return $self->compare_to($compareto) == 1;
-}
-
-=head2 * is_older_than($version)
-
-Given a version object, returns true if the current version is older than the
-given version.
-
-=cut
-
-sub is_older_than($) {
-	my $self      = shift;
-	my $compareto = shift;
-
-	return $self->compare_to($compareto) == -1;
-}
-
-=head2 * to_string
-
-Returns a string representation of the version, suitable for printing.
-
-=cut
-
-sub to_string() {
-	my $self = shift;
-	return $self->display_version;
-}
-
-sub stats {
-	my $class = shift;
-	return {
-		cache_hits => $CACHE_HITS,
-		cache_misses => $CACHE_MISSES
-	};
 }
 
 1;

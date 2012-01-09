@@ -1,6 +1,6 @@
 $|++;
 
-use Test::More tests => 24;
+use Test::More tests => 22;
 BEGIN { use_ok('OpenNMS::Release::RPM') };
 
 my ($rpm);
@@ -24,8 +24,6 @@ $olderrpm = OpenNMS::Release::RPM->new("t/repo/stable/common/opennms/opennms-1.8
 
 is($rpm->compare_to($olderrpm), 1);
 is($olderrpm->compare_to($rpm), -1);
-is($rpm->compare_to($olderrpm, 0), 1);
-is($olderrpm->compare_to($rpm, 0), -1);
 ok($rpm->is_newer_than($olderrpm));
 ok(!$rpm->is_older_than($olderrpm));
 ok($olderrpm->is_older_than($rpm));
