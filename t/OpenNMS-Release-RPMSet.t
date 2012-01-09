@@ -5,7 +5,7 @@ use Data::Dumper;
 
 use Test::More;
 BEGIN {
-	my $rpm = `which rpm 2>/dev/null`;
+	my $package = `which rpm 2>/dev/null`;
 	if ($? == 0) {
 		plan tests => 26;
 		use_ok('OpenNMS::Release::RPMPackage');
@@ -17,56 +17,56 @@ BEGIN {
 
 rmtree("t/newrepo");
 
-my $rpmset = OpenNMS::Release::PackageSet->new();
-isa_ok($rpmset, 'OpenNMS::Release::PackageSet');
+my $packageset = OpenNMS::Release::PackageSet->new();
+isa_ok($packageset, 'OpenNMS::Release::PackageSet');
 
-is(scalar(@{$rpmset->find_all()}), 0);
+is(scalar(@{$packageset->find_all()}), 0);
 
-$rpmset->add(OpenNMS::Release::RPMPackage->new("t/repo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm"));
-$rpmset->add(OpenNMS::Release::RPMPackage->new("t/repo/stable/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
-$rpmset->add(OpenNMS::Release::RPMPackage->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm"));
+$packageset->add(OpenNMS::Release::RPMPackage->new("t/repo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm"));
+$packageset->add(OpenNMS::Release::RPMPackage->new("t/repo/stable/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
+$packageset->add(OpenNMS::Release::RPMPackage->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm"));
 
-is(scalar(@{$rpmset->find_all()}), 3);
-is(scalar(@{$rpmset->find_newest()}), 2);
+is(scalar(@{$packageset->find_all()}), 3);
+is(scalar(@{$packageset->find_newest()}), 2);
 
-is(scalar(@{$rpmset->find_by_name("iplike")}), 2);
-$rpm = $rpmset->find_newest_by_name("iplike");
-ok(defined $rpm);
-is($rpm->[0]->name, "iplike");
-is($rpm->[0]->version->version, "2.0.2");
+is(scalar(@{$packageset->find_by_name("iplike")}), 2);
+$package = $packageset->find_newest_by_name("iplike");
+ok(defined $package);
+is($package->[0]->name, "iplike");
+is($package->[0]->version->version, "2.0.2");
 
-is(scalar(@{$rpmset->find_by_name("opennms")}), 1);
-$rpm = $rpmset->find_newest_by_name("opennms");
-ok(defined $rpm);
-is($rpm->[0]->name, "opennms");
-is($rpm->[0]->version->version, "1.8.16");
+is(scalar(@{$packageset->find_by_name("opennms")}), 1);
+$package = $packageset->find_newest_by_name("opennms");
+ok(defined $package);
+is($package->[0]->name, "opennms");
+is($package->[0]->version->version, "1.8.16");
 
-$rpmset->set();
-is(scalar(@{$rpmset->find_all()}), 0);
-$rpmset->set(OpenNMS::Release::RPMPackage->new("t/repo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm"));
-is(scalar(@{$rpmset->find_all()}), 1);
-is($rpmset->find_all()->[0]->name, "opennms");
+$packageset->set();
+is(scalar(@{$packageset->find_all()}), 0);
+$packageset->set(OpenNMS::Release::RPMPackage->new("t/repo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm"));
+is(scalar(@{$packageset->find_all()}), 1);
+is($packageset->find_all()->[0]->name, "opennms");
 
-$rpm = OpenNMS::Release::RPMPackage->new("t/repo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
-$rpmset->set(OpenNMS::Release::RPMPackage->new("t/repo/stable/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
-ok($rpmset->is_obsolete($rpm));
+$package = OpenNMS::Release::RPMPackage->new("t/repo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
+$packageset->set(OpenNMS::Release::RPMPackage->new("t/repo/stable/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm"));
+ok($packageset->is_obsolete($package));
 
-$rpmset->add($rpm);
-$rpmlist = $rpmset->find_obsolete();
+$packageset->add($package);
+$packagelist = $packageset->find_obsolete();
 
-is(scalar(@{$rpmlist}), 1);
-is($rpmlist->[0]->version->version, "1.0.7");
+is(scalar(@{$packagelist}), 1);
+is($packagelist->[0]->version->version, "1.0.7");
 
-$rpmset->set();
-$rpmset->add(OpenNMS::Release::RPMPackage->new('t/repo/bleeding/rhel5/opennms/x86_64/iplike-1.0.7-1.x86_64.rpm'));
-$rpmset->add(OpenNMS::Release::RPMPackage->new('t/repo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm'));
-$rpmset->add(OpenNMS::Release::RPMPackage->new('t/repo/stable/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm'));
+$packageset->set();
+$packageset->add(OpenNMS::Release::RPMPackage->new('t/repo/bleeding/rhel5/opennms/x86_64/iplike-1.0.7-1.x86_64.rpm'));
+$packageset->add(OpenNMS::Release::RPMPackage->new('t/repo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm'));
+$packageset->add(OpenNMS::Release::RPMPackage->new('t/repo/stable/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm'));
 
-is(scalar(@{$rpmset->find_all()}), 3);
-is(scalar(@{$rpmset->find_newest()}), 2);
+is(scalar(@{$packageset->find_all()}), 3);
+is(scalar(@{$packageset->find_newest()}), 2);
 
-$rpmlist = $rpmset->find_newest();
-is($rpmlist->[0]->arch, 'i386');
-is($rpmlist->[0]->version->version, '2.0.2');
-is($rpmlist->[1]->arch, 'x86_64');
-is($rpmlist->[1]->version->version, '1.0.7');
+$packagelist = $packageset->find_newest();
+is($packagelist->[0]->arch, 'i386');
+is($packagelist->[0]->version->version, '2.0.2');
+is($packagelist->[1]->arch, 'x86_64');
+is($packagelist->[1]->version->version, '1.0.7');
