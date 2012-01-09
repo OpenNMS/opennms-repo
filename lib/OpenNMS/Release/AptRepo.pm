@@ -1,20 +1,33 @@
-package OpenNMS::Release::Repo;
+package OpenNMS::Release::AptRepo;
 
 use 5.008008;
 use strict;
 use warnings;
 
+use Carp;
+use Cwd;
+use Data::Dumper;
+use File::Basename;
+use File::Copy qw();
+use File::Find;
+use File::Path;
+use File::Spec;
+use File::Temp qw(tempdir);
+
+use OpenNMS::Util;
+use OpenNMS::Release::RPM;
+
 =head1 NAME
 
-OpenNMS::Release::Repo - Perl extension that represents a package repository
+OpenNMS::Release::AptRepo - Perl extension that represents an Apt repository
 
 =head1 SYNOPSIS
 
-  use OpenNMS::Release::Repo;
+  use OpenNMS::Release::AptRepo;
 
 =head1 DESCRIPTION
 
-This represents an individual package repository.
+This represents an individual debian/apt repository.
 
 =cut
 
@@ -22,26 +35,25 @@ our $VERSION = '1.0';
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::Repo-E<gt>new();
+OpenNMS::Release::AptRepo-E<gt>new();
 
 Create a new Repo object.  You can add and remove packages to/from it, re-index it, and so on.
+
+=over 2
+
+=back
 
 =cut
 
 sub new {
 	my $proto = shift;
-	my $class = ref($proto) || $proto;
-	my $self  = {};
-
-	bless($self);
-	return $self;
+	my $self  = $proto->SUPER::new(@_);
 }
 
 =head1 METHODS
 
 =cut
 
-1;
 
 __END__
 =head1 AUTHOR

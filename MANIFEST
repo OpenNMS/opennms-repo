@@ -16,3 +16,6 @@ lib/OpenNMS/Release.pm
 lib/OpenNMS/Release/RPM.pm
 lib/OpenNMS/Release/RPM/Version.pm
 lib/OpenNMS/Release/Repo.pm
+lib/OpenNMS/Release/AptRepo.pm
+lib/OpenNMS/Release/RPMSet.pm
+lib/OpenNMS/Release/YumRepo.pm

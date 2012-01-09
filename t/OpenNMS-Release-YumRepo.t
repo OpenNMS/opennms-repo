@@ -5,14 +5,14 @@ use Data::Dumper;
 use OpenNMS::Release::RPM;
 use Test::More tests => 63;
 BEGIN {
-	use_ok('OpenNMS::Release::Repo');
+	use_ok('OpenNMS::Release::YumRepo');
 };
-import OpenNMS::Release::Repo::RPMSet;
+import OpenNMS::Release::RPMSet;
 
 rmtree("t/newrepo");
 
-my $stable_ro = OpenNMS::Release::Repo->new("t/repo", "stable", "common");
-isa_ok($stable_ro, 'OpenNMS::Release::Repo');
+my $stable_ro = OpenNMS::Release::YumRepo->new("t/repo", "stable", "common");
+isa_ok($stable_ro, 'OpenNMS::Release::YumRepo');
 
 is($stable_ro->base, "t/repo");
 is($stable_ro->release, "stable");
@@ -77,8 +77,8 @@ is(scalar(@{$rpmlist}), 3);
 
 ##### RPMSet Tests #####
 
-my $rpmset = OpenNMS::Release::Repo::RPMSet->new();
-isa_ok($rpmset, 'OpenNMS::Release::Repo::RPMSet');
+my $rpmset = OpenNMS::Release::RPMSet->new();
+isa_ok($rpmset, 'OpenNMS::Release::RPMSet');
 
 is(scalar(@{$rpmset->find_all()}), 0);
 
@@ -179,9 +179,9 @@ $bleeding_rhel5->delete;
 
 sub reset_repos {
 	rmtree("t/newrepo");
-	$stable_common   = OpenNMS::Release::Repo->new("t/repo", "stable", "common")->copy("t/newrepo");
-	$stable_rhel5    = OpenNMS::Release::Repo->new("t/repo", "stable", "rhel5")->copy("t/newrepo");
-	$bleeding_common = OpenNMS::Release::Repo->new("t/repo", "bleeding", "common")->copy("t/newrepo");
-	$bleeding_rhel5  = OpenNMS::Release::Repo->new("t/repo", "bleeding", "rhel5")->copy("t/newrepo");
+	$stable_common   = OpenNMS::Release::YumRepo->new("t/repo", "stable", "common")->copy("t/newrepo");
+	$stable_rhel5    = OpenNMS::Release::YumRepo->new("t/repo", "stable", "rhel5")->copy("t/newrepo");
+	$bleeding_common = OpenNMS::Release::YumRepo->new("t/repo", "bleeding", "common")->copy("t/newrepo");
+	$bleeding_rhel5  = OpenNMS::Release::YumRepo->new("t/repo", "bleeding", "rhel5")->copy("t/newrepo");
 }
 
