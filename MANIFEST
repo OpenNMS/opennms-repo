@@ -8,10 +8,14 @@ t/OpenNMS-Release-DebVersion.t
 t/OpenNMS-Release-RPMVersion.t
 t/OpenNMS-Release-DebPackage.t
 t/OpenNMS-Release-RPMPackage.t
+t/OpenNMS-Release-DebSet.t
 t/OpenNMS-Release-RPMSet.t
 t/OpenNMS-Release-YumRepo.t
-t/dists/nightly-1.11/main/binary-i386/opennms_1.11.0-0.20111216.14_all.deb
+t/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_2.0.2-1_i386.deb
 t/dists/opennms-1.8/main/binary-i386/opennms_1.8.16-1_all.deb
+t/dists/nightly-1.11/main/binary-amd64/iplike-pgsql84_1.0.8-1_amd64.deb
+t/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb
+t/dists/nightly-1.11/main/binary-i386/opennms_1.11.0-0.20111216.14_all.deb
 t/repo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm
 t/repo/bleeding/rhel5/opennms/x86_64/iplike-1.0.7-1.x86_64.rpm
 t/repo/bleeding/common/opennms/opennms-1.11.0-0.20111220.1.noarch.rpm
