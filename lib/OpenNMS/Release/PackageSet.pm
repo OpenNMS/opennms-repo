@@ -1,4 +1,4 @@
-package OpenNMS::Release::RPMSet;
+package OpenNMS::Release::PackageSet;
 
 use 5.008008;
 use strict;
@@ -13,7 +13,7 @@ sub new {
 	my $class = ref($proto) || $proto;
 	my $self  = {};
 
-	$self->{RPMS} = {};
+	$self->{PACKAGES} = {};
 
 	bless($self);
 
@@ -26,52 +26,52 @@ sub new {
 
 sub _hash() {
 	my $self = shift;
-	return $self->{RPMS};
+	return $self->{PACKAGES};
 }
 
 sub add(@) {
 	my $self = shift;
 
-	my @rpms = ();
+	my @packages = ();
 	for my $item (@_) {
 		if (ref($item) eq "ARRAY") {
-			push(@rpms, @{$item});
+			push(@packages, @{$item});
 		} else {
-			push(@rpms, $item);
+			push(@packages, $item);
 		}
 	}
 
 	my %seen = ();
-	for my $rpm (@rpms) {
-		$self->remove($rpm);
-		push(@{$self->_hash->{$rpm->name}->{$rpm->arch}}, $rpm);
-		@{$self->_hash->{$rpm->name}->{$rpm->arch}} = sort { $b->compare_to($a) } @{$self->_hash->{$rpm->name}->{$rpm->arch}};
+	for my $package (@packages) {
+		$self->remove($package);
+		push(@{$self->_hash->{$package->name}->{$package->arch}}, $package);
+		@{$self->_hash->{$package->name}->{$package->arch}} = sort { $b->compare_to($a) } @{$self->_hash->{$package->name}->{$package->arch}};
 	}
 }
 
 sub remove($) {
 	my $self = shift;
-	my $rpm  = shift;
+	my $package  = shift;
 
 	my $deleted = 0;
-	my $entries = $self->_hash->{$rpm->name}->{$rpm->arch};
+	my $entries = $self->_hash->{$package->name}->{$package->arch};
 	for my $i (0 .. $#{$entries}) {
-		if ($entries->[$i]->path eq $rpm->path) {
+		if ($entries->[$i]->path eq $package->path) {
 			$deleted = delete $entries->[$i];
 		}
 	}
-	if (exists $self->_hash->{$rpm->name}->{$rpm->arch} and scalar(@{$self->_hash->{$rpm->name}->{$rpm->arch}}) == 0) {
-		delete $self->_hash->{$rpm->name}->{$rpm->arch};
+	if (exists $self->_hash->{$package->name}->{$package->arch} and scalar(@{$self->_hash->{$package->name}->{$package->arch}}) == 0) {
+		delete $self->_hash->{$package->name}->{$package->arch};
 	}
-	if (exists $self->_hash->{$rpm->name} and scalar(keys %{$self->_hash->{$rpm->name}}) == 0) {
-		delete $self->_hash->{$rpm->name};
+	if (exists $self->_hash->{$package->name} and scalar(keys %{$self->_hash->{$package->name}}) == 0) {
+		delete $self->_hash->{$package->name};
 	}
 	return $deleted;
 }
 
 sub set(@) {
 	my $self = shift;
-	$self->{RPMS} = {};
+	$self->{PACKAGES} = {};
 	$self->add(@_);
 }
 
@@ -139,11 +139,11 @@ sub find_obsolete() {
 
 sub is_obsolete($) {
 	my $self = shift;
-	my $rpm  = shift;
+	my $package  = shift;
 
-	my $newest = $self->find_newest_by_name_and_arch($rpm->name, $rpm->arch);
+	my $newest = $self->find_newest_by_name_and_arch($package->name, $package->arch);
 	return 0 unless (defined $newest);
-	return $newest->is_newer_than($rpm);
+	return $newest->is_newer_than($package);
 }
 
 1;

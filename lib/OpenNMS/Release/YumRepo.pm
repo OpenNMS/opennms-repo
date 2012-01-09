@@ -16,7 +16,7 @@ use File::Temp qw(tempdir);
 
 use OpenNMS::Util;
 use OpenNMS::Release::RPMPackage;
-use OpenNMS::Release::RPMSet;
+use OpenNMS::Release::PackageSet;
 
 use base qw(OpenNMS::Release::Repo);
 
@@ -136,7 +136,7 @@ sub dirty {
 
 sub clear_cache() {
 	my $self = shift;
-	return delete $self->{RPMSET};
+	return delete $self->{PACKAGESET};
 }
 
 =head2 * base
@@ -352,10 +352,10 @@ sub delete {
 	return 1;
 }
 
-sub _rpmset {
+sub _packageset {
 	my $self = shift;
 
-	if (not exists $self->{RPMSET}) {
+	if (not exists $self->{PACKAGESET}) {
 		my $rpms = [];
 		find({ wanted => sub {
 			return unless ($File::Find::name =~ /\.rpm$/);
@@ -363,18 +363,18 @@ sub _rpmset {
 			my $rpm = OpenNMS::Release::RPMPackage->new($File::Find::name);
 			push(@{$rpms}, $rpm);
 		}, no_chdir => 1}, $self->path);
-		$self->{RPMSET} = OpenNMS::Release::RPMSet->new($rpms);
+		$self->{PACKAGESET} = OpenNMS::Release::PackageSet->new($rpms);
 	}
-	return $self->{RPMSET};
+	return $self->{PACKAGESET};
 	
 }
 
-sub _add_to_rpmset($) {
+sub _add_to_packageset($) {
 	my $self = shift;
 	my $rpm  = shift;
 
-	if (exists $self->{RPMSET}) {
-		$self->_rpmset->add($rpm);
+	if (exists $self->{PACKAGESET}) {
+		$self->_packageset->add($rpm);
 	}
 }
 
@@ -388,7 +388,7 @@ L<OpenNMS::Release::RPMPackage> objects.
 sub find_all_rpms {
 	my $self = shift;
 
-	return $self->_rpmset->find_all();
+	return $self->_packageset->find_all();
 }
 
 =head2 * find_newest_rpms
@@ -401,7 +401,7 @@ of L<OpenNMS::Release::RPMPackage> objects.
 
 sub find_newest_rpms {
 	my $self = shift;
-	return $self->_rpmset->find_newest();
+	return $self->_packageset->find_newest();
 }
 
 =head2 * find_obsolete_rpms
@@ -413,7 +413,7 @@ Returns a list of L<OpenNMS::Release::RPMPackage> objects.
 
 sub find_obsolete_rpms {
 	my $self = shift;
-	return $self->_rpmset->find_obsolete();
+	return $self->_packageset->find_obsolete();
 }
 
 =head2 * find_newest_rpm_by_name($name, $arch)
@@ -429,7 +429,7 @@ sub find_newest_rpm_by_name {
 	my $name      = shift;
 	my $arch      = shift;
 
-	my $newest = $self->_rpmset->find_newest_by_name($name);
+	my $newest = $self->_packageset->find_newest_by_name($name);
 	return undef unless (defined $newest);
 
 	if (not defined $arch) {
@@ -458,7 +458,7 @@ sub find_newest_rpms_by_name {
 	my $name      = shift;
 
 	carp "find_newest_rpm_by_name is deprecated, use find_newest_rpms_by_name instead\n";
-	return $self->_rpmset->find_newest_by_name($name);
+	return $self->_packageset->find_newest_by_name($name);
 }
 
 =head2 * delete_obsolete_rpms
@@ -518,7 +518,7 @@ sub copy_rpm($$) {
 	$self->dirty(1);
 
 	my $newrpm = $rpm->copy($topath);
-	$self->_add_to_rpmset($newrpm);
+	$self->_add_to_packageset($newrpm);
 	return $newrpm;
 }
 
@@ -530,7 +530,7 @@ sub link_rpm($$) {
 	$self->dirty(1);
 
 	my $newrpm = $rpm->link($topath);
-	$self->_add_to_rpmset($newrpm);
+	$self->_add_to_packageset($newrpm);
 	return $newrpm;
 }
 
@@ -542,7 +542,7 @@ sub symlink_rpm($$) {
 	$self->dirty(1);
 
 	my $newrpm = $rpm->symlink($topath);
-	$self->_add_to_rpmset($newrpm);
+	$self->_add_to_packageset($newrpm);
 	return $newrpm;
 }
 

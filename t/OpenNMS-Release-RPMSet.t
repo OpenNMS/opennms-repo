@@ -9,7 +9,7 @@ BEGIN {
 	if ($? == 0) {
 		plan tests => 26;
 		use_ok('OpenNMS::Release::RPMPackage');
-		use_ok('OpenNMS::Release::RPMSet');
+		use_ok('OpenNMS::Release::PackageSet');
 	} else {
 		plan skip_all => '`rpm` not found, skipping RPM tests.';
 	}
@@ -17,8 +17,8 @@ BEGIN {
 
 rmtree("t/newrepo");
 
-my $rpmset = OpenNMS::Release::RPMSet->new();
-isa_ok($rpmset, 'OpenNMS::Release::RPMSet');
+my $rpmset = OpenNMS::Release::PackageSet->new();
+isa_ok($rpmset, 'OpenNMS::Release::PackageSet');
 
 is(scalar(@{$rpmset->find_all()}), 0);
 
