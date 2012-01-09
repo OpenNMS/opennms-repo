@@ -23,7 +23,7 @@ This is just a perl module for manipulating RPM versions.
 
 =cut
 
-our $VERSION = '0.1';
+our $VERSION = '2.0';
 our $RPMVER  = undef;
 
 =head1 CONSTRUCTOR

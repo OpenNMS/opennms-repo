@@ -6,6 +6,8 @@ use warnings;
 
 use Data::Dumper;
 
+our $VERSION = '2.0';
+
 sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;

@@ -28,7 +28,7 @@ our @EXPORT = qw(
 	gpg_detach_sign_file
 );
 
-our $VERSION = '0.7';
+our $VERSION = '2.0';
 
 =head1 METHODS
 

@@ -18,7 +18,7 @@ This represents an individual package repository.
 
 =cut
 
-our $VERSION = '1.0';
+our $VERSION = '2.0';
 
 =head1 CONSTRUCTOR
 

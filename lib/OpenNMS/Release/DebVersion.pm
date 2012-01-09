@@ -23,7 +23,7 @@ This is just a perl module for manipulating Debian versions.
 
 =cut
 
-our $VERSION = '0.1';
+our $VERSION = '2.0';
 our $DPKG    = undef;
 
 =head1 CONSTRUCTOR

@@ -31,7 +31,7 @@ This represents an individual debian/apt repository.
 
 =cut
 
-our $VERSION = '1.0';
+our $VERSION = '2.0';
 
 =head1 CONSTRUCTOR
 

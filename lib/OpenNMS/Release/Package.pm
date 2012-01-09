@@ -33,7 +33,7 @@ things.
 
 =cut
 
-our $VERSION = '1.1';
+our $VERSION = '2.0';
 
 =head1 CONSTRUCTOR
 

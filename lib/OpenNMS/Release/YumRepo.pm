@@ -42,7 +42,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = '1.0';
+our $VERSION = '2.0';
 
 =head1 CONSTRUCTOR
 
