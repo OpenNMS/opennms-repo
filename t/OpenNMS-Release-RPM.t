@@ -1,7 +1,15 @@
 $|++;
 
-use Test::More tests => 22;
-BEGIN { use_ok('OpenNMS::Release::RPM') };
+use Test::More;
+BEGIN {
+	my $rpm = `which rpm 2>/dev/null`;
+	if ($? == 0) {
+		plan tests => 22;
+		use_ok('OpenNMS::Release::RPM');
+	} else {
+		plan skip_all => '`rpm` not found, skipping RPM tests.';
+	}
+};
 
 my ($rpm);
 

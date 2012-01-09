@@ -1,6 +1,13 @@
-#use Test::More tests => 1;
-use Test::More tests => 15;
-BEGIN { use_ok('OpenNMS::Release::RPM::Version') };
+use Test::More;
+BEGIN {
+	my $rpmver = `which rpmver 2>/dev/null`;
+	if ($? == 0) {
+		plan tests => 15;
+		use_ok('OpenNMS::Release::RPM::Version');
+	} else {
+		plan skip_all => '`rpmver` not found, skipping RPM tests.';
+	}
+};
 
 my $one_oh_one     = OpenNMS::Release::RPM::Version->new('1.0', '1');
 my $one_oh_two     = OpenNMS::Release::RPM::Version->new('1.0', '2');

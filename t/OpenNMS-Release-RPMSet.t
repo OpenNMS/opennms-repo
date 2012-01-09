@@ -2,10 +2,17 @@ $|++;
 
 use File::Path;
 use Data::Dumper;
-use OpenNMS::Release::RPM;
-use Test::More tests => 25;
+
+use Test::More;
 BEGIN {
-	use_ok('OpenNMS::Release::RPMSet');
+	my $rpm = `which rpm 2>/dev/null`;
+	if ($? == 0) {
+		plan tests => 26;
+		use_ok('OpenNMS::Release::RPM');
+		use_ok('OpenNMS::Release::RPMSet');
+	} else {
+		plan skip_all => '`rpm` not found, skipping RPM tests.';
+	}
 };
 
 rmtree("t/newrepo");
