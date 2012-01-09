@@ -292,6 +292,9 @@ sub is_newer_than($) {
 	if ($this->name ne $that->name) {
 		croak "You can't compare 2 different package names with is_newer_than! (" . $this->name . " != " . $that->name .")";
 	}
+	if ($this->arch ne $that->arch) {
+		croak "You can't compare 2 different package architectures with is_newer_than! (" . $this->to_string . " != " . $that->to_string .")";
+	}
 	return $this->compare_to($that) == 1;
 }
 
@@ -307,7 +310,10 @@ sub is_older_than($) {
 	my $that = shift;
 
 	if ($this->name ne $that->name) {
-		croak "You can't compare 2 different package names with is_newer_than! (" . $this->name . " != " . $that->name .")";
+		croak "You can't compare 2 different package names with is_older_than! (" . $this->name . " != " . $that->name .")";
+	}
+	if ($this->arch ne $that->arch) {
+		croak "You can't compare 2 different package architectures with is_older_than! (" . $this->to_string . " != " . $that->to_string .")";
 	}
 	return $this->compare_to($that) == -1;
 }
