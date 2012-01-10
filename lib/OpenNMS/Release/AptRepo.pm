@@ -15,7 +15,6 @@ use File::Spec;
 use File::Temp qw(tempdir);
 
 use OpenNMS::Util;
-use OpenNMS::Release::RPM;
 
 =head1 NAME
 
