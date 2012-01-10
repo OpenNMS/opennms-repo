@@ -4,6 +4,10 @@ use 5.008008;
 use strict;
 use warnings;
 
+use Carp;
+use File::Path;
+use File::Basename;
+
 =head1 NAME
 
 OpenNMS::Release::Repo - Perl extension that represents a package repository
@@ -117,7 +121,7 @@ sub _add_to_packageset($) {
 	my $package = shift;
 
 	if (exists $self->{PACKAGESET}) {
-		$self->packageset->add($package);
+		$self->{PACKAGESET}->add($package);
 	}
 }
 
@@ -245,7 +249,7 @@ L<OpenNMS::Release::Package> objects.
 sub find_all_packages {
 	my $self = shift;
 
-	return $self->_packageset->find_all();
+	return $self->packageset->find_all();
 }
 
 =head2 * find_newest_packages
@@ -258,7 +262,7 @@ of L<OpenNMS::Release::Package> objects.
 
 sub find_newest_packages {
 	my $self = shift;
-	return $self->_packageset->find_newest();
+	return $self->packageset->find_newest();
 }
 
 =head2 * find_obsolete_packages
@@ -270,7 +274,7 @@ Returns a list of L<OpenNMS::Release::Package> objects.
 
 sub find_obsolete_packages {
 	my $self = shift;
-	return $self->_packageset->find_obsolete();
+	return $self->packageset->find_obsolete();
 }
 
 =head2 * find_newest_package_by_name($name, $arch)
@@ -286,7 +290,7 @@ sub find_newest_package_by_name {
 	my $name      = shift;
 	my $arch      = shift;
 
-	my $newest = $self->_packageset->find_newest_by_name($name);
+	my $newest = $self->packageset->find_newest_by_name($name);
 	return undef unless (defined $newest);
 
 	if (not defined $arch) {
@@ -314,7 +318,7 @@ sub find_newest_packages_by_name {
 	my $self      = shift;
 	my $name      = shift;
 
-	return $self->_packageset->find_newest_by_name($name);
+	return $self->packageset->find_newest_by_name($name);
 }
 
 =head2 * delete_obsolete_packages

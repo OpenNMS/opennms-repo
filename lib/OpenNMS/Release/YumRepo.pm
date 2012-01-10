@@ -338,7 +338,7 @@ sub _packageset {
 		my $package = OpenNMS::Release::RPMPackage->new($File::Find::name);
 		push(@packages, $package);
 	}, no_chdir => 1}, $self->path);
-	return \@packages;
+	return OpenNMS::Release::PackageSet->new(\@packages);
 	
 }
 
