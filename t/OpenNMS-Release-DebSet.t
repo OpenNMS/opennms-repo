@@ -15,16 +15,16 @@ BEGIN {
 	}
 };
 
-rmtree("t/newdists");
+rmtree("t/testpackages/deb");
 
 my $packageset = OpenNMS::Release::PackageSet->new();
 isa_ok($packageset, 'OpenNMS::Release::PackageSet');
 
 is(scalar(@{$packageset->find_all()}), 0);
 
-$packageset->add(OpenNMS::Release::DebPackage->new("t/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb"));
-$packageset->add(OpenNMS::Release::DebPackage->new("t/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_2.0.2-1_i386.deb"));
-$packageset->add(OpenNMS::Release::DebPackage->new("t/dists/opennms-1.8/main/binary-i386/opennms_1.8.16-1_all.deb"));
+$packageset->add(OpenNMS::Release::DebPackage->new("t/packages/deb/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb"));
+$packageset->add(OpenNMS::Release::DebPackage->new("t/packages/deb/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_2.0.2-1_i386.deb"));
+$packageset->add(OpenNMS::Release::DebPackage->new("t/packages/deb/dists/opennms-1.8/main/binary-i386/opennms_1.8.16-1_all.deb"));
 
 is(scalar(@{$packageset->find_all()}), 3);
 is(scalar(@{$packageset->find_newest()}), 2);
@@ -43,12 +43,12 @@ is($package->[0]->version->version, "1.8.16");
 
 $packageset->set();
 is(scalar(@{$packageset->find_all()}), 0);
-$packageset->set(OpenNMS::Release::DebPackage->new("t/dists/nightly-1.11/main/binary-i386/opennms_1.11.0-0.20111216.14_all.deb"));
+$packageset->set(OpenNMS::Release::DebPackage->new("t/packages/deb/dists/nightly-1.11/main/binary-i386/opennms_1.11.0-0.20111216.14_all.deb"));
 is(scalar(@{$packageset->find_all()}), 1);
 is($packageset->find_all()->[0]->name, 'opennms');
 
-$package = OpenNMS::Release::DebPackage->new("t/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb");
-$packageset->set(OpenNMS::Release::DebPackage->new("t/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_2.0.2-1_i386.deb"));
+$package = OpenNMS::Release::DebPackage->new("t/packages/deb/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb");
+$packageset->set(OpenNMS::Release::DebPackage->new("t/packages/deb/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_2.0.2-1_i386.deb"));
 ok($packageset->is_obsolete($package));
 
 $packageset->add($package);
@@ -58,9 +58,9 @@ is(scalar(@{$packagelist}), 1);
 is($packagelist->[0]->version->version, '1.0.8');
 
 $packageset->set();
-$packageset->add(OpenNMS::Release::DebPackage->new('t/dists/nightly-1.11/main/binary-amd64/iplike-pgsql84_1.0.8-1_amd64.deb'));
-$packageset->add(OpenNMS::Release::DebPackage->new('t/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb'));
-$packageset->add(OpenNMS::Release::DebPackage->new('t/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_2.0.2-1_i386.deb'));
+$packageset->add(OpenNMS::Release::DebPackage->new('t/packages/deb/dists/nightly-1.11/main/binary-amd64/iplike-pgsql84_1.0.8-1_amd64.deb'));
+$packageset->add(OpenNMS::Release::DebPackage->new('t/packages/deb/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb'));
+$packageset->add(OpenNMS::Release::DebPackage->new('t/packages/deb/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_2.0.2-1_i386.deb'));
 
 is(scalar(@{$packageset->find_all()}), 3);
 is(scalar(@{$packageset->find_newest()}), 2);

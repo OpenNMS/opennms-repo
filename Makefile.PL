@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     NAME              => 'OpenNMS::Release',
-    VERSION           => '2.0',
+    VERSION           => '2.1',
     PREREQ_PM         => {
         'Expect' => 1.20,
     }, # e.g., Module::Name => 1.1

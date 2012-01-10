@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Cwd qw();
 use File::Path;
 use File::Basename;
 use File::Temp qw(tempdir);
@@ -27,9 +28,10 @@ our $VERSION = '2.0';
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::Repo-E<gt>new();
+OpenNMS::Release::Repo-E<gt>new($base);
 
-Create a new Repo object.  You can add and remove packages to/from it, re-index it, and so on.
+Create a new Repo object, based in path $base.  You can add and remove packages to/from it, re-index it, and so on.
+The base will always be initialized as the absolute path.
 
 =cut
 
@@ -38,6 +40,15 @@ sub new {
 	my $class = ref($proto) || $proto;
 	my $self  = {};
 
+	my $base = shift;
+	if (not defined $base or not -d $base) {
+		croak "base '$base' is not a directory!";
+	}
+
+	$base =~ s,/$,,;
+	$self->{BASE} = Cwd::abs_path($base);
+	$self->{DIRTY} = 0;
+
 	bless($self);
 	return $self;
 }
@@ -45,6 +56,23 @@ sub new {
 =head1 METHODS
 
 =cut
+
+sub base {
+	my $self = shift;
+	return $self->{BASE};
+}
+
+sub abs_base {
+	return shift->base;
+}
+
+sub path {
+	croak "You must implement 'path' in your subclass!";
+}
+
+sub abs_path {
+	return shift->path;
+}
 
 sub dirty {
 	my $self = shift;
@@ -57,8 +85,75 @@ sub clear_cache() {
 	return delete $self->{PACKAGESET};
 }
 
-sub copy() {
-	croak "You must implement this in your subclass!";
+=head2 * copy
+
+Given a new base path, copy this repository to the new path using rsync.
+Returns an OpenNMS::Release::Repo object, representing this new base path.
+
+If possible, it will create the new repository using hard links.
+
+=cut
+
+sub copy {
+	my $self = shift;
+	my $newbase = shift;
+	if (not defined $newbase) {
+		return undef;
+	}
+
+	my $rsync = `which rsync 2>/dev/null`;
+	if ($? != 0) {
+		carp "Unable to locate rsync!";
+		return undef;
+	}
+	chomp($rsync);
+
+	my $repo = $self->new($newbase, $self->release);
+	mkpath($repo->path);
+
+	my $selfpath = $self->path;
+	my $repopath = $repo->path;
+
+	my $source_fs = $self->_get_fs_for_path($selfpath);
+	my $dest_fs   = $self->_get_fs_for_path($repopath);
+
+	if (defined $source_fs and defined $dest_fs and $source_fs eq $dest_fs) {
+		system($rsync, "-aqrH", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+	} else {
+		system($rsync, "-aqrH", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+	}
+
+	return $repo;
+}
+
+=head2 * replace
+
+Given a target repository, replace the target repository with the contents of the
+current repository.
+
+=cut
+
+sub replace {
+	my $self        = shift;
+	my $target_repo = shift;
+
+	croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
+	croak "platforms do not match! (" . $self->platform . " != " . $target_repo->platform . ")" if ($self->platform ne $target_repo->platform);
+
+	my $self_path   = $self->path;
+	my $target_path = $target_repo->path;
+
+	croak "paths match -- this should not be" if ($self_path eq $target_path);
+
+	File::Copy::move($target_path, $target_path . '.bak') or croak "failed to rename $target_path to $target_path.bak: $!";
+	File::Copy::move($self_path, $target_path) or croak "failed to rename $self_path to $target_path: $!";
+
+	rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
+
+	rmdir($self->releasedir);
+	rmdir($self->base);
+
+	return $self->new($target_repo->base, $self->release, $self->platform);
 }
 
 =head2 * create_temporary
@@ -190,7 +285,7 @@ sub install_package($$) {
 	my $package    = shift;
 	my $topath = shift;
 
-	my $finalpath = File::Spec->catfile($self->abs_path, $topath);
+	my $finalpath = File::Spec->catfile($self->path, $topath);
 	mkpath($finalpath);
 	$self->copy_package($package, $finalpath);
 }
@@ -208,8 +303,8 @@ sub share_package($$) {
 	my $from_repo = shift;
 	my $package       = shift;
 
-	my $topath_r   = dirname($package->relative_path($from_repo->abs_path));
-	my $abs_topath = File::Spec->catfile($self->abs_path, $topath_r);
+	my $topath_r   = dirname($package->relative_path($from_repo->path));
+	my $abs_topath = File::Spec->catfile($self->path, $topath_r);
 
 	my $local_package = $self->find_newest_package_by_name($package->name, $package->arch);
 

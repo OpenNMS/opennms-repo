@@ -68,16 +68,13 @@ Create a new Repo object.  You can add and remove RPMs to/from it, re-index it, 
 sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
-	my $self = bless($proto->SUPER::new(@_), $class);
 
 	my $base     = shift;
 	my $release  = shift;
 	my $platform = shift;
 
-	if (not defined $base) {
-		carp "You did not provide a base path!";
-		return undef;
-	}
+	my $self = bless($proto->SUPER::new($base), $class);
+
 	if (not defined $release) {
 		carp "You did not specify a release!";
 		return undef;
@@ -107,10 +104,6 @@ sub new {
 		close($handle);
 	}
 
-	$base =~ s/\/$//;
-
-	$self->{DIRTY}    = 0;
-	$self->{BASE}     = $base;
 	$self->{RELEASE}  = $release;
 	$self->{PLATFORM} = $platform;
 
@@ -152,29 +145,6 @@ sub find_repos($) {
 	return \@repos;
 }
 
-=head2 * base
-
-The 'base' of the repository, i.e., the top-level root path the
-repository lives in, e.g., /opt/yum.
-
-=cut
-
-sub base {
-	my $self = shift;
-	return $self->{BASE};
-}
-
-=head2 * abs_base
-
-The 'base' of the repository, as an absolute path.
-
-=cut
-
-sub abs_base() {
-	my $self = shift;
-	return Cwd::abs_path($self->base);
-}
-
 =head2 * release
 
 The 'release' of the repository, e.g., "stable", "testing", etc.
@@ -210,17 +180,6 @@ sub path() {
 	return File::Spec->catfile($self->base, $self->release, $self->platform);
 }
 
-=head2 * abs_path
-
-The path of the repository, as an absolute path.
-
-=cut
-
-sub abs_path() {
-	my $self = shift;
-	return Cwd::abs_path($self->path);
-}
-
 =head2 * releasedir
 
 The path of the release directory (base + release).
@@ -241,77 +200,6 @@ A convenient way of displaying the repository.
 sub to_string() {
 	my $self = shift;
 	return $self->path;
-}
-
-=head2 * copy
-
-Given a new base path, copy this repository to the new path using rsync.
-Returns an OpenNMS::Release::YumRepo object, representing this new base path.
-
-If possible, it will create the new repository using hard links.
-
-=cut
-
-sub copy {
-	my $self = shift;
-	my $newbase = shift;
-	if (not defined $newbase) {
-		return undef;
-	}
-
-	my $rsync = `which rsync 2>/dev/null`;
-	if ($? != 0) {
-		carp "Unable to locate rsync!";
-		return undef;
-	}
-	chomp($rsync);
-
-	my $repo = OpenNMS::Release::YumRepo->new($newbase, $self->release, $self->platform);
-	mkpath($repo->path);
-
-	my $selfpath = $self->abs_path;
-	my $repopath = $repo->abs_path;
-
-	my $source_fs = $self->_get_fs_for_path($selfpath);
-	my $dest_fs   = $self->_get_fs_for_path($repopath);
-
-	if (defined $source_fs and defined $dest_fs and $source_fs eq $dest_fs) {
-		system($rsync, "-aqrH", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
-	} else {
-		system($rsync, "-aqrH", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
-	}
-
-	return $repo;
-}
-
-=head2 * replace
-
-Given a target repository, replace the target repository with the contents of the
-current repository.
-
-=cut
-
-sub replace {
-	my $self        = shift;
-	my $target_repo = shift;
-
-	croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
-	croak "platforms do not match! (" . $self->platform . " != " . $target_repo->platform . ")" if ($self->platform ne $target_repo->platform);
-
-	my $self_path   = $self->abs_path;
-	my $target_path = $target_repo->abs_path;
-
-	croak "paths match -- this should not be" if ($self_path eq $target_path);
-
-	File::Copy::move($target_path, $target_path . '.bak') or croak "failed to rename $target_path to $target_path.bak: $!";
-	File::Copy::move($self_path, $target_path) or croak "failed to rename $self_path to $target_path: $!";
-
-	rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
-
-	rmdir($self->releasedir);
-	rmdir($self->base);
-
-	return OpenNMS::Release::YumRepo->new($target_repo->abs_base, $self->release, $self->platform);
 }
 
 =head2 * delete
@@ -345,7 +233,7 @@ sub _packageset {
 
 sub cachedir() {
 	my $self = shift;
-	return File::Spec->catfile($self->abs_base, "caches", $self->release, $self->platform);
+	return File::Spec->catfile($self->base, "caches", $self->release, $self->platform);
 }
 
 =head2 * index({options})
@@ -374,9 +262,9 @@ sub index($) {
 
 	mkpath($self->cachedir);
 	my @args = ('-q',
-		'--outputdir', $self->abs_path,
+		'--outputdir', $self->path,
 		'--cachedir', $self->cachedir,
-		$self->abs_path);
+		$self->path);
 
 	if ($CREATEREPO_USE_CHECKSUM) {
 		unshift(@args, '--checksum', 'sha');
@@ -388,7 +276,7 @@ sub index($) {
 	my $password = $options->{'signing_password'};
 
 	if (defined $id and defined $password) {
-		my $repodata = File::Spec->catfile($self->abs_path, 'repodata');
+		my $repodata = File::Spec->catfile($self->path, 'repodata');
 		gpg_write_key($id, $password, File::Spec->catfile($repodata, 'repomd.xml.key'));
 		gpg_detach_sign_file($id, $password, File::Spec->catfile($repodata, 'repomd.xml'));
 	}
