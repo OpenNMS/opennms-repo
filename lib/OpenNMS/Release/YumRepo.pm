@@ -148,6 +148,7 @@ sub find_repos($) {
 		}
 		push(@repos, OpenNMS::Release::YumRepo->new($base, $parts[0], $parts[1]));
 	}
+	@repos = sort { $a->path cmp $b->path } @repos;
 	return \@repos;
 }
 
