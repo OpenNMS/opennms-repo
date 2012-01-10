@@ -3,15 +3,15 @@ $|++;
 use Cwd;
 use File::Path;
 use Data::Dumper;
-use Test::More qw(no_plan);
+use Test::More;
 BEGIN {
 	my $package = `which dpkg 2>/dev/null`;
 	if ($? == 0) {
-		#plan tests => 6;
+		plan tests => 4;
 		use_ok('OpenNMS::Release::DebPackage');
 		use_ok('OpenNMS::Release::AptRepo');
 	} else {
-		#plan skip_all => '`dpkg` not found, skipping Debian tests.';
+		plan skip_all => '`dpkg` not found, skipping Debian tests.';
 	}
 };
 
