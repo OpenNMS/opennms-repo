@@ -41,21 +41,31 @@ sub new {
 	my $self  = {};
 
 	my $base = shift;
-	if (not defined $base or not -d $base) {
-		croak "base '$base' is not a directory!";
+	if (not defined $base or not File::Spec->file_name_is_absolute( $base )) {
+		croak "base must be an absolute path!";
 	}
 
 	$base =~ s,/$,,;
-	$self->{BASE} = Cwd::abs_path($base);
+	$self->{BASE} = $base;
 	$self->{DIRTY} = 0;
 
 	bless($self);
 	return $self;
 }
 
+
 =head1 METHODS
 
+=head2 * new_with_base($newbase)
+
+Given a new base path, construct a Repo object matching the current,
+but with the new base path.
+
 =cut
+
+sub new_with_base($) {
+	croak "You must implement 'new_with_base' in your subclass!";
+}
 
 sub base {
 	my $self = shift;
@@ -108,7 +118,7 @@ sub copy {
 	}
 	chomp($rsync);
 
-	my $repo = $self->new($newbase, $self->release);
+	my $repo = $self->new_with_base($newbase);
 	mkpath($repo->path);
 
 	my $selfpath = $self->path;

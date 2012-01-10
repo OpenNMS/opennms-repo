@@ -110,6 +110,13 @@ sub new {
 	return $self;
 }
 
+sub new_with_base($) {
+	my $self = shift;
+	my $base = shift;
+
+	return OpenNMS::Release::YumRepo->new($base, $self->release, $self->platform);
+}
+
 =head1 METHODS
 
 =head2 * find_repos($base)
