@@ -75,9 +75,9 @@ sub new {
 	}
 
 	if (not defined $APT_FTPARCHIVE) {
-		my $apt_ftparchive = `which apt_ftparchive 2>/dev/null`;
+		my $apt_ftparchive = `which apt-ftparchive 2>/dev/null`;
 		if ($? != 0) {
-			croak "Unable to locate \`apt_ftparchive\` executable!";
+			croak "Unable to locate \`apt-ftparchive\` executable!";
 		}
 		chomp($apt_ftparchive);
 		$APT_FTPARCHIVE=$apt_ftparchive;
@@ -204,6 +204,15 @@ sub _packageset {
 	
 }
 
+sub install_package {
+	my $self    = shift;
+	my $package = shift;
+	my $topath  = File::Spec->catfile($self->path, 'main', 'binary-' . $package->arch);
+
+	mkpath($topath);
+	$self->copy_package($package, $topath);
+}
+
 sub cachedir() {
 	my $self = shift;
 	return File::Spec->catfile($self->base, "ftparchive");
@@ -281,7 +290,7 @@ sub create_indexfile() {
 
 	my $outputfile = IO::Handle->new();
 	my $filename = $self->indexfile();
-	open ($outputfile '>' . $filename) or croak "Unable to write to $filename: $!";
+	open ($outputfile, '>' . $filename) or croak "Unable to write to $filename: $!";
 
 	my $archivedir = $self->base;
 	my $cachedir   = $self->cachedir;

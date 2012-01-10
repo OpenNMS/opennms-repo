@@ -6,6 +6,7 @@ use warnings;
 
 use Carp;
 use Cwd qw();
+use Data::Dumper;
 use File::Path;
 use File::Basename;
 use File::Temp qw(tempdir);
@@ -88,11 +89,6 @@ sub dirty {
 	my $self = shift;
 	if (@_) { $self->{DIRTY} = shift }
 	return $self->{DIRTY};
-}
-
-sub clear_cache() {
-	my $self = shift;
-	return delete $self->{PACKAGESET};
 }
 
 =head2 * copy
@@ -222,6 +218,11 @@ sub packageset {
 	return $self->{PACKAGESET};
 }
 
+sub clear_cache() {
+	my $self = shift;
+	return delete $self->{PACKAGESET};
+}
+
 sub _add_to_packageset($) {
 	my $self    = shift;
 	my $package = shift;
@@ -252,37 +253,47 @@ sub copy_package($$) {
 	$self->dirty(1);
 
 	my $newpackage = $package->copy($topath);
+	if (not defined $newpackage) {
+		croak "failed to copy " . $package->to_string . " to $topath";
+	}
 	$self->_add_to_packageset($newpackage);
+
 	return $newpackage;
 }
 
 sub link_package($$) {
-	my $self   = shift;
-	my $package    = shift;
-	my $topath = shift;
+	my $self    = shift;
+	my $package = shift;
+	my $topath  = shift;
 
 	$self->dirty(1);
 
 	my $newpackage = $package->link($topath);
+	if (not defined $newpackage) {
+		croak "failed to link " . $package->to_string . " to $topath";
+	}
 	$self->_add_to_packageset($newpackage);
 	return $newpackage;
 }
 
 sub symlink_package($$) {
-	my $self   = shift;
-	my $package    = shift;
-	my $topath = shift;
+	my $self    = shift;
+	my $package = shift;
+	my $topath  = shift;
 
 	$self->dirty(1);
 
 	my $newpackage = $package->symlink($topath);
+	if (not defined $newpackage) {
+		croak "failed to symlink " . $package->to_string . " to $topath";
+	}
 	$self->_add_to_packageset($newpackage);
 	return $newpackage;
 }
 
 =head2 * install_package($package, $target_path)
 
-Given an package and a target path relative to the repository path, install
+Given an package and an optional target path relative to the repository path, install
 the package into the repository.
 
 For example, C<$repo-E<gt>install_package($package, "opennms/i386")> will install
@@ -291,11 +302,11 @@ the package into C<$repo-E<gt>path>/opennms/i386/C<package_filename>.
 =cut
 
 sub install_package($$) {
-	my $self   = shift;
-	my $package    = shift;
-	my $topath = shift;
+	my $self    = shift;
+	my $package = shift;
+	my $topath  = shift;
 
-	my $finalpath = File::Spec->catfile($self->path, $topath);
+	my $finalpath = defined $topath? File::Spec->catfile($self->path, $topath) : $self->path;
 	mkpath($finalpath);
 	$self->copy_package($package, $finalpath);
 }
@@ -311,7 +322,7 @@ newest existing version of that package.
 sub share_package($$) {
 	my $self      = shift;
 	my $from_repo = shift;
-	my $package       = shift;
+	my $package   = shift;
 
 	my $topath_r   = dirname($package->relative_path($from_repo->path));
 	my $abs_topath = File::Spec->catfile($self->path, $topath_r);

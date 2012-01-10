@@ -261,6 +261,7 @@ sub copy($) {
 
 	unlink $filename if (-e $filename);
 	my $ret = File::Copy::copy($self->path, $filename);
+
 	return $ret? $self->new($filename) : undef;
 }
 
@@ -322,7 +323,7 @@ Returns a string representation of the package, suitable for printing.
 
 sub to_string() {
 	my $self = shift;
-	return $self->name . '-' . $self->full_version . ' (' . $self->path . ')';
+	return $self->name . '-' . $self->version->full_version . ' (' . $self->path . ')';
 }
 
 sub _get_filename_for_target($) {

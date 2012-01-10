@@ -13,13 +13,13 @@ BEGIN {
 
 my ($deb);
 
-# t/packages/deb/dists/opennms-1.8/main/binary-i386/opennms_1.8.16-1_all.deb
-# t/packages/deb/dists/nightly-1.11/main/binary-i386/opennms_1.11.0-0.20111216.14_all.deb
+# t/packages/deb/dists/opennms-1.8/main/binary-all/opennms_1.8.16-1_all.deb
+# t/packages/deb/dists/nightly-1.11/main/binary-all/opennms_1.11.0-0.20111216.14_all.deb
 
 $deb = OpenNMS::Release::DebPackage->new();
 is($deb, undef, "Check for invalid deb when no path is provided.");
 
-$deb = OpenNMS::Release::DebPackage->new("t/packages/deb/dists/nightly-1.11/main/binary-i386/opennms_1.11.0-0.20111216.14_all.deb");
+$deb = OpenNMS::Release::DebPackage->new("t/packages/deb/dists/nightly-1.11/main/binary-all/opennms_1.11.0-0.20111216.14_all.deb");
 isa_ok($deb, 'OpenNMS::Release::DebPackage');
 
 is($deb->name,             'opennms',       'Package name is "opennms".');
@@ -31,7 +31,7 @@ is($deb->arch,             'all',           'Architecture should be "all".');
 ok($deb->is_in_repo('t'), 'Debian package should be in t/.');
 ok($deb->is_in_repo('t/../t'), 'is_in_path should handle relative paths');
 
-$olderdeb = OpenNMS::Release::DebPackage->new("t/packages/deb/dists/opennms-1.8/main/binary-i386/opennms_1.8.16-1_all.deb");
+$olderdeb = OpenNMS::Release::DebPackage->new("t/packages/deb/dists/opennms-1.8/main/binary-all/opennms_1.8.16-1_all.deb");
 
 is($deb->compare_to($olderdeb), 1);
 is($olderdeb->compare_to($deb), -1);

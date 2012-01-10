@@ -85,9 +85,11 @@ sub new {
 	}
 	if (not $d_version =~ s/^Version:\s*(.*?)\s*\r?\n?$/$1/) {
 		carp "Unable to determine package version from output: $d_version";
+		return undef;
 	}
 	if (not $d_architecture =~ s/^Architecture:\s*(.*?)\s*\r?\n?$/$1/) {
 		carp "Unable to determine package arch from output: $d_architecture";
+		return undef;
 	}
 
 	my $name = $d_package;

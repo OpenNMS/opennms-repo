@@ -4,6 +4,7 @@ use 5.008008;
 use strict;
 use warnings;
 
+use Carp;
 use Data::Dumper;
 
 our $VERSION = '2.0';
@@ -41,7 +42,6 @@ sub add(@) {
 		}
 	}
 
-	my %seen = ();
 	for my $package (@packages) {
 		$self->remove($package);
 		push(@{$self->_hash->{$package->name}->{$package->arch}}, $package);
@@ -50,16 +50,15 @@ sub add(@) {
 }
 
 sub remove($) {
-	my $self = shift;
-	my $package  = shift;
+	my $self    = shift;
+	my $package = shift;
 
 	my $deleted = 0;
 	my $entries = $self->_hash->{$package->name}->{$package->arch};
-	for my $i (0 .. $#{$entries}) {
-		if ($entries->[$i]->path eq $package->path) {
-			$deleted = delete $entries->[$i];
-		}
-	}
+
+	my @keep = grep { $_->path ne $package->path } @{$entries};
+	$self->_hash->{$package->name}->{$package->arch} = \@keep;
+
 	if (exists $self->_hash->{$package->name}->{$package->arch} and scalar(@{$self->_hash->{$package->name}->{$package->arch}}) == 0) {
 		delete $self->_hash->{$package->name}->{$package->arch};
 	}
@@ -80,7 +79,9 @@ sub find_all() {
 	my @ret = ();
 	for my $name (sort keys %{$self->_hash}) {
 		for my $arch (sort keys %{$self->_hash->{$name}}) {
-			push(@ret, @{$self->_hash->{$name}->{$arch}});
+			if (exists $self->_hash->{$name}->{$arch}) {
+				push(@ret, @{$self->_hash->{$name}->{$arch}});
+			}
 		}
 	}
 	return \@ret;
