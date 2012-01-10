@@ -13,6 +13,7 @@ use File::Find;
 use File::Path;
 use File::Spec;
 use File::Temp qw(tempdir);
+use IO::Handle;
 
 use OpenNMS::Util;
 use OpenNMS::Release::RPMPackage;
@@ -43,6 +44,8 @@ be preserved when sharing RPMs between repositories.
 =cut
 
 our $VERSION = '2.0';
+our $CREATEREPO = undef;
+our $CREATEREPO_USE_CHECKSUM = 0;
 
 =head1 CONSTRUCTOR
 
@@ -82,6 +85,26 @@ sub new {
 	if (not defined $platform) {
 		carp "You did not specify a platform!";
 		return undef;
+	}
+
+	if (not defined $CREATEREPO) {
+		my $createrepo = `which createrepo 2>/dev/null`;
+		if ($? != 0) {
+			croak "Unable to locate \`createrepo\` executable!";
+		}
+		chomp($createrepo);
+		$CREATEREPO=$createrepo;
+
+
+		my $handle = IO::Handle->new();
+		open($handle, "$CREATEREPO --help 2>&1 |") or croak "unable to run $CREATEREPO: $!";
+		while (<$handle>) {
+			if (/--checksum=SUMTYPE/) {
+				$CREATEREPO_USE_CHECKSUM = 1;
+				last;
+			}
+		}
+		close($handle);
 	}
 
 	$base =~ s/\/$//;
@@ -640,11 +663,16 @@ sub index($) {
 	my $options = shift;
 
 	mkpath($self->cachedir);
-	my @command = ('createrepo', '-q',
+	my @args = ('-q',
 		'--outputdir', $self->abs_path,
 		'--cachedir', $self->cachedir,
 		$self->abs_path);
-	system(@command) == 0 or croak "createrepo failed! $!";
+
+	if ($CREATEREPO_USE_CHECKSUM) {
+		unshift(@args, '--checksum', 'sha');
+	}
+
+	system($CREATEREPO, @args) == 0 or croak "createrepo failed! $!";
 
 	my $id       = $options->{'signing_id'};
 	my $password = $options->{'signing_password'};
