@@ -4,7 +4,7 @@ use File::Path;
 use Data::Dumper;
 use Test::More;
 BEGIN {
-	my $rpm = `which rpm 2>/dev/null`;
+	my $package = `which rpm 2>/dev/null`;
 	if ($? == 0) {
 		plan tests => 40;
 		use_ok('OpenNMS::Release::RPMPackage');
@@ -35,91 +35,91 @@ my ($stable_common, $stable_rhel5, $bleeding_common, $bleeding_rhel5);
 
 reset_repos();
 
-my $rpmlist = $stable_common->find_all_rpms();
-is(scalar(@{$rpmlist}), 1);
+my $packagelist = $stable_common->find_all_packages();
+is(scalar(@{$packagelist}), 1);
 
-my $rpm = $rpmlist->[0];
-isa_ok($rpm, 'OpenNMS::Release::RPMPackage');
-is($rpm->name, 'opennms');
+my $package = $packagelist->[0];
+isa_ok($package, 'OpenNMS::Release::RPMPackage');
+is($package->name, 'opennms');
 
-$rpmlist = $bleeding_common->find_all_rpms();
-is(scalar(@{$rpmlist}), 1);
+$packagelist = $bleeding_common->find_all_packages();
+is(scalar(@{$packagelist}), 1);
 
-$bleeding_common->install_rpm($rpm, "opennms");
+$bleeding_common->install_package($package, "opennms");
 ok(-f "t/newrepo/bleeding/common/opennms/opennms-1.8.16-1.noarch.rpm");
 
-$rpmlist = $bleeding_common->find_all_rpms();
-is(scalar(@{$rpmlist}), 2);
+$packagelist = $bleeding_common->find_all_packages();
+is(scalar(@{$packagelist}), 2);
 
 # make sure that we don't get duplicate entries in the RPM set if we
 # install an existing RPM
-$bleeding_common->install_rpm($rpm, "opennms");
-$rpmlist = $bleeding_common->find_all_rpms();
-is(scalar(@{$rpmlist}), 2);
+$bleeding_common->install_package($package, "opennms");
+$packagelist = $bleeding_common->find_all_packages();
+is(scalar(@{$packagelist}), 2);
 
-($rpm) = $bleeding_common->find_newest_rpm_by_name("opennms", "noarch");
-is($rpm->name, "opennms");
-is($rpm->version->version, "1.11.0");
+($package) = $bleeding_common->find_newest_package_by_name("opennms", "noarch");
+is($package->name, "opennms");
+is($package->version->version, "1.11.0");
 
-$rpmlist = $stable_rhel5->find_all_rpms();
-is(scalar(@{$rpmlist}), 1);
+$packagelist = $stable_rhel5->find_all_packages();
+is(scalar(@{$packagelist}), 1);
 
-$rpm = $rpmlist->[0];
-$bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
+$package = $packagelist->[0];
+$bleeding_rhel5->share_package($stable_rhel5, $package);
 ok(-f "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm" and not -l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
 
-$rpmlist = $bleeding_rhel5->find_newest_rpms();
-is(scalar(@{$rpmlist}), 2);
+$packagelist = $bleeding_rhel5->find_newest_packages();
+is(scalar(@{$packagelist}), 2);
 
-$rpmlist = $bleeding_rhel5->find_all_rpms();
-is(scalar(@{$rpmlist}), 3);
+$packagelist = $bleeding_rhel5->find_all_packages();
+is(scalar(@{$packagelist}), 3);
 
-$bleeding_rhel5->share_rpm($stable_rhel5, $rpm);
+$bleeding_rhel5->share_package($stable_rhel5, $package);
 ok(-f "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm" and not -l "t/newrepo/bleeding/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm");
 
-$rpmlist = $bleeding_rhel5->find_all_rpms();
-is(scalar(@{$rpmlist}), 3);
+$packagelist = $bleeding_rhel5->find_all_packages();
+is(scalar(@{$packagelist}), 3);
 
-$rpmlist = $bleeding_rhel5->find_obsolete_rpms();
+$packagelist = $bleeding_rhel5->find_obsolete_packages();
 
-is(scalar(@{$rpmlist}), 1);
-is($rpmlist->[0]->version->version, "1.0.7");
+is(scalar(@{$packagelist}), 1);
+is($packagelist->[0]->version->version, "1.0.7");
 
 # subroutine says to not delete any
-is($bleeding_rhel5->delete_obsolete_rpms(sub { return 0 }), 0);
+is($bleeding_rhel5->delete_obsolete_packages(sub { return 0 }), 0);
 ok(-e "t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
 
 # delete any obsolete by default
-is($bleeding_rhel5->delete_obsolete_rpms(), 1);
+is($bleeding_rhel5->delete_obsolete_packages(), 1);
 ok(! -e "t/newrepo/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm");
 
-is($bleeding_common->delete_obsolete_rpms(sub { $_[0]->name ne "opennms" }), 0);
+is($bleeding_common->delete_obsolete_packages(sub { $_[0]->name ne "opennms" }), 0);
 
 reset_repos();
 
-$bleeding_rhel5->share_all_rpms($stable_rhel5);
+$bleeding_rhel5->share_all_packages($stable_rhel5);
 
-$rpmlist = $bleeding_rhel5->find_all_rpms();
-is(scalar(@{$rpmlist}), 3);
+$packagelist = $bleeding_rhel5->find_all_packages();
+is(scalar(@{$packagelist}), 3);
 
-$rpmlist = $bleeding_rhel5->find_newest_rpms();
-is(scalar(@{$rpmlist}), 2);
+$packagelist = $bleeding_rhel5->find_newest_packages();
+is(scalar(@{$packagelist}), 2);
 
 # this should delete the old iplike-1.0.7-1.i386
-is($bleeding_rhel5->delete_obsolete_rpms(), 1);
-$rpm = $bleeding_rhel5->find_newest_rpm_by_name('iplike', 'i386');
-is($rpm->version->version, '2.0.2');
-$rpm = $bleeding_rhel5->find_newest_rpm_by_name('iplike', 'x86_64');
-is($rpm->version->version, '1.0.7');
+is($bleeding_rhel5->delete_obsolete_packages(), 1);
+$package = $bleeding_rhel5->find_newest_package_by_name('iplike', 'i386');
+is($package->version->version, '2.0.2');
+$package = $bleeding_rhel5->find_newest_package_by_name('iplike', 'x86_64');
+is($package->version->version, '1.0.7');
 
 my $copy = $bleeding_rhel5->copy("t/copy");
-$rpm = OpenNMS::Release::RPMPackage->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
-$copy->install_rpm($rpm, "opennms");
+$package = OpenNMS::Release::RPMPackage->new("t/repo/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
+$copy->install_package($package, "opennms");
 $bleeding_rhel5 = $copy->replace($bleeding_rhel5);
 ok(! -d "t/copy");
-$rpm = $bleeding_rhel5->find_newest_rpm_by_name("opennms", "noarch");
-ok(defined $rpm);
-is($rpm->version->version, "1.8.16");
+$package = $bleeding_rhel5->find_newest_package_by_name("opennms", "noarch");
+ok(defined $package);
+is($package->version->version, "1.8.16");
 
 $stable_common->delete;
 $stable_rhel5->delete;

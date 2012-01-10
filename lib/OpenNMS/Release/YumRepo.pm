@@ -379,75 +379,75 @@ sub _packageset {
 	my $self = shift;
 
 	if (not exists $self->{PACKAGESET}) {
-		my $rpms = [];
+		my $packages = [];
 		find({ wanted => sub {
 			return unless ($File::Find::name =~ /\.rpm$/);
 			return unless (-e $File::Find::name);
-			my $rpm = OpenNMS::Release::RPMPackage->new($File::Find::name);
-			push(@{$rpms}, $rpm);
+			my $package = OpenNMS::Release::RPMPackage->new($File::Find::name);
+			push(@{$packages}, $package);
 		}, no_chdir => 1}, $self->path);
-		$self->{PACKAGESET} = OpenNMS::Release::PackageSet->new($rpms);
+		$self->{PACKAGESET} = OpenNMS::Release::PackageSet->new($packages);
 	}
 	return $self->{PACKAGESET};
 	
 }
 
 sub _add_to_packageset($) {
-	my $self = shift;
-	my $rpm  = shift;
+	my $self    = shift;
+	my $package = shift;
 
 	if (exists $self->{PACKAGESET}) {
-		$self->_packageset->add($rpm);
+		$self->_packageset->add($package);
 	}
 }
 
-=head2 * find_all_rpms
+=head2 * find_all_packages
 
-Locate all RPMs in the repository.  Returns a list of
-L<OpenNMS::Release::RPMPackage> objects.
+Locate all Packages in the repository.  Returns a list of
+L<OpenNMS::Release::Package> objects.
 
 =cut
 
-sub find_all_rpms {
+sub find_all_packages {
 	my $self = shift;
 
 	return $self->_packageset->find_all();
 }
 
-=head2 * find_newest_rpms
+=head2 * find_newest_packages
 
-Locate the newest version of each RPM in the repository (based
-on the name of the RPM, not filesystem details).  Returns a list
-of L<OpenNMS::Release::RPMPackage> objects.
+Locate the newest version of each package in the repository (based
+on the name of the package, not filesystem details).  Returns a list
+of L<OpenNMS::Release::Package> objects.
 
 =cut
 
-sub find_newest_rpms {
+sub find_newest_packages {
 	my $self = shift;
 	return $self->_packageset->find_newest();
 }
 
-=head2 * find_obsolete_rpms
+=head2 * find_obsolete_packages
 
-Locate all but the newest version of each RPM in the repository.
-Returns a list of L<OpenNMS::Release::RPMPackage> objects.
+Locate all but the newest version of each package in the repository.
+Returns a list of L<OpenNMS::Release::Package> objects.
 
 =cut
 
-sub find_obsolete_rpms {
+sub find_obsolete_packages {
 	my $self = shift;
 	return $self->_packageset->find_obsolete();
 }
 
-=head2 * find_newest_rpm_by_name($name, $arch)
+=head2 * find_newest_package_by_name($name, $arch)
 
-Given an RPM name, returns the newest L<OpenNMS::Release::RPMPackage> object
+Given a package name, returns the newest L<OpenNMS::Release::Package> object
 by that name and architecture in the repository.
-If no RPM by that name exists, returns undef.
+If no package by that name exists, returns undef.
 
 =cut
 
-sub find_newest_rpm_by_name {
+sub find_newest_package_by_name {
 	my $self      = shift;
 	my $name      = shift;
 	my $arch      = shift;
@@ -459,72 +459,71 @@ sub find_newest_rpm_by_name {
 		carp "WARNING: No architecture specified. This is probably not what you want.\n";
 		return $newest->[0];
 	} else {
-		for my $rpm (@$newest) {
-			if ($rpm->arch eq $arch) {
-				return $rpm;
+		for my $package (@$newest) {
+			if ($package->arch eq $arch) {
+				return $package;
 			}
 		}
 		return undef;
 	}
 }
 
-=head2 * find_newest_rpms_by_name
+=head2 * find_newest_packages_by_name
 
-Given an RPM name, returns the newest list f L<OpenNMS::Release::RPMPackage> objects
-for each architecture by that name in the repository.  If no RPM by that name
+Given a package name, returns the newest list f L<OpenNMS::Release::Package> objects
+for each architecture by that name in the repository.  If no package by that name
 exists, returns undef.
 
 =cut
 
-sub find_newest_rpms_by_name {
+sub find_newest_packages_by_name {
 	my $self      = shift;
 	my $name      = shift;
 
-	carp "find_newest_rpm_by_name is deprecated, use find_newest_rpms_by_name instead\n";
 	return $self->_packageset->find_newest_by_name($name);
 }
 
-=head2 * delete_obsolete_rpms
+=head2 * delete_obsolete_packages
 
-Removes all but the newest RPMs from the repository.
+Removes all but the newest packages from the repository.
 
-Optionally, takes a subroutine reference.  Each obsolete RPM
+Optionally, takes a subroutine reference.  Each obsolete package
 object is passed to this subroutine, along with the repository
-object,  and if it returns true (1), that RPM will be deleted.
+object, and if it returns true (1), that package will be deleted.
 
 Examples:
 
 =over 2
 
-=item $repo-E<gt>delete_obsolete_rpms(sub { $_[0]-E<gt>name eq "iplike" })
+=item $repo-E<gt>delete_obsolete_packages(sub { $_[0]-E<gt>name eq "iplike" })
 
-Only delete obsolete RPMs named "iplike".
+Only delete obsolete packages named "iplike".
 
-=item $repo-E<gt>delete_obsolete_rpms(sub { $_[0]-E<gt>path =~ /monkey/ })
+=item $repo-E<gt>delete_obsolete_packages(sub { $_[0]-E<gt>path =~ /monkey/ })
 
-Only delete obsolete RPMs in a filesystem path containing the text "monkey".
+Only delete obsolete packages in a filesystem path containing the text "monkey".
 
-=item $repo-E<gt>delete_obsolete_rpms(sub { $_[0]-E<gt>version =~ /^1/ })
+=item $repo-E<gt>delete_obsolete_packages(sub { $_[0]-E<gt>version =~ /^1/ })
 
-Only delete obsolete RPMs whose version starts with 1.
+Only delete obsolete packages whose version starts with 1.
 
-=item $repo-E<gt>delete_obsolete_rpms(sub { $_[1]-E<gt>release =~ /unstable/ })
+=item $repo-E<gt>delete_obsolete_packages(sub { $_[1]-E<gt>release =~ /unstable/ })
 
-Only delete obsolete RPMs in the "unstable" repository.
+Only delete obsolete packages in the "unstable" repository.
 
 =back
 
 =cut
 
-sub delete_obsolete_rpms {
+sub delete_obsolete_packages {
 	my $self = shift;
 	my $sub  = shift || sub { 1 };
 
 	my $count = 0;
-	for my $rpm (@{$self->find_obsolete_rpms}) {
-		if ($sub->($rpm, $self)) {
+	for my $package (@{$self->find_obsolete_packages}) {
+		if ($sub->($package, $self)) {
 			$self->dirty(1);
-			$rpm->delete;
+			$package->delete;
 			$count++;
 		}
 	}
@@ -533,102 +532,102 @@ sub delete_obsolete_rpms {
 	return $count;
 }
 
-sub copy_rpm($$) {
+sub copy_package($$) {
 	my $self   = shift;
-	my $rpm    = shift;
+	my $package    = shift;
 	my $topath = shift;
 
 	$self->dirty(1);
 
-	my $newrpm = $rpm->copy($topath);
-	$self->_add_to_packageset($newrpm);
-	return $newrpm;
+	my $newpackage = $package->copy($topath);
+	$self->_add_to_packageset($newpackage);
+	return $newpackage;
 }
 
-sub link_rpm($$) {
+sub link_package($$) {
 	my $self   = shift;
-	my $rpm    = shift;
+	my $package    = shift;
 	my $topath = shift;
 
 	$self->dirty(1);
 
-	my $newrpm = $rpm->link($topath);
-	$self->_add_to_packageset($newrpm);
-	return $newrpm;
+	my $newpackage = $package->link($topath);
+	$self->_add_to_packageset($newpackage);
+	return $newpackage;
 }
 
-sub symlink_rpm($$) {
+sub symlink_package($$) {
 	my $self   = shift;
-	my $rpm    = shift;
+	my $package    = shift;
 	my $topath = shift;
 
 	$self->dirty(1);
 
-	my $newrpm = $rpm->symlink($topath);
-	$self->_add_to_packageset($newrpm);
-	return $newrpm;
+	my $newpackage = $package->symlink($topath);
+	$self->_add_to_packageset($newpackage);
+	return $newpackage;
 }
 
-=head2 * install_rpm($rpm, $target_path)
+=head2 * install_package($package, $target_path)
 
-Given an RPM and a target path relative to the repository path, install
-the RPM into the repository.
+Given an package and a target path relative to the repository path, install
+the package into the repository.
 
-For example, C<$repo-E<gt>install_rpm($rpm, "opennms/i386")> will install
-the RPM into C<$repo-E<gt>path>/opennms/i386/C<rpm_filename>.
+For example, C<$repo-E<gt>install_package($package, "opennms/i386")> will install
+the package into C<$repo-E<gt>path>/opennms/i386/C<package_filename>.
 
 =cut
 
-sub install_rpm($$) {
+sub install_package($$) {
 	my $self   = shift;
-	my $rpm    = shift;
+	my $package    = shift;
 	my $topath = shift;
 
 	my $finalpath = File::Spec->catfile($self->abs_path, $topath);
 	mkpath($finalpath);
-	$self->copy_rpm($rpm, $finalpath);
+	$self->copy_package($package, $finalpath);
 }
 
-=head2 * share_rpm($source_repo, $rpm)
+=head2 * share_package($source_repo, $package)
 
-Given a source repository and an RPM object, hard link the RPM into the
+Given a source repository and an package object, hard link the package into the
 equivalent location in the current repository, if it is newer than the
-newest existing version of that RPM.
+newest existing version of that package.
 
 =cut
 
-sub share_rpm($$) {
+sub share_package($$) {
 	my $self      = shift;
 	my $from_repo = shift;
-	my $rpm       = shift;
+	my $package       = shift;
 
-	my $topath_r   = dirname($rpm->relative_path($from_repo->abs_path));
+	my $topath_r   = dirname($package->relative_path($from_repo->abs_path));
 	my $abs_topath = File::Spec->catfile($self->abs_path, $topath_r);
 
-	my $local_rpm = $self->find_newest_rpm_by_name($rpm->name, $rpm->arch);
+	my $local_package = $self->find_newest_package_by_name($package->name, $package->arch);
 
-	if (not defined $local_rpm or $rpm->is_newer_than($local_rpm)) {
-		$self->link_rpm($rpm, $abs_topath);
+	if (not defined $local_package or $package->is_newer_than($local_package)) {
+		$self->link_package($package, $abs_topath);
 		return 1;
 	}
 	return 0;
 }
 
-=head2 * share_all_rpms($source_repo)
+=head2 * share_all_packages($source_repo)
 
-Given a source repository, share any RPM in that source repository that is
-newer than the equivalent RPM in the current repository.  If no equivalent RPM
-exists, then share the newest RPM.
+Given a source repository, share any package in that source repository that is
+newer than the equivalent package in the current repository.  If no equivalent package
+exists, then share the newest package.
 
 =cut
 
-sub share_all_rpms($) {
+sub share_all_packages($) {
 	my $self      = shift;
 	my $from_repo = shift;
 
 	my $count = 0;
-	for my $rpm (@{$from_repo->find_newest_rpms()}) {
-		$count += $self->share_rpm($from_repo, $rpm);
+	for my $package (@{$from_repo->find_newest_packages()}) {
+		$count += $self->share_package($from_repo, $package);
 	}
 	return $count;
 }
