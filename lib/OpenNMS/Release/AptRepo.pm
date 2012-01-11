@@ -186,8 +186,29 @@ sub delete {
 	$self->SUPER::delete(@_);
 
 	rmdir($self->releasedir);
+	rmdir(File::Spec->catfile($self->base, 'dists'));
 	rmdir($self->base);
 	return 1;
+}
+
+=head2 * replace
+
+Given a target repository, replace the target repository with the contents of the
+current repository.
+
+=cut
+
+sub replace {
+	my $self	= shift;
+	my $target_repo = shift;
+
+	my $ret = $self->SUPER::replace($target_repo);
+
+	rmdir($self->releasedir);
+	rmdir(File::Spec->catfile($self->base, 'dists'));
+	rmdir($self->base);
+
+	return $ret;
 }
 
 sub _packageset {
@@ -249,7 +270,7 @@ sub index($) {
 	mkpath(File::Spec->catfile($self->path, 'main', 'source'));
 
 	my $release_handle = IO::Handle->new();
-	my $path           = $self->path;
+	my $path	   = $self->path;
 	my $indexfile      = $self->indexfile;
 	system($APT_FTPARCHIVE, 'generate', $indexfile) == 0 or croak "unable to run $APT_FTPARCHIVE generate: $!";
 
@@ -299,33 +320,33 @@ sub create_indexfile() {
 
 	print $outputfile <<END;
 Dir {
-        ArchiveDir "$archivedir";
-        CacheDir "$cachedir";
+	ArchiveDir "$archivedir";
+	CacheDir "$cachedir";
 };
 
 Default {
-        Packages::Compress ". bzip2 gzip";
-        Sources::Compress ". bzip2 gzip";
-        Contents::Compress ". bzip2 gzip";
+	Packages::Compress ". bzip2 gzip";
+	Sources::Compress ". bzip2 gzip";
+	Contents::Compress ". bzip2 gzip";
 };
 
 APT::FTPArchive {
-        Release {
-                Origin "OpenNMS";
-                Label "OpenNMS Repository: $release";
-                Suite "$release";
-                Codename "$release";
-                Architectures "$arches source";
-                Sections "main";
-                Description "OpenNMS Repository: $release";
-        };
+	Release {
+		Origin "OpenNMS";
+		Label "OpenNMS Repository: $release";
+		Suite "$release";
+		Codename "$release";
+		Architectures "$arches source";
+		Sections "main";
+		Description "OpenNMS Repository: $release";
+	};
 
 	close($outputfile);
 };
 
 Tree "dists/$release" {
-        Sections "main";
-        Architectures "$arches source";
+	Sections "main";
+	Architectures "$arches source";
 };
 END
 

@@ -144,7 +144,6 @@ sub replace {
 	my $target_repo = shift;
 
 	croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
-	croak "platforms do not match! (" . $self->platform . " != " . $target_repo->platform . ")" if ($self->platform ne $target_repo->platform);
 
 	my $self_path   = $self->path;
 	my $target_path = $target_repo->path;
@@ -159,7 +158,7 @@ sub replace {
 	rmdir($self->releasedir);
 	rmdir($self->base);
 
-	return $self->new($target_repo->base, $self->release, $self->platform);
+	return $self->new_with_base($target_repo->base);
 }
 
 =head2 * create_temporary

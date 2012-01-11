@@ -7,7 +7,7 @@ use Test::More;
 BEGIN {
 	my $package = `which dpkg 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 4;
+		plan tests => 6;
 		use_ok('OpenNMS::Release::DebPackage');
 		use_ok('OpenNMS::Release::AptRepo');
 	} else {

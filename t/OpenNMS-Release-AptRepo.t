@@ -7,7 +7,7 @@ use Test::More;
 BEGIN {
 	my $package = `which dpkg 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 40;
+		plan tests => 45;
 		use_ok('OpenNMS::Release::DebPackage');
 		use_ok('OpenNMS::Release::AptRepo');
 	} else {
@@ -109,22 +109,31 @@ is(scalar(@{$packagelist}), 4);
 $packagelist = $nightly_111->find_newest_packages();
 is(scalar(@{$packagelist}), 3);
 
-diag(`find t/testpackages-debrepo`);
+$packagelist = $nightly_111->find_obsolete_packages();
+is(scalar(@{$packagelist}), 1);
+is($packagelist->[0]->name, 'iplike-pgsql84');
+is($packagelist->[0]->arch, 'i386');
+is($packagelist->[0]->version->version, '1.0.8');
+
 # this should delete the old iplike-1.0.8-1_i386
 is($nightly_111->delete_obsolete_packages(), 1);
-$package = $nightly_111->find_newest_package_by_name('iplike', 'i386');
+$package = $nightly_111->find_newest_package_by_name('iplike-pgsql84', 'i386');
 is($package->version->version, '2.0.2');
-$package = $nightly_111->find_newest_package_by_name('iplike', 'x86_64');
+$package = $nightly_111->find_newest_package_by_name('iplike-pgsql84', 'amd64');
 is($package->version->version, '1.0.8');
 
 my $copy = $nightly_111->copy("$t/copy");
 $package = OpenNMS::Release::DebPackage->new("$t/packages/deb/dists/opennms-1.8/main/binary-all/opennms_1.8.16-1_all.deb");
-$copy->install_package($package, 'opennms');
+$copy->install_package($package);
 $nightly_111 = $copy->replace($nightly_111);
 ok(! -d "$t/copy");
-$package = $nightly_111->find_newest_package_by_name('opennms', 'all');
+$package = $opennms_18->find_newest_package_by_name('opennms', 'all');
 ok(defined $package);
 is($package->version->version, "1.8.16");
+
+$package = $nightly_111->find_newest_package_by_name('opennms', 'all');
+ok(defined $package);
+is($package->version->version, "1.11.0");
 
 $opennms_18->delete;
 $nightly_111->delete;

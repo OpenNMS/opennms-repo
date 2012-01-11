@@ -224,6 +224,22 @@ sub delete {
 	return 1;
 }
 
+=head2 * replace
+
+Given a target repository, replace the target repository with the contents of the
+current repository.
+
+=cut
+
+sub replace {
+        my $self        = shift;
+        my $target_repo = shift;
+
+        croak "platforms do not match! (" . $self->platform . " != " . $target_repo->platform . ")" if ($self->platform ne $target_repo->platform);
+
+	return $self->SUPER::replace($target_repo);
+}
+
 sub _packageset {
 	my $self = shift;
 
