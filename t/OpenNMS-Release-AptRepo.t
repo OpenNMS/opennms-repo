@@ -7,7 +7,7 @@ use Test::More;
 BEGIN {
 	my $package = `which dpkg 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 45;
+		plan tests => 50;
 		use_ok('OpenNMS::Release::DebPackage');
 		use_ok('OpenNMS::Release::AptRepo');
 	} else {
@@ -17,7 +17,7 @@ BEGIN {
 
 my $t = Cwd::abs_path("t");
 
-rmtree("$t/testpackages-debrepo/deb");
+reset_repos();
 
 my $opennms_18_ro = OpenNMS::Release::AptRepo->new("$t/packages/deb", "opennms-1.8");
 isa_ok($opennms_18_ro, 'OpenNMS::Release::AptRepo');
@@ -138,8 +138,38 @@ is($package->version->version, "1.11.0");
 $opennms_18->delete;
 $nightly_111->delete;
 
+# test begin/commit
+
+reset_repos();
+
+ok(! -e "$t/testpackages-debrepo/deb/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb");
+my $temp = $opennms_18->begin();
+$temp->install_package(OpenNMS::Release::DebPackage->new("$t/packages/deb/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb"));
+$temp->commit();
+ok(-f "$t/testpackages-debrepo/deb/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb");
+
+# test begin/abort
+
+reset_repos();
+
+ok(! -e "$t/testpackages-debrepo/deb/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb");
+$temp = $opennms_18->begin();
+$temp->install_package(OpenNMS::Release::DebPackage->new("$t/packages/deb/dists/nightly-1.11/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb"));
+$temp->abort();
+ok(! -e "$t/testpackages-debrepo/deb/dists/opennms-1.8/main/binary-i386/iplike-pgsql84_1.0.8-1_i386.deb");
+
+# test begin inside begin
+
+reset_repos();
+
+$temp = $opennms_18->begin();
+eval {
+	$temp = $temp->begin();
+};
+ok(defined $@);
+
 sub reset_repos {
-	rmtree("$t/testpackages-debrepo/deb");
+	rmtree("$t/testpackages-debrepo");
 	$opennms_18 = OpenNMS::Release::AptRepo->new("$t/packages/deb", "opennms-1.8")->copy("$t/testpackages-debrepo/deb");
 	$nightly_111 = OpenNMS::Release::AptRepo->new("$t/packages/deb", "nightly-1.11")->copy("$t/testpackages-debrepo/deb");
 }

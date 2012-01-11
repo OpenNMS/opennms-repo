@@ -172,8 +172,9 @@ program.
 sub create_temporary {
 	my $self = shift;
 
+	my $CLEANUP = exists $ENV{OPENNMS_CLEANUP}? $ENV{OPENNMS_CLEANUP} : 1;
 	# create a temporary directory at the same level as the current base
-	my $newbase = tempdir('.repoXXXXXX', DIR => $self->abs_base, CLEANUP => 1);
+	my $newbase = tempdir('.repoXXXXXX', DIR => $self->abs_base, CLEANUP => $CLEANUP);
 	return $self->copy($newbase);
 }
 
@@ -506,6 +507,48 @@ sub index_if_necessary($) {
 	}
 
 	return 1;
+}
+
+sub begin() {
+	my $self = shift;
+
+	if (exists $self->{ORIGINAL_REPO}) {
+		croak "tried to start a transation on an object that's already in a transaction! (original repo = " . $self->to_string . ")";
+	}
+
+	my $temporary = $self->create_temporary;
+	$temporary->{ORIGINAL_REPO} = $self;
+	return $temporary;
+}
+
+sub commit($) {
+	my $self    = shift;
+	my $options = shift;
+
+	# first, index the changes
+	my $index = $self->index_if_necessary($options);
+
+	# reset the original object
+	my $original = delete $self->{ORIGINAL_REPO};
+	$original->clear_cache;
+	$original->dirty(0);
+
+	# copy ourselves over the original
+	my $new = $self->copy($original->base);
+
+	my $delete = $self->delete;
+	carp "error while deleting " . $self->to_string unless ($delete);
+
+	return $new;
+}
+
+sub abort() {
+	my $self = shift;
+
+	my $original = delete $self->{ORIGINAL_REPO};
+	$self->delete;
+
+	return $original;
 }
 
 1;

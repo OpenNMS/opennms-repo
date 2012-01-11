@@ -108,6 +108,10 @@ sub find_repos($) {
 	my $class = shift;
 	my $base = shift;
 
+	if (not defined $base or not File::Spec->file_name_is_absolute($base) or not -d $base) {
+		croak "base must be an absolute path which exists!";
+	}
+
 	my @repos;
 	my @repodirs;
 
@@ -267,35 +271,25 @@ sub index($) {
 	for my $arch (@ARCHITECTURES) {
 		mkpath(File::Spec->catfile($self->path, 'main', 'binary-' . $arch));
 	}
-	mkpath(File::Spec->catfile($self->path, 'main', 'source'));
+	mkpath(File::Spec->catfile($self->path, 'main'));
+	$self->create_indexfile();
 
 	my $release_handle = IO::Handle->new();
 	my $path	   = $self->path;
 	my $indexfile      = $self->indexfile;
+	my $releasefile    = File::Spec->catfile($path, 'Release');
+
 	system($APT_FTPARCHIVE, 'generate', $indexfile) == 0 or croak "unable to run $APT_FTPARCHIVE generate: $!";
+	system("$APT_FTPARCHIVE -c '$indexfile' release '$path' > '$releasefile'") == 0 or croak "unable to run $APT_FTPARCHIVE release: $!";
 
-	open($release_handle, "$APT_FTPARCHIVE -c '$indexfile' release $path |") == 0 or croak "unable to run $APT_FTPARCHIVE release: $!";
-	my $release_contents = "";
-	{
-		local $/ = undef;
-		$release_contents = <$release_handle>;
+	my $id       = $options->{'signing_id'};
+	my $password = $options->{'signing_password'};
+
+	if (defined $id and defined $password) {
+		gpg_detach_sign_file($id, $password, $releasefile);
+	} else {
+		carp "skipping gpg-signing of '$releasefile'";
 	}
-	close($release_handle);
-
-	my $output_handle = IO::Handle->new();
-	my $output_filename = File::Spec->catfile($path, 'Release');
-	open($output_handle, '>' . $output_filename) or croak "unable to write to $output_filename: $!";
-	print $output_handle $release_contents;
-	close($output_handle);
-
-#	my $id       = $options->{'signing_id'};
-#	my $password = $options->{'signing_password'};
-#
-#	if (defined $id and defined $password) {
-#		my $repodata = File::Spec->catfile($self->path, 'repodata');
-#		gpg_write_key($id, $password, File::Spec->catfile($repodata, 'repomd.xml.key'));
-#		gpg_detach_sign_file($id, $password, File::Spec->catfile($repodata, 'repomd.xml'));
-#	}
 
 	$self->dirty(0);
 	return 1;
@@ -333,23 +327,23 @@ Default {
 APT::FTPArchive {
 	Release {
 		Origin "OpenNMS";
-		Label "OpenNMS Repository: $release";
+		Label "OpenNMS Repository - $release";
 		Suite "$release";
 		Codename "$release";
-		Architectures "$arches source";
+		Architectures "$arches";
 		Sections "main";
-		Description "OpenNMS Repository: $release";
+		Description "OpenNMS Repository - $release";
 	};
 
-	close($outputfile);
 };
 
 Tree "dists/$release" {
 	Sections "main";
-	Architectures "$arches source";
+	Architectures "$arches";
 };
 END
 
+	close($outputfile);
 }
 
 1;
