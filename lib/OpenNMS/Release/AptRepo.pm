@@ -288,7 +288,7 @@ sub index($) {
 	if (defined $id and defined $password) {
 		gpg_detach_sign_file($id, $password, $releasefile);
 	} else {
-		carp "skipping gpg-signing of '$releasefile'";
+		# carp "skipping gpg-signing of '$releasefile'";
 	}
 
 	$self->dirty(0);
