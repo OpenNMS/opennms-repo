@@ -35,7 +35,7 @@ version comparisons, path comparisons, and other miscellaneous things.
 
 =cut
 
-our $VERSION = '2.0';
+our $VERSION = '2.1';
 
 =head1 CONSTRUCTOR
 

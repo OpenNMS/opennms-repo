@@ -1,11 +1,11 @@
 use Test::More;
 BEGIN {
-	my $rpmver = `which rpmver 2>/dev/null`;
+	my $rpm = `which rpm 2>/dev/null`;
 	if ($? == 0) {
 		plan tests => 18;
 		use_ok('OpenNMS::Release::RPMVersion');
 	} else {
-		plan skip_all => '`rpmver` not found, skipping RPM tests.';
+		plan skip_all => '`rpm` not found, skipping RPM tests.';
 	}
 };
 
