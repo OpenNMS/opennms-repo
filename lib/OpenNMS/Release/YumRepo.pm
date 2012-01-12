@@ -43,7 +43,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = '2.0';
+our $VERSION = '2.1';
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 
