@@ -162,8 +162,6 @@ sub _compare_version {
 	my $ver_a = shift;
 	my $ver_b = shift;
 
-	#print STDERR "\n_compare_version($ver_a, $ver_b)\n";
-
 	my @a = split(/[^[:alnum:]]/, $ver_a);
 	my @b = split(/[^[:alnum:]]/, $ver_b);
 
@@ -173,7 +171,6 @@ sub _compare_version {
 	my $length = ($length_a >= $length_b)? $length_a : $length_b;
 
 	for my $i (0 .. ($length - 1)) {
-		#print STDERR "\na = $a[$i], b = $b[$i]\n";
 		next unless (defined $a[$i] or defined $b[$i]);
 
 		return -1 unless (defined $a[$i]);
