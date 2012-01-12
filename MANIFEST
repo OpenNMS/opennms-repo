@@ -8,6 +8,7 @@ t/OpenNMS-Release-DebVersion.t
 t/OpenNMS-Release-RPMVersion.t
 t/OpenNMS-Release-DebPackage.t
 t/OpenNMS-Release-RPMPackage.t
+t/OpenNMS-Release-SourcePackage.t
 t/OpenNMS-Release-DebSet.t
 t/OpenNMS-Release-RPMSet.t
 t/OpenNMS-Release-AptRepo.t
@@ -22,6 +23,13 @@ t/packages/rpm/bleeding/rhel5/opennms/i386/iplike-1.0.7-1.i386.rpm
 t/packages/rpm/bleeding/rhel5/opennms/x86_64/iplike-1.0.7-1.x86_64.rpm
 t/packages/rpm/stable/common/opennms/opennms-1.8.16-1.noarch.rpm
 t/packages/rpm/stable/rhel5/opennms/i386/iplike-2.0.2-1.i386.rpm
+t/packages/source/foo-1.0-2.tar.bz2
+t/packages/source/foo-2.0.tar.bz2
+t/packages/source/test-1.0-2.tar.gz
+t/packages/source/test-1.0.tgz
+t/packages/source/test-1.1-1.tar.gz
+t/packages/source/test-package-with-multiple-name-sections-1.0-1.tar.bz2
+t/packages/source/test.tgz
 lib/OpenNMS/Util.pm
 lib/OpenNMS/Release.pm
 lib/OpenNMS/Release/Version.pm
@@ -30,6 +38,7 @@ lib/OpenNMS/Release/RPMVersion.pm
 lib/OpenNMS/Release/Package.pm
 lib/OpenNMS/Release/DebPackage.pm
 lib/OpenNMS/Release/RPMPackage.pm
+lib/OpenNMS/Release/SourcePackage.pm
 lib/OpenNMS/Release/PackageSet.pm
 lib/OpenNMS/Release/Repo.pm
 lib/OpenNMS/Release/AptRepo.pm
