@@ -206,6 +206,8 @@ sub replace {
 	my $self	= shift;
 	my $target_repo = shift;
 
+	croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
+
 	my $ret = $self->SUPER::replace($target_repo);
 
 	rmdir($self->releasedir);

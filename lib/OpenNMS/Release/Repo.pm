@@ -25,7 +25,7 @@ This represents an individual package repository.
 
 =cut
 
-our $VERSION = '2.0';
+our $VERSION = '2.1';
 
 =head1 CONSTRUCTOR
 
@@ -143,8 +143,6 @@ sub replace {
 	my $self        = shift;
 	my $target_repo = shift;
 
-	croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
-
 	my $self_path   = $self->path;
 	my $target_path = $target_repo->path;
 
@@ -155,7 +153,6 @@ sub replace {
 
 	rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
 
-	rmdir($self->releasedir);
 	rmdir($self->base);
 
 	return $self->new_with_base($target_repo->base);
@@ -241,6 +238,8 @@ Delete the repository from the filesystem.
 sub delete {
 	my $self = shift;
 
+	$self->clear_cache;
+	$self->dirty(1);
 	rmtree($self->path) or croak "Unable to remove " . $self->path;
 	return 1;
 }

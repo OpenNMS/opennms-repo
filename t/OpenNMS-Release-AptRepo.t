@@ -168,6 +168,9 @@ eval {
 };
 ok(defined $@);
 
+$opennms_18->delete;
+$nightly_111->delete;
+
 sub reset_repos {
 	rmtree("$t/testpackages-debrepo");
 	$opennms_18 = OpenNMS::Release::AptRepo->new("$t/packages/deb", "opennms-1.8")->copy("$t/testpackages-debrepo/deb");

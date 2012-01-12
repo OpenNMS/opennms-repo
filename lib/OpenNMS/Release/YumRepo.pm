@@ -43,7 +43,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = '2.0';
+our $VERSION = '2.1';
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 
@@ -235,6 +235,7 @@ sub replace {
         my $self        = shift;
         my $target_repo = shift;
 
+	croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
         croak "platforms do not match! (" . $self->platform . " != " . $target_repo->platform . ")" if ($self->platform ne $target_repo->platform);
 
 	return $self->SUPER::replace($target_repo);
