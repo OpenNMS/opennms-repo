@@ -10,24 +10,24 @@ use File::Basename;
 use File::Copy qw();
 use Expect;
 
-use OpenNMS::Release::RPMVersion;
+use OpenNMS::Release::Version;
 
 =head1 NAME
 
-OpenNMS::Release::RPMPackage - Perl extension for manipulating RPMs
+OpenNMS::Release::Package - Perl extension for manipulating packages
 
 =head1 SYNOPSIS
 
-  use OpenNMS::Release::RPMPackage;
+  use OpenNMS::Release::Package;
 
-  my $rpm = OpenNMS::Release::RPMPackage->new("path/to/foo.rpm");
-  if ($rpm->is_in_repo("path/to")) {
+  my $package = OpenNMS::Release::Package->new("path/to/foo");
+  if ($package->is_in_repo("path/to")) {
     print "all good!"
   }
 
 =head1 DESCRIPTION
 
-This is just a perl module for manipulating RPMs, including
+This is just a perl module for manipulating packages, including
 version comparisons, path comparisons, and other miscellaneous
 things.
 
@@ -39,7 +39,7 @@ our $VERSION = '2.0';
 
 OpenNMS::Release::Package->new($path, $name, $version, [$arch])
 
-Given a path to a package file, name, OpenNMS::Package::Version, and optional
+Given a path to a package file, name, OpenNMS::Release::Version, and optional
 architecture, create a new OpenNMS::Release::Package object.
 
 The file must exist.
@@ -57,7 +57,7 @@ sub new {
 	my $arch    = shift || 'unknown';
 
 	if (not defined $version) {
-		carp "You must provide at least a path, name, and OpenNMS::Package::Version!";
+		carp "You must provide at least a path, name, and OpenNMS::Release::Version!";
 		return undef;
 	}
 
@@ -193,7 +193,7 @@ sub equals($) {
 	my $this = shift;
 	my $that = shift;
 
-	return $this->compare_to($that) == 0;
+	return int($this->compare_to($that) == 0);
 }
 
 =head2 * is_newer_than($package)
@@ -213,7 +213,7 @@ sub is_newer_than($) {
 	if ($this->arch ne $that->arch) {
 		croak "You can't compare 2 different package architectures with is_newer_than! (" . $this->to_string . " != " . $that->to_string .")";
 	}
-	return $this->compare_to($that) == 1;
+	return int($this->compare_to($that) == 1);
 }
 
 =head2 * is_older_than($package)
@@ -233,7 +233,7 @@ sub is_older_than($) {
 	if ($this->arch ne $that->arch) {
 		croak "You can't compare 2 different package architectures with is_older_than! (" . $this->to_string . " != " . $that->to_string .")";
 	}
-	return $this->compare_to($that) == -1;
+	return int($this->compare_to($that) == -1);
 }
 
 =head2 * delete
