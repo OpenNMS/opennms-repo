@@ -153,7 +153,7 @@ sub replace {
 
 	rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
 
-	rmdir($self->base);
+	$self->delete;
 
 	return $self->new_with_base($target_repo->base);
 }
@@ -240,7 +240,25 @@ sub delete {
 
 	$self->clear_cache;
 	$self->dirty(1);
+
+	return 1 if (not -e $self->path);
+
 	rmtree($self->path) or croak "Unable to remove " . $self->path;
+
+	# clean up any loose directories which have no files in them
+	my @parts;
+	my $rel = File::Spec->abs2rel($self->path, $self->base);
+	if (defined $rel and $rel ne "") {
+		@parts = File::Spec->splitdir($rel);
+
+		while (@parts) {
+			my $rm = File::Spec->catdir($self->base, @parts);
+			rmdir($rm);
+			pop @parts;
+		}
+		rmdir($self->base);
+	}
+
 	return 1;
 }
 
