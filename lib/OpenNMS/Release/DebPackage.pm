@@ -24,7 +24,7 @@ OpenNMS::Release::DebPackage - Perl extension for manipulating Debian packages
   use OpenNMS::Release::DebPackage;
 
   my $deb = OpenNMS::Release::DebPackage->new("path/to/foo.deb");
-  if ($deb->is_in_repo("path/to")) {
+  if ($deb->is_in_path("path/to")) {
     print "all good!"
   }
 

@@ -23,7 +23,7 @@ OpenNMS::Release::RPMPackage - Perl extension for manipulating RPMs
   use OpenNMS::Release::RPMPackage;
 
   my $rpm = OpenNMS::Release::RPMPackage->new("path/to/foo.rpm");
-  if ($rpm->is_in_repo("path/to")) {
+  if ($rpm->is_in_path("path/to")) {
     print "all good!"
   }
 
@@ -50,9 +50,7 @@ The RPM file must exist.
 sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
-	my $self  = {};
-
-	my $path = shift;
+	my $path  = shift;
 
 	if (not defined $path) {
 		carp "You did not provide a path!";

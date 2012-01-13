@@ -10,6 +10,8 @@ use File::Basename;
 use File::Copy qw();
 use Expect;
 
+use base qw(OpenNMS::Release::LocalFile);
+
 use OpenNMS::Release::Version;
 
 =head1 NAME
@@ -42,16 +44,16 @@ OpenNMS::Release::Package->new($path, $name, $version, [$arch])
 Given a path to a package file, name, OpenNMS::Release::Version, and optional
 architecture, create a new OpenNMS::Release::Package object.
 
-The file must exist.
+The file must be absolute, and must exist.
 
 =cut
 
 sub new {
-	my $proto = shift;
-	my $class = ref($proto) || $proto;
-	my $self  = {};
-
+	my $proto   = shift;
+	my $class   = ref($proto) || $proto;
 	my $path    = shift;
+	my $self    = bless($class->SUPER::new($path), $class);
+
 	my $name    = shift;
 	my $version = shift;
 	my $arch    = shift || 'unknown';
@@ -66,13 +68,10 @@ sub new {
 		return undef;
 	}
 
-	$path = Cwd::abs_path($path);
-	$self->{PATH}    = $path;
 	$self->{NAME}    = $name;
 	$self->{VERSION} = $version;
 	$self->{ARCH}    = $arch;
 
-	bless($self);
 	return $self;
 }
 
@@ -109,46 +108,6 @@ The package arch, as an OpenNMS::Release::Version object.
 sub arch {
 	my $self = shift;
 	return $self->{ARCH};
-}
-
-=head2 * path
-
-The path to the package. This will always be initialized as the absolute path
-to the package file.
-
-=cut
-
-sub path {
-	my $self = shift;
-	return $self->{PATH};
-}
-
-=head2 * relative_path($base)
-
-Given a base directory, returns the path of this package, relative to that base path.
-
-=cut
-
-sub relative_path($) {
-	my $self = shift;
-	my $base = Cwd::abs_path(shift);
-
-	if ($self->path =~ /^${base}\/?(.*)$/) {
-		return $1;
-	}
-	return undef;
-}
-
-=head2 * is_in_repo($path)
-
-Given a repository path, returns true if the package is contained in the given
-repository path.
-
-=cut
-
-sub is_in_repo {
-	my $self = shift;
-	return defined $self->relative_path(shift);
 }
 
 =head2 * compare_to($package)
@@ -247,60 +206,6 @@ sub delete() {
 	return unlink($self->path);
 }
 
-=head2 * copy($target_path)
-
-Given a target path, copy the current package to that path.
-
-=cut
-
-sub copy($) {
-	my $self = shift;
-	my $to   = shift;
-
-	my $filename = $self->_get_filename_for_target($to);
-
-	unlink $filename if (-e $filename);
-	my $ret = File::Copy::copy($self->path, $filename);
-
-	return $ret? $self->new($filename) : undef;
-}
-
-=head2 * link($target_path)
-
-Given a target path, hard link the current package to that path.
-
-=cut
-
-sub link($) {
-	my $self = shift;
-	my $to   = shift;
-
-	my $filename = $self->_get_filename_for_target($to);
-
-	unlink $filename if (-e $filename);
-	my $ret = link($self->path, $filename);
-	return $ret? $self->new($filename) : undef;
-}
-
-=head2 * symlink($target_path)
-
-Given a target path, symlink the current package to that path, relative to
-the source package's location.
-
-=cut
-
-sub symlink($) {
-	my $self = shift;
-	my $to   = shift;
-
-	my $filename = $self->_get_filename_for_target($to);
-	my $from = File::Spec->abs2rel($self->path, dirname($filename));
-
-	unlink $filename if (-e $filename);
-	my $ret = symlink($from, $filename);
-	return $ret? $self->new($filename) : undef;
-}
-
 =head2 * sign($id, $password)
 
 Given a GPG id and password, sign (or resign) the package.
@@ -324,19 +229,6 @@ Returns a string representation of the package, suitable for printing.
 sub to_string() {
 	my $self = shift;
 	return $self->name . '-' . $self->version->full_version . ' (' . $self->path . ')';
-}
-
-sub _get_filename_for_target($) {
-	my $self = shift;
-	my $to   = shift;
-
-	if (-d $to) {
-		if ($to !~ /\/$/) {
-			$to .= "/";
-		}
-		$to = $to . basename($self->path);
-	}
-	return $to;
 }
 
 1;

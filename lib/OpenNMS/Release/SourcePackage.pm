@@ -24,7 +24,7 @@ OpenNMS::Release::SourcePackage - Perl extension for manipulating source tarball
   use OpenNMS::Release::SourcePackage;
 
   my $tarball = OpenNMS::Release::SourcePackage->new("path/to/foo-1.0.tar.gz");
-  if ($tarball->is_in_repo("path/to")) {
+  if ($tarball->is_in_path("path/to")) {
     print "all good!"
   }
 

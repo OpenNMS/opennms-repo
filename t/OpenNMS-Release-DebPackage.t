@@ -28,8 +28,8 @@ is($deb->version->version, '1.11.0',        'Version should be 1.11.0.');
 is($deb->version->release, '0.20111216.14', 'Release should be snapshot.');
 is($deb->arch,             'all',           'Architecture should be "all".');
 
-ok($deb->is_in_repo('t'), 'Debian package should be in t/.');
-ok($deb->is_in_repo('t/../t'), 'is_in_path should handle relative paths');
+ok($deb->is_in_path('t'), 'Debian package should be in t/.');
+ok($deb->is_in_path('t/../t'), 'is_in_path should handle relative paths');
 
 $olderdeb = OpenNMS::Release::DebPackage->new("t/packages/deb/dists/opennms-1.8/main/binary-all/opennms_1.8.16-1_all.deb");
 
