@@ -92,26 +92,25 @@ is($newer_tarball->arch,             'source', 'Architecture should be "source".
 is($newer_tarball->is_newer_than($newer_tarball), 0);
 
 for my $tarname (sort keys %$test_parsing) {
-	diag("testing $tarname");
 	$tarball = OpenNMS::Release::SourcePackage->new($tarname);
 
 	my $attributes = $test_parsing->{$tarname};
 
-	is($tarball->name,             $attributes->{name});
-	is($tarball->version->epoch,   undef);
-	is($tarball->version->version, $attributes->{version});
-	is($tarball->version->release, $attributes->{release});
-	is($tarball->extension,        $attributes->{extension});
-	is($tarball->compression,      $attributes->{compression});
+	is($tarball->name,             $attributes->{name},        "$tarname name");
+	is($tarball->version->epoch,   undef,                      "$tarname epoch");
+	is($tarball->version->version, $attributes->{version},     "$tarname version");
+	is($tarball->version->release, $attributes->{release},     "$tarname release");
+	is($tarball->extension,        $attributes->{extension},   "$tarname extension");
+	is($tarball->compression,      $attributes->{compression}, "$tarname compression");
 
 	my $newer_than = undef;
 	eval {
 		$newer_than = $tarball->is_newer_than($newer_tarball);
 	};
 	if (not defined $attributes->{newer_than}) {
-		ok($@);
+		ok($@, "$tarname newer_than");
 	} else {
-		is($newer_than, $attributes->{newer_than});
+		is($newer_than, $attributes->{newer_than}, "$tarname newer_than");
 	}
 }
 

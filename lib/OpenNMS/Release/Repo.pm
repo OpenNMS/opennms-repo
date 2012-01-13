@@ -527,7 +527,7 @@ sub delete_obsolete_packages {
 			$count++;
 		}
 	}
-	$self->clear_cache();
+	#$self->clear_cache();
 
 	return $count;
 }

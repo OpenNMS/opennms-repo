@@ -223,7 +223,7 @@ Returns a string representation of the package, suitable for printing.
 
 sub to_string() {
 	my $self = shift;
-	return $self->name . '-' . $self->version->full_version . ' (' . $self->path . ')';
+	return $self->name . '-' . $self->version->full_version;
 }
 
 1;
