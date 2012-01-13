@@ -1,7 +1,7 @@
 $|++;
 
 use Cwd;
-use Test::More tests => 72;
+use Test::More tests => 70;
 
 use_ok('OpenNMS::Release::SourcePackage');
 
@@ -114,9 +114,6 @@ for my $tarname (sort keys %$test_parsing) {
 		is($newer_than, $attributes->{newer_than});
 	}
 }
-
-ok($newer_tarball->is_in_path("$t"), 'Debian package should be in t/.');
-ok($newer_tarball->is_in_path("$t/../t"), 'is_in_path should handle relative paths');
 
 $older_tarball = OpenNMS::Release::SourcePackage->new("$t/packages/source/test-1.0.tgz");
 

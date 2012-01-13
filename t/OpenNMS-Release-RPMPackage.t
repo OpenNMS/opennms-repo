@@ -5,7 +5,7 @@ use Test::More;
 BEGIN {
 	my $rpm = `which rpm 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 22;
+		plan tests => 20;
 		use_ok('OpenNMS::Release::RPMPackage');
 	} else {
 		plan skip_all => '`rpm` not found, skipping RPM tests.';
@@ -26,9 +26,6 @@ is($rpm->version->epoch,   undef,          'Epoch should be undefined.');
 is($rpm->version->version, '1.11.0',       'Version should be 1.11.0.');
 is($rpm->version->release, '0.20111220.1', 'Release should be snapshot.');
 is($rpm->arch,             'noarch',       'Architecture should be "noarch".');
-
-ok($rpm->is_in_path("$t"), 'RPM should be in t/.');
-ok($rpm->is_in_path("$t/../t"), 'is_in_path should handle relative paths');
 
 $olderrpm = OpenNMS::Release::RPMPackage->new("$t/packages/rpm/stable/common/opennms/opennms-1.8.16-1.noarch.rpm");
 

@@ -262,18 +262,45 @@ sub delete {
 	return 1;
 }
 
+sub _get_final_path($$) {
+	my $self    = shift;
+	my $topath  = shift;
+
+	my $finalpath = undef;
+	return $self->path unless (defined $topath);
+
+	if (File::Spec->file_name_is_absolute($topath)) {
+		return $topath;
+	} else {
+		return File::Spec->catdir($self->path, $topath);
+	}
+}
+
+sub delete_package($) {
+	my $self    = shift;
+	my $package = shift;
+
+	my $ret = $self->packageset->remove($package);
+	$self->dirty(1);
+	$package->delete;
+	return $ret;
+}
+
 sub copy_package($$) {
 	my $self    = shift;
 	my $package = shift;
 	my $topath  = shift;
 
-	$self->dirty(1);
+	my $finalpath = $self->_get_final_path($topath);
+	mkpath($finalpath);
 
-	my $newpackage = $package->copy($topath);
+	my $newpackage = $package->copy($finalpath);
 	if (not defined $newpackage) {
-		croak "failed to copy " . $package->to_string . " to $topath";
+		croak "failed to copy " . $package->to_string . " to $finalpath";
 	}
+
 	$self->_add_to_packageset($newpackage);
+	$self->dirty(1);
 
 	return $newpackage;
 }
@@ -283,13 +310,17 @@ sub link_package($$) {
 	my $package = shift;
 	my $topath  = shift;
 
+	my $finalpath = $self->_get_final_path($topath);
+	mkpath($finalpath);
+
+	my $newpackage = $package->link($finalpath);
+	if (not defined $newpackage) {
+		croak "failed to link " . $package->to_string . " to $finalpath";
+	}
+
+	$self->_add_to_packageset($newpackage);
 	$self->dirty(1);
 
-	my $newpackage = $package->link($topath);
-	if (not defined $newpackage) {
-		croak "failed to link " . $package->to_string . " to $topath";
-	}
-	$self->_add_to_packageset($newpackage);
 	return $newpackage;
 }
 
@@ -323,9 +354,7 @@ sub install_package($$) {
 	my $package = shift;
 	my $topath  = shift;
 
-	my $finalpath = defined $topath? File::Spec->catfile($self->path, $topath) : $self->path;
-	mkpath($finalpath);
-	$self->copy_package($package, $finalpath);
+	$self->copy_package($package, $topath);
 }
 
 =head2 * share_package($source_repo, $package)
@@ -342,7 +371,7 @@ sub share_package($$) {
 	my $package   = shift;
 
 	my $topath_r   = dirname($package->relative_path($from_repo->path));
-	my $abs_topath = File::Spec->catfile($self->path, $topath_r);
+	my $abs_topath = $topath_r eq '.'? $self->path : File::Spec->catdir($self->path, $topath_r);
 
 	my $local_package = $self->find_newest_package_by_name($package->name, $package->arch);
 
@@ -494,8 +523,7 @@ sub delete_obsolete_packages {
 	my $count = 0;
 	for my $package (@{$self->find_obsolete_packages}) {
 		if ($sub->($package, $self)) {
-			$self->dirty(1);
-			$package->delete;
+			$self->delete_package($package);
 			$count++;
 		}
 	}

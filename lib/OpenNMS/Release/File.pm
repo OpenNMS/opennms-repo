@@ -5,7 +5,6 @@ use strict;
 use warnings;
 
 use Carp;
-use Cwd;
 use File::Basename;
 use File::Copy qw();
 use File::Spec;
@@ -21,9 +20,6 @@ OpenNMS::Release::File - Perl extension for manipulating files
   use OpenNMS::Release::File;
 
   my $file = OpenNMS::Release::File->new("path/to/foo");
-  if ($file->is_in_path("path/to")) {
-    print "all good!"
-  }
 
 =head1 DESCRIPTION
 
@@ -79,23 +75,16 @@ Given a base directory, returns the path of this file, relative to that base pat
 
 sub relative_path($) {
 	my $self = shift;
-	my $base = Cwd::abs_path(shift);
+	my $base = shift;
+
+	if (not File::Spec->file_name_is_absolute($base)) {
+		croak "base '$base' is not absolute!";
+	}
 
 	if ($self->path =~ /^${base}\/?(.*)$/) {
 		return $1;
 	}
 	return undef;
-}
-
-=head2 * is_in_path($path)
-
-Given a repository path, returns true if the file is contained in the given path.
-
-=cut
-
-sub is_in_path {
-	my $self = shift;
-	return defined $self->relative_path(shift);
 }
 
 =head2 * equals($file)

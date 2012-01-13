@@ -10,7 +10,7 @@ use File::Basename;
 use File::Copy qw();
 use Expect;
 
-use base qw(OpenNMS::Release::LocalFile);
+use base qw(OpenNMS::Release::File);
 
 use OpenNMS::Release::Version;
 
@@ -44,7 +44,7 @@ OpenNMS::Release::Package->new($path, $name, $version, [$arch])
 Given a path to a package file, name, OpenNMS::Release::Version, and optional
 architecture, create a new OpenNMS::Release::Package object.
 
-The file must be absolute, and must exist.
+The file must be absolute.
 
 =cut
 
@@ -60,11 +60,6 @@ sub new {
 
 	if (not defined $version) {
 		carp "You must provide at least a path, name, and OpenNMS::Release::Version!";
-		return undef;
-	}
-
-	if (not -e $path) {
-		carp "$path does not exist!";
 		return undef;
 	}
 

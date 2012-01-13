@@ -17,9 +17,6 @@ OpenNMS::Release::File - Perl extension for manipulating files
   use OpenNMS::Release::File;
 
   my $file = OpenNMS::Release::File->new("path/to/foo");
-  if ($file->is_in_path("path/to")) {
-    print "all good!"
-  }
 
 =head1 DESCRIPTION
 

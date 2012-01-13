@@ -11,7 +11,7 @@ use File::Copy qw();
 use IO::Handle;
 use Expect;
 
-use base qw(OpenNMS::Release::Package);
+use base qw(OpenNMS::Release::LocalPackage);
 
 use OpenNMS::Release::DebVersion;
 
@@ -24,9 +24,6 @@ OpenNMS::Release::DebPackage - Perl extension for manipulating Debian packages
   use OpenNMS::Release::DebPackage;
 
   my $deb = OpenNMS::Release::DebPackage->new("path/to/foo.deb");
-  if ($deb->is_in_path("path/to")) {
-    print "all good!"
-  }
 
 =head1 DESCRIPTION
 
@@ -51,7 +48,6 @@ The file must exist.
 sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
-	my $self  = {};
 
 	my $path = shift;
 

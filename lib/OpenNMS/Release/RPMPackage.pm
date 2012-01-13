@@ -10,7 +10,7 @@ use File::Basename;
 use File::Copy qw();
 use Expect;
 
-use base qw(OpenNMS::Release::Package);
+use base qw(OpenNMS::Release::LocalPackage);
 
 use OpenNMS::Release::RPMVersion;
 
@@ -23,9 +23,6 @@ OpenNMS::Release::RPMPackage - Perl extension for manipulating RPMs
   use OpenNMS::Release::RPMPackage;
 
   my $rpm = OpenNMS::Release::RPMPackage->new("path/to/foo.rpm");
-  if ($rpm->is_in_path("path/to")) {
-    print "all good!"
-  }
 
 =head1 DESCRIPTION
 
