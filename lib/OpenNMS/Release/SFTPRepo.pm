@@ -140,9 +140,8 @@ sub _packageset {
 	my $self = shift;
 
 	my @packages = ();
-	my $sftp = $self->_sftp;
 
-	my $files = $sftp->ls(
+	my $files = $self->_sftp->ls(
 		$self->path,
 		wanted => sub {
 			my $entry = $_[1];
@@ -150,9 +149,8 @@ sub _packageset {
 		},
 		names_only => 1
 	);
-	#$sftp->mkpath($self->path);
 	for my $file (@{$files}) {
-		push(@packages, OpenNMS::Release::SourcePackage->new($file));
+		push(@packages, OpenNMS::Release::SourcePackage->new(File::Spec->catfile($self->path, $file)));
 	}
 	return OpenNMS::Release::PackageSet->new(\@packages);
 	
@@ -179,8 +177,12 @@ sub _delete_package($) {
 	my $self    = shift;
 	my $package = shift;
 
+	if (not defined $package) {
+		croak "_delete_package called with undef \$package!";
+	}
+
 	# remove $package
-	carp "_delete_package(" . $package->to_string . ")";
+	$self->_sftp->remove($package->path);
 }
 
 sub _add_package($) {
@@ -188,8 +190,15 @@ sub _add_package($) {
 	my $from    = shift;
 	my $to      = shift;
 
+	if (not defined $from) {
+		croak "_add_package called with undef \$from!";
+	} elsif (not defined $to) {
+		croak "_add_package called with undef \$to!";
+	}
+
 	# upload $package
-	carp "_add_package(" . $from->to_string . ", " . $to->to_string . ")";
+	$self->_sftp->mkpath($self->path);
+	$self->_sftp->put($from->path, $to->path);
 }
 
 sub delete_package($) {
@@ -212,7 +221,9 @@ sub copy_package($$) {
 	my $topath  = shift;
 
 	my $filename = basename($from->path);
-	my $to = OpenNMS::Release::SourcePackage->new(File::Spec->catfile($self->_get_final_path($topath), $filename));
+	my $finalpath = File::Spec->catfile($self->_get_final_path($topath), $filename);
+	my $to = OpenNMS::Release::SourcePackage->new($finalpath);
+
 	$self->packageset->add($to);
 
 	if ($self->_in_transaction) {
@@ -220,7 +231,7 @@ sub copy_package($$) {
 		$self->_del_transactions->remove($to);
 		$self->_source_packagemap->{$to->path} = $from;
 	} else {
-		$self->_add_package($to);
+		$self->_add_package($from, $to);
 	}
 	return 1;
 }
