@@ -53,7 +53,7 @@ sub _packageset {
 		/home/frs/project/o/op/opennms/OpenNMS-Source/opennms-source-1.9.92-1.tar.gz
 		/home/frs/project/o/op/opennms/OpenNMS-Source/opennms-source-1.9.93-1.tar.gz
 	)) {
-		push(@packages, OpenNMS::Release::SourcePackage->new($file));
+		push(@packages, OpenNMS::Release::FilePackage->new($file));
 	}
 	return OpenNMS::Release::PackageSet->new(\@packages);
 	

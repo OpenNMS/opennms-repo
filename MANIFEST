@@ -6,6 +6,8 @@ lib/OpenNMS/Release/AptRepo.pm
 lib/OpenNMS/Release/DebPackage.pm
 lib/OpenNMS/Release/DebVersion.pm
 lib/OpenNMS/Release/File.pm
+lib/OpenNMS/Release/FilePackage.pm
+lib/OpenNMS/Release/FileRepo.pm
 lib/OpenNMS/Release/LocalFile.pm
 lib/OpenNMS/Release/LocalPackage.pm
 lib/OpenNMS/Release/MockSFTPRepo.pm
@@ -16,8 +18,6 @@ lib/OpenNMS/Release/Repo.pm
 lib/OpenNMS/Release/RPMPackage.pm
 lib/OpenNMS/Release/RPMVersion.pm
 lib/OpenNMS/Release/SFTPRepo.pm
-lib/OpenNMS/Release/SourcePackage.pm
-lib/OpenNMS/Release/SourceRepo.pm
 lib/OpenNMS/Release/Version.pm
 lib/OpenNMS/Release/YumRepo.pm
 lib/OpenNMS/Util.pm
@@ -25,13 +25,13 @@ t/OpenNMS-Release-AptRepo.t
 t/OpenNMS-Release-DebPackage.t
 t/OpenNMS-Release-DebSet.t
 t/OpenNMS-Release-DebVersion.t
+t/OpenNMS-Release-FilePackage.t
+t/OpenNMS-Release-FileRepo.t
 t/OpenNMS-Release-MockSFTPRepo.t
 t/OpenNMS-Release-RPMPackage.t
 t/OpenNMS-Release-RPMSet.t
 t/OpenNMS-Release-RPMVersion.t
 t/OpenNMS-Release-SFTPRepo.t
-t/OpenNMS-Release-SourcePackage.t
-t/OpenNMS-Release-SourceRepo.t
 t/OpenNMS-Release.t
 t/OpenNMS-Release-Version.t
 t/OpenNMS-Release-YumRepo.t

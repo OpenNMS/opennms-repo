@@ -1,4 +1,4 @@
-package OpenNMS::Release::SourcePackage;
+package OpenNMS::Release::FilePackage;
 
 use 5.008008;
 use strict;
@@ -17,18 +17,17 @@ use OpenNMS::Release::Version;
 
 =head1 NAME
 
-OpenNMS::Release::SourcePackage - Perl extension for manipulating source tarballs
+OpenNMS::Release::FilePackage - Perl extension for manipulating files
 
 =head1 SYNOPSIS
 
-  use OpenNMS::Release::SourcePackage;
+	use OpenNMS::Release::FilePackage;
 
-  my $tarball = OpenNMS::Release::SourcePackage->new("path/to/foo-1.0.tar.gz");
+	my $tarball = OpenNMS::Release::FilePackage->new("path/to/foo-1.0.tar.gz");
 
 =head1 DESCRIPTION
 
-This is just a perl module for manipulating source tarball packages, including
-version comparisons, path comparisons, and other miscellaneous things.
+This is just a perl module for manipulating files, including version comparisons, path comparisons, and other miscellaneous things.
 
 =cut
 
@@ -36,10 +35,9 @@ our $VERSION = '2.1';
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::SourcePackage->new($path)
+OpenNMS::Release::FilePackage->new($path)
 
-Given a path to a tarball, create a new OpenNMS::Release::SourcePackage object.
-The file must exist.
+Given a path to a file, create a new OpenNMS::Release::FilePackage object.  The file must exist.
 
 =cut
 
@@ -54,39 +52,46 @@ sub new {
 		return undef;
 	}
 
-	my $name        = undef;
+	my $name	= undef;
 	my $version     = undef;
 	my $release     = undef;
 	my $extension   = undef;
 	my $compression = undef;
+	my $type        = undef;
 
 	my $filename    = basename($path);
 
 	if ($filename =~ s/\.(tar.gz|tgz)$//) {
 		$extension   = $1;
 		$compression = 'gzip';
+		$type        = 'tarball';
 	} elsif ($filename =~ s/\.(tar.bz2|tbz2)$//) {
 		$extension   = $1;
 		$compression = 'bzip2';
+		$type        = 'tarball';
+	} elsif ($filename =~ s/\.(zip)$//) {
+		$extension   = $1;
+		$compression = 'zip';
+		$type        = 'zip';
 	} else {
-		carp "Unable to determine if $filename is a bzip2 or gzip file";
+		carp "Unable to determine if $filename is a supported file";
 		return undef;
 	}
 
 	if ($filename =~ /^(.*)-(\d[^-]*?)-(\d[^-]*?)$/) {
-		# look for name-version-release first
-		($name, $version, $release) = ($1, $2, $3);
+	# look for name-version-release first
+	($name, $version, $release) = ($1, $2, $3);
 	} elsif ($filename =~ /^(.*)-(\d[^\-]*?)$/) {
-		# then look for name-version
-		($name, $version, $release) = ($1, $2, 0);
+	# then look for name-version
+	($name, $version, $release) = ($1, $2, 0);
 	} else {
-		# give up and set version and release to 0
-		($name, $version, $release) = ($filename, 0, 0);
+	# give up and set version and release to 0
+	($name, $version, $release) = ($filename, 0, 0);
 	}
 
 	$version = OpenNMS::Release::Version->new($version, $release);
 
-	my $self = bless($class->SUPER::new($path, $name, $version, 'source'), $class);
+	my $self = bless($class->SUPER::new($path, $name, $version, $type), $class);
 	$self->{EXTENSION} = $extension;
 	$self->{COMPRESSION} = $compression;
 
@@ -108,13 +113,23 @@ sub extension {
 
 =head2 * compression
 
-Get the compression type for this file (gzip, bzip2).
+Get the compression type for this file (gzip, bzip2, zip).
 
 =cut
 
 sub compression {
 	my $self = shift;
 	return $self->{COMPRESSION};
+}
+
+=head2 * type
+
+Get the file type for this file (tarball, zip).
+
+=cut
+
+sub type {
+	return shift->arch;
 }
 
 1;

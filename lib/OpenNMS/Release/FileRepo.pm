@@ -1,4 +1,4 @@
-package OpenNMS::Release::SourceRepo;
+package OpenNMS::Release::FileRepo;
 
 use 5.008008;
 use strict;
@@ -16,18 +16,18 @@ use File::Temp qw(tempdir);
 use IO::Handle;
 
 use OpenNMS::Util;
-use OpenNMS::Release::SourcePackage;
+use OpenNMS::Release::FilePackage;
 use OpenNMS::Release::PackageSet;
 
 use base qw(OpenNMS::Release::Repo);
 
 =head1 NAME
 
-OpenNMS::Release::SourceRepo - Perl extension that represents a source repository
+OpenNMS::Release::FileRepo - Perl extension that represents a source repository
 
 =head1 SYNOPSIS
 
-  use OpenNMS::Release::SourceRepo;
+  use OpenNMS::Release::FileRepo;
 
 =head1 DESCRIPTION
 
@@ -39,7 +39,7 @@ our $VERSION = '2.1';
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::SourceRepo-E<gt>new($base);
+OpenNMS::Release::FileRepo-E<gt>new($base);
 
 Create a new Repo object.  You can add and remove tarballs to/from it, re-index it, and so on.
 
@@ -66,7 +66,7 @@ sub new_with_base($) {
 	my $self = shift;
 	my $base = shift;
 
-	return OpenNMS::Release::SourceRepo->new($base);
+	return OpenNMS::Release::FileRepo->new($base);
 }
 
 =head1 METHODS
@@ -102,7 +102,7 @@ sub _packageset {
 	find({ wanted => sub {
 		return unless ($File::Find::name =~ /\.(tar.gz|tgz|tar.bz2|tbz2)$/);
 		return unless (-e $File::Find::name);
-		my $package = OpenNMS::Release::SourcePackage->new($File::Find::name);
+		my $package = OpenNMS::Release::FilePackage->new($File::Find::name);
 		push(@packages, $package);
 	}, no_chdir => 1}, $self->path);
 	return OpenNMS::Release::PackageSet->new(\@packages);

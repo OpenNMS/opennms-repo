@@ -18,7 +18,7 @@ use IO::Handle;
 use Net::SFTP::Foreign;
 
 use OpenNMS::Util;
-use OpenNMS::Release::SourcePackage;
+use OpenNMS::Release::FilePackage;
 use OpenNMS::Release::PackageSet;
 
 use base qw(OpenNMS::Release::Repo);
@@ -150,7 +150,7 @@ sub _packageset {
 		names_only => 1
 	);
 	for my $file (@{$files}) {
-		push(@packages, OpenNMS::Release::SourcePackage->new(File::Spec->catfile($self->path, $file)));
+		push(@packages, OpenNMS::Release::FilePackage->new(File::Spec->catfile($self->path, $file)));
 	}
 	return OpenNMS::Release::PackageSet->new(\@packages);
 	
@@ -222,7 +222,7 @@ sub copy_package($$) {
 
 	my $filename = basename($from->path);
 	my $finalpath = File::Spec->catfile($self->_get_final_path($topath), $filename);
-	my $to = OpenNMS::Release::SourcePackage->new($finalpath);
+	my $to = OpenNMS::Release::FilePackage->new($finalpath);
 
 	$self->packageset->add($to);
 

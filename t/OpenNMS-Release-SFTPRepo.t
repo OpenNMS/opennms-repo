@@ -17,7 +17,7 @@ use Test::More skip_all => "only for one-time testing with a real repo";
 my $class = 'OpenNMS::Release::SFTPRepo';
 
 use_ok($class);
-use_ok('OpenNMS::Release::SourceRepo');
+use_ok('OpenNMS::Release::FileRepo');
 
 my $t = Cwd::abs_path('t');
 my ($a, $b);
@@ -27,14 +27,14 @@ my $packages = $a->find_all_packages();
 
 $a->share_all_packages($b);
 
-my $package = $a->find_newest_package_by_name('test', 'source');
+my $package = $a->find_newest_package_by_name('test', 'tarball');
 ok($package);
 is($package->version->version, '1.1');
 
 $packages = $a->find_all_packages();
 is(scalar(@$packages), 3);
 
-$package = OpenNMS::Release::SourcePackage->new("$t/packages/source/test-1.0.tgz");
+$package = OpenNMS::Release::FilePackage->new("$t/packages/source/test-1.0.tgz");
 $a->install_package($package);
 
 $packages = $a->find_all_packages();
@@ -68,17 +68,17 @@ my $new = $a->begin();
 is($new->path, '/home/frs/project/o/op/opennms/OpenNMS-Snapshots');
 $new->share_all_packages($b);
 
-$package = $new->find_newest_package_by_name('test', 'source');
+$package = $new->find_newest_package_by_name('test', 'tarball');
 ok($package);
 is($package->version->version, '1.1');
-$package = $a->find_newest_package_by_name('test', 'source');
+$package = $a->find_newest_package_by_name('test', 'tarball');
 ok($package);
 is($package->version->version, '1.1');
 
 $packages = $new->find_all_packages();
 is(scalar(@$packages), 3);
 
-$package = OpenNMS::Release::SourcePackage->new("$t/packages/source/test-1.0.tgz");
+$package = OpenNMS::Release::FilePackage->new("$t/packages/source/test-1.0.tgz");
 $new->install_package($package);
 
 $packages = $new->find_all_packages();
@@ -106,5 +106,5 @@ is(scalar(@$packages), 3);
 
 sub reset_repos {
 	$a = $class->new('frs.sourceforge.net', '/home/frs/project/o/op/opennms/OpenNMS-Snapshots');
-	$b = OpenNMS::Release::SourceRepo->new("$t/packages/source");
+	$b = OpenNMS::Release::FileRepo->new("$t/packages/source");
 }

@@ -3,7 +3,7 @@ $|++;
 use Cwd;
 use Test::More tests => 70;
 
-use_ok('OpenNMS::Release::SourcePackage');
+use_ok('OpenNMS::Release::FilePackage');
 
 my ($tarball);
 my $t = Cwd::abs_path('t');
@@ -77,22 +77,22 @@ my $test_parsing = {
 		},
 };
 
-$tarball = OpenNMS::Release::SourcePackage->new();
+$tarball = OpenNMS::Release::FilePackage->new();
 is($tarball, undef, "Check for invalid tarball when no path is provided.");
 
-$newer_tarball = OpenNMS::Release::SourcePackage->new("$t/packages/source/test-1.0-2.tar.gz");
-isa_ok($newer_tarball, 'OpenNMS::Release::SourcePackage');
+$newer_tarball = OpenNMS::Release::FilePackage->new("$t/packages/source/test-1.0-2.tar.gz");
+isa_ok($newer_tarball, 'OpenNMS::Release::FilePackage');
 
-is($newer_tarball->name,             'test',   'Package name is "test".');
-is($newer_tarball->version->epoch,   undef,    'Epoch should be undefined.');
-is($newer_tarball->version->version, '1.0',    'Version should be 1.0.');
-is($newer_tarball->version->release, '2',      'Release should be snapshot.');
-is($newer_tarball->arch,             'source', 'Architecture should be "source".');
+is($newer_tarball->name,             'test',    'Package name is "test".');
+is($newer_tarball->version->epoch,   undef,     'Epoch should be undefined.');
+is($newer_tarball->version->version, '1.0',     'Version should be 1.0.');
+is($newer_tarball->version->release, '2',       'Release should be snapshot.');
+is($newer_tarball->arch,             'tarball', 'Architecture should be "tarball".');
 
 is($newer_tarball->is_newer_than($newer_tarball), 0);
 
 for my $tarname (sort keys %$test_parsing) {
-	$tarball = OpenNMS::Release::SourcePackage->new($tarname);
+	$tarball = OpenNMS::Release::FilePackage->new($tarname);
 
 	my $attributes = $test_parsing->{$tarname};
 
@@ -114,7 +114,7 @@ for my $tarname (sort keys %$test_parsing) {
 	}
 }
 
-$older_tarball = OpenNMS::Release::SourcePackage->new("$t/packages/source/test-1.0.tgz");
+$older_tarball = OpenNMS::Release::FilePackage->new("$t/packages/source/test-1.0.tgz");
 
 is($newer_tarball->compare_to($older_tarball), 1);
 is($older_tarball->compare_to($newer_tarball), -1);
