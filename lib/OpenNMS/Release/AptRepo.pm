@@ -40,7 +40,7 @@ Repositories are expected to be in the form:
 
 =cut
 
-our $VERSION = '2.1';
+our $VERSION = '2.1.1';
 our $APT_FTPARCHIVE = undef;
 our @ARCHITECTURES = qw(amd64 i386 powerpc);
 
@@ -124,11 +124,11 @@ sub find_repos($) {
 	for my $repodir (@repodirs) {
 		$repodir = File::Spec->abs2rel($repodir, $base);
 		my @parts = File::Spec->splitdir($repodir);
-		if (scalar(@parts) != 3) {
+		if (scalar(@parts) != 2) {
 			carp "not sure how to determine release and platform for $base/$repodir";
 			next;
 		}
-		push(@repos, OpenNMS::Release::DebRepo->new($base, $parts[1]));
+		push(@repos, OpenNMS::Release::AptRepo->new($base, $parts[1]));
 	}
 	@repos = sort { $a->path cmp $b->path } @repos;
 	return \@repos;
