@@ -2,6 +2,13 @@ Changes
 Makefile.PL
 MANIFEST
 README
+debian/changelog
+debian/compat
+debian/control
+debian/copyright
+debian/libopennms-release-perl.docs
+debian/rules
+debian/watch
 lib/OpenNMS/Release/AptRepo.pm
 lib/OpenNMS/Release/DebPackage.pm
 lib/OpenNMS/Release/DebVersion.pm

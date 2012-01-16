@@ -1,0 +1,15 @@
+Source: libopennms-release-perl
+Section: perl
+Priority: optional
+Build-Depends: debhelper (>= 7)
+Build-Depends-Indep: perl
+Maintainer: Benjamin Reed <ranger@opennms.org>
+Standards-Version: 3.9.1
+Homepage: http://search.cpan.org/dist/OpenNMS-Release/
+
+Package: libopennms-release-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}
+Description: Manage OpenNMS packaging/release repositories.
+ This is a set of tools for managing packages, repositories, and
+ releases for the OpenNMS project.

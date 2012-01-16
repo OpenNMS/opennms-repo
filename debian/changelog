@@ -1,0 +1,5 @@
+libopennms-release-perl (2.1-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Benjamin Reed <ranger@opennms.org>  Mon, 16 Jan 2012 09:38:36 -0500
