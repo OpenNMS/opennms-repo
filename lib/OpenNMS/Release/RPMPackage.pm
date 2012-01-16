@@ -32,7 +32,7 @@ things.
 
 =cut
 
-our $VERSION = '2.0';
+our $VERSION = '2.1';
 our $RPMSIGN = undef;
 
 =head1 CONSTRUCTOR
