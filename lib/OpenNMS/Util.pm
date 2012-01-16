@@ -28,7 +28,7 @@ our @EXPORT = qw(
 	gpg_detach_sign_file
 );
 
-our $VERSION = '2.0';
+our $VERSION = v2.1.2;
 
 =head1 METHODS
 
@@ -85,10 +85,11 @@ sub gpg_write_key {
 	return 1;
 }
 
-=head2 * gpg_detach_sign_file($id, $password, $file)
+=head2 * gpg_detach_sign_file($id, $password, $inputfile, [$outputfile])
 
 Given a GPG ID and password, and a file, detach-signs the
-specified file. This creates a file named C<$file.asc>.
+specified file and outputs to C<$outputfile>. If no output file
+is specified, it creates a file named C<$inputfile.asc>.
 
 =cut
 
@@ -96,8 +97,9 @@ sub gpg_detach_sign_file {
 	my $id       = shift;
 	my $password = shift;
 	my $file     = shift;
+	my $output   = shift || $file . '.asc';
 
-	system("gpg --passphrase '$password' --batch --yes -a --default-key '$id' --detach-sign $file") == 0 or croak "unable to detach-sign '$file' with GPG id '$id': $!";
+	system("gpg --passphrase '$password' --batch --yes -a --default-key '$id' --detach-sign -o '$output' '$file'") == 0 or croak "unable to detach-sign '$file' with GPG id '$id': $!";
 	return 1;
 }
 

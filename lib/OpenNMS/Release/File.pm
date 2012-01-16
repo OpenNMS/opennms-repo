@@ -27,7 +27,7 @@ This is a perl module for manipulating files.
 
 =cut
 
-our $VERSION = '2.1';
+our $VERSION = v2.1;
 
 =head1 CONSTRUCTOR
 
