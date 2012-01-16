@@ -1,3 +1,9 @@
+libopennms-release-perl (2.1.2-1) unstable; urgency=low
+
+  * change signature extension to .gpg
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Mon, 16 Jan 2012 14:17:12 -0500
+
 libopennms-release-perl (2.1.1-1) unstable; urgency=low
 
   * Bump version to 2.1.1 for the AptRepo fix.

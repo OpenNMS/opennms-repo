@@ -40,7 +40,7 @@ Repositories are expected to be in the form:
 
 =cut
 
-our $VERSION = v2.1.1;
+our $VERSION = v2.1.2;
 our $APT_FTPARCHIVE = undef;
 our @ARCHITECTURES = qw(amd64 i386 powerpc);
 
@@ -288,7 +288,7 @@ sub index($) {
 	my $password = $options->{'signing_password'};
 
 	if (defined $id and defined $password) {
-		gpg_detach_sign_file($id, $password, $releasefile);
+		gpg_detach_sign_file($id, $password, $releasefile, $releasefile . '.gpg');
 	} else {
 		# carp "skipping gpg-signing of '$releasefile'";
 	}

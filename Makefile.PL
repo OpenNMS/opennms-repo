@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     NAME                     => 'OpenNMS::Release',
-    VERSION                  => '2.1.1',
+    VERSION                  => '2.1.2',
     PREREQ_PM                => {
         'Expect'             => 1.20,
 	'Net::SFTP::Foreign' => undef,
