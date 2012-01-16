@@ -40,7 +40,7 @@ Repositories are expected to be in the form:
 
 =cut
 
-our $VERSION = v2.1.2;
+our $VERSION = v2.1.3;
 our $APT_FTPARCHIVE = undef;
 our @ARCHITECTURES = qw(amd64 i386 powerpc);
 
@@ -311,8 +311,22 @@ sub create_indexfile() {
 
 	my $archivedir = $self->base;
 	my $cachedir   = $self->cachedir;
-	my $release    = $self->release;
 	my $arches     = join(' ', @ARCHITECTURES);
+	my $release    = $self->release;
+
+	my $codename   = $self->release;
+	my $codenamefile = File::Spec->catfile($self->path, '.codename');
+	if (-e $codenamefile) {
+		$codename = slurp($codenamefile);
+		chomp($codename);
+	}
+
+	my $suite      = $self->release;
+	my $suitefile = File::Spec->catfile($self->path, '.suite');
+	if (-e $suitefile) {
+		$suite = slurp($suitefile);
+		chomp($suite);
+	}
 
 	print $outputfile <<END;
 Dir {
@@ -330,7 +344,7 @@ APT::FTPArchive {
 	Release {
 		Origin "OpenNMS";
 		Label "OpenNMS Repository - $release";
-		Suite "$release";
+		Suite "$suite";
 		Codename "$release";
 		Architectures "$arches";
 		Sections "main";

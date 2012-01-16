@@ -1,3 +1,9 @@
+libopennms-release-perl (2.1.3-1) unstable; urgency=low
+
+  * Add support for suite and codename metadata files
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Mon, 16 Jan 2012 14:36:34 -0500
+
 libopennms-release-perl (2.1.2-1) unstable; urgency=low
 
   * change signature extension to .gpg
