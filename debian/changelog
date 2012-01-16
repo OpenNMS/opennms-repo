@@ -1,3 +1,9 @@
+libopennms-release-perl (2.1.1-1) unstable; urgency=low
+
+  * Bump version to 2.1.1 for the AptRepo fix.
+
+ -- Benjamin Reed <ranger@debian.opennms.org>  Mon, 16 Jan 2012 11:26:33 -0500
+
 libopennms-release-perl (2.1-1) unstable; urgency=low
 
   * Initial Release.
