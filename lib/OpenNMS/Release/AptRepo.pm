@@ -154,7 +154,7 @@ The path of the repository (base + release).
 
 sub path() {
 	my $self = shift;
-	return File::Spec->catfile($self->base, 'dists', $self->release);
+	return File::Spec->catdir($self->base, 'dists', $self->release);
 }
 
 =head2 * releasedir
@@ -165,7 +165,7 @@ The path of the release directory (base + release).
 
 sub releasedir() {
 	my $self = shift;
-	return File::Spec->catfile($self->base, 'dists', $self->release);
+	return File::Spec->catdir($self->base, 'dists', $self->release);
 }
 
 =head2 * to_string
@@ -190,7 +190,7 @@ sub delete {
 	$self->SUPER::delete(@_);
 
 	rmdir($self->releasedir);
-	rmdir(File::Spec->catfile($self->base, 'dists'));
+	rmdir(File::Spec->catdir($self->base, 'dists'));
 	rmdir($self->base);
 	return 1;
 }
@@ -211,7 +211,7 @@ sub replace {
 	my $ret = $self->SUPER::replace($target_repo);
 
 	rmdir($self->releasedir);
-	rmdir(File::Spec->catfile($self->base, 'dists'));
+	rmdir(File::Spec->catdir($self->base, 'dists'));
 	rmdir($self->base);
 
 	return $ret;
@@ -224,9 +224,12 @@ sub _packageset {
 	find({ wanted => sub {
 		return unless ($File::Find::name =~ /\.deb$/);
 		return unless (-e $File::Find::name);
+		return if (-l $File::Find::name);
+
 		my $package = OpenNMS::Release::DebPackage->new($File::Find::name);
 		push(@packages, $package);
 	}, no_chdir => 1}, $self->path);
+
 	return OpenNMS::Release::PackageSet->new(\@packages);
 	
 }
@@ -234,15 +237,16 @@ sub _packageset {
 sub install_package {
 	my $self    = shift;
 	my $package = shift;
-	my $topath  = File::Spec->catfile($self->path, 'main', 'binary-' . $package->arch);
 
+	my $topath  = File::Spec->catdir($self->path, 'main', 'binary-' . $package->arch);
 	mkpath($topath);
-	$self->copy_package($package, $topath);
+
+	return $self->copy_package($package, $topath);
 }
 
 sub cachedir() {
 	my $self = shift;
-	return File::Spec->catfile($self->base, "ftparchive");
+	return File::Spec->catdir($self->path, ".ftparchive");
 }
 
 =head2 * index({options})
@@ -269,11 +273,21 @@ sub index($) {
 	my $self    = shift;
 	my $options = shift;
 
+	$self->_delete_dead_symlinks();
+	$self->_symlink_packages();
+
 	mkpath($self->cachedir);
 	for my $arch (@ARCHITECTURES) {
-		mkpath(File::Spec->catfile($self->path, 'main', 'binary-' . $arch));
+		my $archdir = File::Spec->catdir($self->path, 'main', 'binary-' . $arch);
+		if (not -d $archdir) {
+			if (-e $archdir) {
+				croak "Whoa, $archdir isn't a directory?! " . `ls -la $archdir`;
+			} else {
+				mkpath($archdir);
+			}
+		}
 	}
-	mkpath(File::Spec->catfile($self->path, 'main'));
+	mkpath(File::Spec->catdir($self->path, 'main'));
 	$self->create_indexfile();
 
 	my $release_handle = IO::Handle->new();
@@ -300,6 +314,54 @@ sub index($) {
 sub indexfile() {
 	my $self = shift;
 	return File::Spec->catfile($self->base, $self->release . '.conf');
+}
+
+sub _delete_dead_symlinks() {
+	my $self = shift;
+
+	find({ wanted => sub {
+		return unless (-l $File::Find::name);
+		if (not -e $File::Find::name) {
+			unlink ($File::Find::name);
+			return;
+		}
+
+		my $linkpackage = OpenNMS::Release::DebPackage->new($File::Find::name);
+		return unless (defined $linkpackage);
+
+		my $newest = $self->find_newest_package_by_name($linkpackage->name, $linkpackage->arch);
+		return unless (defined $newest);
+
+		if ($newest->is_newer_than($linkpackage)) {
+			unlink($File::Find::name);
+		}
+	}, no_chdir => 1 }, $self->base);
+
+	return 1;
+}
+
+sub _symlink_packages() {
+	my $self = shift;
+
+	# first, make sure the arch dirs exist
+	for my $arch (@ARCHITECTURES) {
+		my $archpath = File::Spec->catdir($self->path, 'main', 'binary-' . $arch);
+		mkpath($archpath);
+	}
+
+	for my $package (@{$self->find_newest_packages()}) {
+		next unless ($package->arch eq 'all');
+
+		for my $arch (@ARCHITECTURES) {
+			my $archpath = File::Spec->catdir($self->path, 'main', 'binary-' . $arch);
+			my $linkedpackage = $package->symlink($archpath);
+			if (not defined $linkedpackage) {
+				carp "unable to symlink " . $package->to_string . " to $archpath";
+			}
+		}
+	}
+
+	return 1;
 }
 
 sub create_indexfile() {

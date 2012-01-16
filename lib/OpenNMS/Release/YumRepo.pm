@@ -43,7 +43,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = v2.1;
+our $VERSION = v2.1.3;
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 
@@ -184,7 +184,7 @@ The path of the repository (base + release + platform).
 
 sub path() {
 	my $self = shift;
-	return File::Spec->catfile($self->base, $self->release, $self->platform);
+	return File::Spec->catdir($self->base, $self->release, $self->platform);
 }
 
 =head2 * releasedir
@@ -195,7 +195,7 @@ The path of the release directory (base + release).
 
 sub releasedir() {
 	my $self = shift;
-	return File::Spec->catfile($self->base, $self->release);
+	return File::Spec->catdir($self->base, $self->release);
 }
 
 =head2 * to_string
@@ -257,7 +257,7 @@ sub _packageset {
 
 sub cachedir() {
 	my $self = shift;
-	return File::Spec->catfile($self->base, "caches", $self->release, $self->platform);
+	return File::Spec->catdir($self->base, "caches", $self->release, $self->platform);
 }
 
 =head2 * index({options})
@@ -300,7 +300,7 @@ sub index($) {
 	my $password = $options->{'signing_password'};
 
 	if (defined $id and defined $password) {
-		my $repodata = File::Spec->catfile($self->path, 'repodata');
+		my $repodata = File::Spec->catdir($self->path, 'repodata');
 		gpg_write_key($id, $password, File::Spec->catfile($repodata, 'repomd.xml.key'));
 		gpg_detach_sign_file($id, $password, File::Spec->catfile($repodata, 'repomd.xml'));
 	}

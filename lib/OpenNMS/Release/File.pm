@@ -7,6 +7,7 @@ use warnings;
 use Carp;
 use File::Basename;
 use File::Copy qw();
+use File::Path;
 use File::Spec;
 
 use OpenNMS::Release::Version;
@@ -27,7 +28,7 @@ This is a perl module for manipulating files.
 
 =cut
 
-our $VERSION = v2.1;
+our $VERSION = v2.1.3;
 
 =head1 CONSTRUCTOR
 
@@ -124,6 +125,8 @@ sub copy($) {
 	my $filename = $self->_get_filename_for_target($to);
 
 	unlink $filename if (-e $filename);
+	mkpath(dirname($filename));
+
 	my $ret = File::Copy::copy($self->path, $filename);
 
 	return $ret? $self->new($filename) : undef;
@@ -142,6 +145,8 @@ sub link($) {
 	my $filename = $self->_get_filename_for_target($to);
 
 	unlink $filename if (-e $filename);
+	mkpath(dirname($filename));
+
 	my $ret = link($self->path, $filename);
 	return $ret? $self->new($filename) : undef;
 }
@@ -161,6 +166,8 @@ sub symlink($) {
 	my $from = File::Spec->abs2rel($self->path, dirname($filename));
 
 	unlink $filename if (-e $filename);
+	mkpath(dirname($filename));
+
 	my $ret = symlink($from, $filename);
 	return $ret? $self->new($filename) : undef;
 }
@@ -181,10 +188,7 @@ sub _get_filename_for_target($) {
 	my $to   = shift;
 
 	if (-d $to) {
-		if ($to !~ /\/$/) {
-			$to .= "/";
-		}
-		$to = $to . basename($self->path);
+		return File::Spec->catfile($to, basename($self->path));
 	}
 	return $to;
 }
