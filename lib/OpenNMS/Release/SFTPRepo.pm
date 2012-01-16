@@ -320,6 +320,24 @@ sub commit {
 	$self->_in_transaction(0);
 }
 
+sub print_transaction_status {
+	my $self = shift;
+
+	if ($self->_in_transaction) {
+		print "In transaction: YES\n";
+		print "- adds pending:\n";
+		for my $package (@{$self->_add_transactions->find_all()}) {
+			print "  - ", $package->to_string, "\n";
+		}
+		print "- deletes pending:\n";
+		for my $package (@{$self->_del_transactions->find_all()}) {
+			print "  - ", $package->to_string, "\n";
+		}
+	} else {
+		print "In transaction: NO\n";
+	}
+}
+
 =head2 * index({options})
 
 No-op, remote repositories don't get indexed.
