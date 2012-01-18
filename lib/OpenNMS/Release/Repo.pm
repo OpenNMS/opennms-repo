@@ -179,6 +179,8 @@ sub _get_fs_for_path($) {
 	my $self = shift;
 	my $path = shift;
 
+	mkpath($path);
+
 	my $df = `which df 2>/dev/null`;
 	if ($? == 0) {
 		chomp($df);

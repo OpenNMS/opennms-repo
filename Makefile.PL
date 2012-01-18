@@ -13,6 +13,7 @@ test_requires  'Test::More'         => undef;
 
 install_script 'buildtool.pl';
 install_script 'create-repo-rpm.pl';
+install_script 'generate-yum-repo-html.pl';
 install_script 'update-apt-repo.pl';
 install_script 'update-sourceforge-repo.pl';
 install_script 'update-yum-repo.pl';

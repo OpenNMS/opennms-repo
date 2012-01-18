@@ -21,11 +21,8 @@ use vars qw(
 	$BRANCH
 
 	$GIT
-	$TOPDIR
+	$GITDIR
 );
-
-$TOPDIR  = Cwd::abs_path(dirname($0));
-$GIT     = Git->repository( Directory => $TOPDIR );
 
 sub usage() {
 	print STDERR <<END;
@@ -124,7 +121,10 @@ sub update_build_state() {
 
 $PROJECT = shift @ARGV;
 $COMMAND = shift @ARGV;
+$GITDIR  = shift @ARGV || Cwd::abs_path('.');
 usage() unless (defined $COMMAND);
+
+$GIT     = Git->repository( Directory => $GITDIR );
 
 $BRANCH = get_branch_name();
 die "Unable to determine branch!" unless (defined $BRANCH);
