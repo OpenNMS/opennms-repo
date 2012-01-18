@@ -7,6 +7,7 @@ use Cwd;
 use File::Basename;
 use File::Copy;
 use File::Path;
+use File::ShareDir qw(:ALL);
 use File::Spec;
 use File::Temp qw(tempdir);
 use Getopt::Long qw(:config gnu_getopt);
@@ -53,7 +54,7 @@ my $rpm_release = defined $newest_rpm? ($newest_rpm->version->release + 1) : $de
 
 print "- generating YUM repository RPM $rpmname, version $rpm_version-$rpm_release:\n";
 
-my $platform_descriptions = read_properties(File::Spec->catdir(dirname($0), "platform.properties"));
+my $platform_descriptions = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
 my $repofiledir           = File::Spec->catfile($base, 'repofiles');
 my $gpgfile               = File::Spec->catfile($repofiledir, 'OPENNMS-GPG-KEY');
 

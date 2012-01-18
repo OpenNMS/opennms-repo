@@ -8,18 +8,15 @@ use File::Basename;
 use File::Copy;
 use File::Find;
 use File::Path;
+use File::ShareDir qw(:ALL);
 use Getopt::Long qw(:config gnu_getopt);
 use IO::Handle;
-#use RPM4;
 
 use OpenNMS::Util v2.0;
 use OpenNMS::Release::YumRepo v2.0;
 use OpenNMS::Release::RPMPackage v2.0;
 
 $|++;
-
-# initialize RPM4
-#readconfig();
 
 my $help             = 0;
 my $all              = 0;
@@ -57,7 +54,7 @@ if (not $all) {
 	}
 }
 
-my $release_descriptions = read_properties(File::Spec->catdir(dirname($0), "release.properties"));
+my $release_descriptions = read_properties(dist_file('OpenNMS-Release', 'release.properties'));
 
 my @sync_order = split(/\s*,\s*/, $release_descriptions->{order_sync});
 delete $release_descriptions->{order_sync};

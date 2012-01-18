@@ -41,6 +41,7 @@ META.yml
 README
 script/buildtool.pl
 script/create-repo-rpm.pl
+script/generate-yum-repo-html.pl
 script/update-apt-repo.pl
 script/update-sourceforge-repo.pl
 script/update-yum-repo.pl

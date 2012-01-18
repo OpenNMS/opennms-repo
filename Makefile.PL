@@ -7,6 +7,7 @@ all_from       'lib/OpenNMS/Release.pm';
 # Specific dependencies
 requires       'Git'                => undef;
 requires       'Expect'             => 1.20;
+requires       'File::ShareDir'     => undef;
 requires       'Net::SFTP::Foreign' => undef;
 test_requires  'Test::More'         => undef;
 

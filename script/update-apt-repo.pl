@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!File::Spec->catdir(dirname($0), /usr/bin/perl -w
 
 use strict;
 use warnings;
