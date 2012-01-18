@@ -1,6 +1,10 @@
 .*.swp
+*.bak
+*.json
 *.old
+*.yml
 OpenNMS-Release-*.tar.gz
 Makefile
 blib
+inc
 pm_to_blib

@@ -1,15 +1,21 @@
-use 5.008008;
-use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
-WriteMakefile(
-    NAME                     => 'OpenNMS::Release',
-    VERSION                  => '2.2',
-    PREREQ_PM                => {
-        'Expect'             => 1.20,
-	'Net::SFTP::Foreign' => undef,
-    },
-    ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM         => 'lib/OpenNMS/Release.pm', # retrieve abstract from module
-       AUTHOR                => 'Benjamin Reed <ranger@opennms.org>') : ()),
-);
+use inc::Module::Install;
+
+# Define metadata
+name           'OpenNMS-Release';
+all_from       'lib/OpenNMS/Release.pm';
+
+# Specific dependencies
+requires       'Git'                => undef;
+requires       'Expect'             => 1.20;
+requires       'Net::SFTP::Foreign' => undef;
+test_requires  'Test::More'         => undef;
+
+install_script 'buildtool.pl';
+install_script 'create-repo-rpm.pl';
+install_script 'update-apt-repo.pl';
+install_script 'update-sourceforge-repo.pl';
+install_script 'update-yum-repo.pl';
+
+install_share 'share';
+
+WriteAll;

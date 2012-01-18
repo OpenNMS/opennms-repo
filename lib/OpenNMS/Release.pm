@@ -8,10 +8,7 @@ require Exporter;
 
 our @ISA = qw(Exporter);
 
-our $VERSION = v2.0;
-
-
-# Preloaded methods go here.
+our $VERSION = '2.2';
 
 1;
 __END__
@@ -19,15 +16,11 @@ __END__
 
 =head1 NAME
 
-OpenNMS::Release - Top-level namespace for OpenNMS package-management code.
+OpenNMS::Release - OpenNMS package-management tools.
 
 =head1 SYNOPSIS
 
   use OpenNMS::Release;
-
-=head1 DESCRIPTION
-
-By default, OpenNMS::Release does nothing.
 
 =head1 AUTHOR
 
