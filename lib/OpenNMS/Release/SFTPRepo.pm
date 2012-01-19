@@ -182,7 +182,8 @@ sub _delete_package($) {
 	}
 
 	# remove $package
-	$self->_sftp->remove($package->path);
+	$self->_sftp->remove($package->path) or croak "failed to remove " . $package->path . " from remote repository: " . $self->_sftp->error;
+	return 1;
 }
 
 sub _add_package($) {
@@ -197,8 +198,10 @@ sub _add_package($) {
 	}
 
 	# upload $package
-	$self->_sftp->mkpath($self->path);
-	$self->_sftp->put($from->path, $to->path);
+	$self->_sftp->mkpath($self->path) or croak "failed to create path " . $self->path . " on the remote repository: " . $self->_sftp->error;
+	$self->_sftp->put($from->path, $to->path) or croak "failed to copy " . basename($from->path) . " to " . dirname($to->path) . " on the remote repository: " . $self->_sftp->error;
+
+	return 1;
 }
 
 sub delete_package($) {
