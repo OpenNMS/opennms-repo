@@ -96,6 +96,10 @@ for my $orig_repo (@$scan_repositories) {
 	sync_repos($release_repo, $signing_id, $signing_password);
 }
 
+if (defined $signing_id and defined $signing_password) {
+	gpg_write_key($signing_id, $signing_password, File::Spec->catfile($base, 'OPENNMS-GPG-KEY'));
+}
+
 # return 1 if the obsolete package given should be deleted
 sub not_opennms {
 	my ($package, $repo) = @_;
