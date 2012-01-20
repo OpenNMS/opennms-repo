@@ -161,7 +161,7 @@ sub create_repo_rpm {
 		'--define', "_release $rpm_release",
 		'--define', '_signature %{nil}',
 		'--define', 'vendor The OpenNMS Group, Inc.',
-		File::Spec->catfile(dirname($0), 'repo.spec')
+		dist_file('OpenNMS-Release', 'repo.spec')
 	) == 0 or die "unable to build rpm: $!";
 
 	print "- finished creating RPM for $release/$platform.\n";
