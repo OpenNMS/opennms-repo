@@ -1,3 +1,9 @@
+libopennms-release-perl (2.3-1) unstable; urgency=medium
+
+  * Fix a few script issues
+
+ -- Benjamin Reed <ranger@opennms.org>  Fri, 20 Jan 2012 10:07:00 -0500
+
 libopennms-release-perl (2.2.1-1) unstable; urgency=low
 
   * Fix a few script issues

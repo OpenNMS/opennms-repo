@@ -1,6 +1,0 @@
-Revision history for Perl extension OpenNMS::YUM.
-
-0.01  Tue Jan  3 13:05:46 2012
-	- original version; created by h2xs 1.23 with options
-		-XAn OpenNMS::YUM
-
