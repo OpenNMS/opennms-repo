@@ -40,7 +40,7 @@ Repositories are expected to be in the form:
 
 =cut
 
-our $VERSION = v2.1.3;
+our $VERSION = '2.4';
 our $APT_FTPARCHIVE = undef;
 our @ARCHITECTURES = qw(amd64 i386 powerpc);
 
@@ -287,7 +287,7 @@ sub index($) {
 			}
 		}
 	}
-	mkpath(File::Spec->catdir($self->path, 'main'));
+	mkpath(File::Spec->catdir($self->path, 'main', 'source'));
 	$self->create_indexfile();
 
 	my $release_handle = IO::Handle->new();
@@ -417,7 +417,7 @@ APT::FTPArchive {
 
 Tree "dists/$release" {
 	Sections "main";
-	Architectures "$arches";
+	Architectures "source $arches";
 };
 END
 

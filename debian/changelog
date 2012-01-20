@@ -1,3 +1,9 @@
+libopennms-release-perl (2.4-1) unstable; urgency=medium
+
+  * Index (empty) APT source repos
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Fri, 20 Jan 2012 12:13:39 -0500
+
 libopennms-release-perl (2.3.3-1) unstable; urgency=low
 
   * missing spec in manifest
