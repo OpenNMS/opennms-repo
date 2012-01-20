@@ -27,6 +27,7 @@ for my $file (@files) {
 	print "- installing ", $package->to_string, "\n";
 	$repo->install_package($package);
 }
+$repo->delete_obsolete_packages();
 $repo->commit();
 
 sub usage {
