@@ -48,6 +48,7 @@ share/generate-yum-repo-html.post
 share/generate-yum-repo-html.pre
 share/platform.properties
 share/release.properties
+share/repo.spec
 t/OpenNMS-Release-AptRepo.t
 t/OpenNMS-Release-DebPackage.t
 t/OpenNMS-Release-DebSet.t
