@@ -197,6 +197,7 @@ usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | <base> <release> 
 
 	-h            : print this help
 	-a            : update all repositories (release and packages will be ignored in this case)
+	-r            : re-sign packages in the repositor(y|ies)
 	-s <password> : sign the package using this password for the gpg key
 	-g <gpg_id>   : sign using this gpg_id (default: opennms\@opennms.org)
 
