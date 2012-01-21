@@ -56,34 +56,43 @@ if (not $all) {
 
 my $release_descriptions = read_properties(dist_file('OpenNMS-Release', 'release.properties'));
 
+my $releases = {};
 my @sync_order = split(/\s*,\s*/, $release_descriptions->{order_sync});
 delete $release_descriptions->{order_sync};
 
-my $scan_repositories = [];
 if ($all) {
-	$scan_repositories = OpenNMS::Release::YumRepo->find_repos($base);
+	for my $repo (@{OpenNMS::Release::YumRepo->find_repos($base)}) {
+		if (not grep { $_ eq $repo->release } @sync_order) {
+			warn "Unknown release: " . $repo->release . ", putting at the end of the sync order.";
+			push(@sync_order, $repo->release);
+		}
+		$releases->{$repo->release}->{$repo->platform} = $repo;
+	}
 } else {
-	$scan_repositories = [ OpenNMS::Release::YumRepo->new($base, $release, $platform) ];
+	$releases->{$release}->{$platform} = OpenNMS::Release::YumRepo->new($base, $release, $platform);
 }
 
-for my $orig_repo (@$scan_repositories) {
-	my $base     = $orig_repo->abs_base;
-	my $release  = $orig_repo->release;
-	my $platform = $orig_repo->platform;
+for my $release (@sync_order) {
+	next unless (exists $releases->{$release});
 
-	print "=== Updating repo files in: $base/$release/$platform/ ===\n";
+	for my $platform (sort keys %{$releases->{$release}}) {
+		my $orig_repo = $releases->{$release}->{$platform};
+		my $base     = $orig_repo->abs_base;
+
+		print "=== Updating repo files in: $base/$release/$platform/ ===\n";
+		
+		my $release_repo = $orig_repo->create_temporary;
 	
-	my $release_repo = $orig_repo->create_temporary;
-
-	if (defined $subdirectory and @rpms) {
-		install_rpms($release_repo, $subdirectory, @rpms);
+		if (defined $subdirectory and @rpms) {
+			install_rpms($release_repo, $subdirectory, @rpms);
+		}
+	
+		index_repo($release_repo, $signing_id, $signing_password);
+		
+		$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
+		
+		sync_repos($release_repo, $signing_id, $signing_password);
 	}
-
-	index_repo($release_repo, $signing_id, $signing_password);
-	
-	$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
-	
-	sync_repos($release_repo, $signing_id, $signing_password);
 }
 
 # return 1 if the obsolete RPM given should be deleted
