@@ -1,3 +1,9 @@
+libopennms-release-perl (2.4.1-1) unstable; urgency=low
+
+  * add support for re-signing the repo
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Sat, 21 Jan 2012 10:51:07 -0500
+
 libopennms-release-perl (2.4-1) unstable; urgency=medium
 
   * Index (empty) APT source repos
