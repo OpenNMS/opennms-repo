@@ -13,6 +13,7 @@ use Getopt::Long qw(:config gnu_getopt);
 use IO::Handle;
 
 use OpenNMS::Util v2.0;
+use OpenNMS::Release::Repo v2.4;
 use OpenNMS::Release::YumRepo v2.0;
 use OpenNMS::Release::RPMPackage v2.0;
 
@@ -20,6 +21,7 @@ $|++;
 
 my $help             = 0;
 my $all              = 0;
+my $resign           = 0;
 
 my $signing_password = undef;
 my $signing_id       = 'opennms@opennms.org';
@@ -29,6 +31,7 @@ my $result = GetOptions(
 	"a|all"      => \$all,
 	"s|sign=s"   => \$signing_password,
 	"g|gpg-id=s" => \$signing_id,
+	"r|resign"   => \$resign,
 );
 
 my ($base, $release, $platform, $subdirectory, @rpms);
@@ -41,6 +44,10 @@ $base = Cwd::abs_path($base);
 
 if ($help) {
 	usage();
+}
+
+if ($resign and not defined $signing_password) {
+	usage("You specified --resign, but did not provide a password!");
 }
 
 if (not $all) {
@@ -72,17 +79,30 @@ if ($all) {
 	$releases->{$release}->{$platform} = OpenNMS::Release::YumRepo->new($base, $release, $platform);
 }
 
+sub display {
+	my $package = shift;
+	my $count   = shift;
+	my $total   = shift;
+	my $sign    = shift;
+
+	print "- " . $package->to_string . " ($count/$total, " . ($sign? 'resigned':'skipped') . ")\n";
+}
+
 for my $release (@sync_order) {
 	next unless (exists $releases->{$release});
 
 	for my $platform (sort keys %{$releases->{$release}}) {
 		my $orig_repo = $releases->{$release}->{$platform};
-		my $base     = $orig_repo->abs_base;
+		my $base      = $orig_repo->abs_base;
 
 		print "=== Updating repo files in: $base/$release/$platform/ ===\n";
-		
+
 		my $release_repo = $orig_repo->create_temporary;
 	
+		if ($resign) {
+			$release_repo->sign_all_packages($signing_id, $signing_password, undef, \&display);
+		}
+
 		if (defined $subdirectory and @rpms) {
 			install_rpms($release_repo, $subdirectory, @rpms);
 		}

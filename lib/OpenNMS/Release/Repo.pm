@@ -25,7 +25,7 @@ This represents an individual package repository.
 
 =cut
 
-our $VERSION = v2.1;
+our $VERSION = '2.4';
 
 =head1 CONSTRUCTOR
 
@@ -486,7 +486,7 @@ sub find_newest_packages_by_name {
 	return $self->packageset->find_newest_by_name($name);
 }
 
-=head2 * delete_obsolete_packages
+=head2 * delete_obsolete_packages([\&subroutine])
 
 Removes all but the newest packages from the repository.
 
@@ -532,6 +532,44 @@ sub delete_obsolete_packages {
 	#$self->clear_cache();
 
 	return $count;
+}
+
+=head2 * sign_all_packages($signing_id, $signing_password, [\&sign], [\&status])
+
+Given a GPG id and password, (re-)sign all the packages in the repository.
+
+Takes 2 optional subroutines.
+
+The first, like delete_obsolete_packages, will receive as arguments the package object,
+and the repository object. If it returns 1, that package will be signed.
+
+The second receives as arguments the package, the current count, the total count
+of packages to be processed, and whether or not the package was chosen to be signed
+by the &sign method.
+
+=cut
+
+sub sign_all_packages {
+	my $self             = shift;
+	my $signing_id       = shift;
+	my $signing_password = shift;
+	my $sign_method      = shift || sub { 1 };
+	my $status_method    = shift || sub {};
+
+	my $count = 0;
+	my @all_packages = @{$self->find_all_packages};
+	my $total = scalar(@all_packages);
+	for my $package (@all_packages) {
+		my $should_sign = $sign_method->($package, $self);
+		if ($should_sign) {
+			$package->sign($signing_id, $signing_password) or croak "Failed to sign " . $package->to_string;
+			$self->dirty(1);
+		}
+		$count++;
+		$status_method->($package, $count, $total, $should_sign);
+	}
+
+	return 1;
 }
 
 =head2 * index_if_necessary
