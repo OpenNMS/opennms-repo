@@ -12,6 +12,7 @@ use Expect;
 
 use base qw(OpenNMS::Release::LocalPackage);
 
+use OpenNMS::Util v2.5;
 use OpenNMS::Release::RPMVersion;
 
 =head1 NAME
@@ -32,7 +33,9 @@ things.
 
 =cut
 
-our $VERSION = v2.1;
+our $VERSION = '2.5';
+
+our $RPM     = undef;
 our $RPMSIGN = undef;
 
 =head1 CONSTRUCTOR
@@ -55,17 +58,23 @@ sub new {
 	}
 
 	if (not defined $RPMSIGN) {
-		my $rpmsign = `which rpmsign 2>/dev/null`;
-		if ($? != 0) {
-			croak "Unable to locate \`rpmsign`!";
+		$RPMSIGN = find_executable('rpmsign');
+		if (not defined $RPMSIGN) {
+			croak "Unable to locate \`rpmsign\`: $!";
 		}
-		chomp($rpmsign);
-		$RPMSIGN = $rpmsign;
 	}
 
 	my $escaped_path = $path;
 	$escaped_path =~ s/\'/\\\'/g;
-	my $output = `rpm -q --queryformat='\%{name}|\%{epoch}|\%{version}|\%{release}|\%{arch}' -p '$escaped_path'`;
+
+	if (not defined $RPM) {
+		$RPM = find_executable('rpm');
+		if (not defined $RPM) {
+			croak "Unable to locate \`rpm\`: $!";
+		}
+	}
+
+	my $output = `$RPM -q --queryformat='\%{name}|\%{epoch}|\%{version}|\%{release}|\%{arch}' -p '$escaped_path'`;
 	chomp($output);
 	if ($? == 0) {
 		my ($name, $epoch, $version, $release, $arch) = split(/\|/, $output);

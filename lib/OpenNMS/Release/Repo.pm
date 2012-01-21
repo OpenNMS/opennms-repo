@@ -11,6 +11,8 @@ use File::Path;
 use File::Basename;
 use File::Temp qw(tempdir);
 
+use OpenNMS::Util v2.5;
+
 =head1 NAME
 
 OpenNMS::Release::Repo - Perl extension that represents a package repository
@@ -25,7 +27,10 @@ This represents an individual package repository.
 
 =cut
 
-our $VERSION = '2.4';
+our $VERSION = '2.5';
+
+our $DF      = undef;
+our $RSYNC   = undef;
 
 =head1 CONSTRUCTOR
 
@@ -107,12 +112,13 @@ sub copy {
 		return undef;
 	}
 
-	my $rsync = `which rsync 2>/dev/null`;
-	if ($? != 0) {
-		carp "Unable to locate rsync!";
-		return undef;
+	if (not defined $RSYNC) {
+		$RSYNC = find_executable('rsync');
+		if (not defined $RSYNC) {
+			carp "Unable to locate \`rsync\`: $!";
+			return undef;
+		}
 	}
-	chomp($rsync);
 
 	my $repo = $self->new_with_base($newbase);
 	mkpath($repo->path);
@@ -124,9 +130,9 @@ sub copy {
 	my $dest_fs   = $self->_get_fs_for_path($repopath);
 
 	if (defined $source_fs and defined $dest_fs and $source_fs eq $dest_fs) {
-		system($rsync, "-aqrH", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+		system($RSYNC, "-aqrH", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
 	} else {
-		system($rsync, "-aqrH", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+		system($RSYNC, "-aqrH", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
 	}
 
 	return $repo;
@@ -181,10 +187,16 @@ sub _get_fs_for_path($) {
 
 	mkpath($path);
 
-	my $df = `which df 2>/dev/null`;
+	if (not defined $DF) {
+		$DF = find_executable('df');
+		if (not defined $DF) {
+			carp "unable to locate \`df\`: $!";
+			return undef;
+		}
+	}
+
 	if ($? == 0) {
-		chomp($df);
-		open(OUTPUT, "$df -h '$path' |") or croak "unable to run 'df -h $path': $!";
+		open(OUTPUT, "$DF -h '$path' |") or croak "unable to run 'df -h $path': $!";
 		<OUTPUT>;
 		my $output = <OUTPUT>;
 		close(OUTPUT);

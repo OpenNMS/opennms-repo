@@ -8,12 +8,10 @@ require Exporter;
 
 our @ISA = qw(Exporter);
 
-our $VERSION = '2.4.1';
+our $VERSION = '2.5';
 
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
-
 =head1 NAME
 
 OpenNMS::Release - OpenNMS package-management tools.

@@ -6,6 +6,8 @@ use warnings;
 
 use Carp;
 
+use OpenNMS::Util v2.5;
+
 use base qw(OpenNMS::Release::Version);
 
 =head1 NAME
@@ -23,7 +25,7 @@ This is just a perl module for manipulating RPM versions.
 
 =cut
 
-our $VERSION = v2.0;
+our $VERSION = '2.5';
 our $RPMVER  = undef;
 
 =head1 CONSTRUCTOR
@@ -45,11 +47,10 @@ sub new {
 	my $self    = bless($class->SUPER::new($version, $release, $epoch), $class);
 
 	if (not defined $RPMVER) {
-		$RPMVER = `which rpmver 2>/dev/null`;
-		if ($? != 0) {
+		$RPMVER = find_executable('rpmver');
+		if (not defined $RPMVER) {
 			croak "Unable to locate \`rpmver\` executable: $!\n";
 		}
-		chomp($RPMVER);
 	}
 
 	return $self;

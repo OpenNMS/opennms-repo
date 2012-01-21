@@ -15,7 +15,7 @@ use File::Spec;
 use File::Temp qw(tempdir);
 use IO::Handle;
 
-use OpenNMS::Util;
+use OpenNMS::Util v2.5;
 use OpenNMS::Release::RPMPackage;
 use OpenNMS::Release::PackageSet;
 
@@ -43,7 +43,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = v2.1.3;
+our $VERSION = '2.5';
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 
@@ -85,13 +85,10 @@ sub new {
 	}
 
 	if (not defined $CREATEREPO) {
-		my $createrepo = `which createrepo 2>/dev/null`;
-		if ($? != 0) {
-			croak "Unable to locate \`createrepo\` executable!";
+		$CREATEREPO = find_executable('createrepo');
+		if (not defined $CREATEREPO) {
+			croak "Unable to locate \`createrepo\` executable: $!";
 		}
-		chomp($createrepo);
-		$CREATEREPO=$createrepo;
-
 
 		my $handle = IO::Handle->new();
 		open($handle, "$CREATEREPO --help 2>&1 |") or croak "unable to run $CREATEREPO: $!";

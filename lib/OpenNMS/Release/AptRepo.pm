@@ -15,7 +15,7 @@ use File::Spec;
 use File::Temp qw(tempdir);
 use IO::Handle;
 
-use OpenNMS::Util;
+use OpenNMS::Util v2.5;
 use OpenNMS::Release::DebPackage;
 use OpenNMS::Release::PackageSet;
 
@@ -40,7 +40,7 @@ Repositories are expected to be in the form:
 
 =cut
 
-our $VERSION = '2.4';
+our $VERSION = '2.5';
 our $APT_FTPARCHIVE = undef;
 our @ARCHITECTURES = qw(amd64 i386 powerpc);
 
@@ -75,12 +75,10 @@ sub new {
 	}
 
 	if (not defined $APT_FTPARCHIVE) {
-		my $apt_ftparchive = `which apt-ftparchive 2>/dev/null`;
-		if ($? != 0) {
-			croak "Unable to locate \`apt-ftparchive\` executable!";
+		$APT_FTPARCHIVE = find_executable('apt-ftparchive');
+		if (not defined $APT_FTPARCHIVE) {
+			croak "Unable to locate \`apt-ftparchive\` executable: $!";
 		}
-		chomp($apt_ftparchive);
-		$APT_FTPARCHIVE=$apt_ftparchive;
 	}
 
 	$self->{RELEASE}  = $release;

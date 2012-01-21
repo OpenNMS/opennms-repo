@@ -22,15 +22,43 @@ OpenNMS::Util - a collection of utility functions.
 our @EXPORT_OK = ( );
 
 our @EXPORT = qw(
+	find_executable
 	read_properties
 	slurp
 	gpg_write_key
 	gpg_detach_sign_file
 );
 
-our $VERSION = v2.1.2;
+our $VERSION = '2.5';
 
 =head1 METHODS
+
+=head2 * find_executable($exe)
+
+Locate an executable. It will first look for an all-caps environment variable
+pointing to the binary  (RPM = rpm, APT_FTPARCHIVE = apt-ftparchive, etc.), and
+check that it is executable, and barring that, look for it in the path.
+
+=cut
+
+sub find_executable($) {
+	my $name = shift;
+
+	my $envname = uc($name);
+	$envname =~ s/[^[:alnum:]]+/_/g;
+
+	if (exists $ENV{$envname} and -x $ENV{$envname}) {
+		return $ENV{$envname};
+	}
+
+	my $exe = `which $name 2>/dev/null`;
+	if ($? == 0) {
+		chomp($exe);
+		return $exe;
+	} else {
+		return undef;
+	}
+}
 
 =head2 * read_properties($file)
 

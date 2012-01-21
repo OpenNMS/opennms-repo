@@ -13,6 +13,7 @@ use Expect;
 
 use base qw(OpenNMS::Release::LocalPackage);
 
+use OpenNMS::Util v2.5;
 use OpenNMS::Release::DebVersion;
 
 =head1 NAME
@@ -34,7 +35,7 @@ things.
 =cut
 
 our $DPKG_SIG = undef;
-our $VERSION = v2.1;
+our $VERSION = '2.5';
 
 =head1 CONSTRUCTOR
 
@@ -57,12 +58,10 @@ sub new {
 	}
 
 	if (not defined $DPKG_SIG) {
-		my $dpkg_sig = `which dpkg-sig 2>/dev/null`;
-		if ($? != 0) {
+		$DPKG_SIG = find_executable('dpkg-sig');
+		if (not defined $DPKG_SIG) {
 			croak "Unable to locate dpkg-sig! Try \`apt-get install dpkg-sig`."
 		}
-		chomp($dpkg_sig);
-		$DPKG_SIG = $dpkg_sig;
 	}
 
 	my $escaped_path = $path;

@@ -6,6 +6,8 @@ use warnings;
 
 use Carp;
 
+use OpenNMS::Util v2.5;
+
 use base qw(OpenNMS::Release::Version);
 
 =head1 NAME
@@ -23,7 +25,7 @@ This is just a perl module for manipulating Debian versions.
 
 =cut
 
-our $VERSION = v2.0;
+our $VERSION = '2.5';
 our $DPKG    = undef;
 
 =head1 CONSTRUCTOR
@@ -45,11 +47,10 @@ sub new {
 	my $self    = bless($class->SUPER::new($version, $release, $epoch), $class);
 
 	if (not defined $DPKG) {
-		$DPKG = `which dpkg 2>/dev/null`;
-		if ($? != 0) {
+		$DPKG = find_executable('dpkg');
+		if (not defined $DPKG) {
 			croak "Unable to locate \`dpkg\` executable: $!\n";
 		}
-		chomp($DPKG);
 	}
 
 	return $self;
