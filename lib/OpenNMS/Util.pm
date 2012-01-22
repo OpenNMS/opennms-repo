@@ -5,6 +5,8 @@ use strict;
 use warnings;
 
 use Carp;
+use File::Spec;
+
 require Exporter;
 
 our @ISA = qw(Exporter);
@@ -51,13 +53,13 @@ sub find_executable($) {
 		return $ENV{$envname};
 	}
 
-	my $exe = `which $name 2>/dev/null`;
-	if ($? == 0) {
-		chomp($exe);
-		return $exe;
-	} else {
-		return undef;
+	for my $dir (File::Spec->path) {
+		my $file = File::Spec->catfile($dir, $name);
+		if (-x $file) {
+			return $file;
+		}
 	}
+	return undef;
 }
 
 =head2 * read_properties($file)

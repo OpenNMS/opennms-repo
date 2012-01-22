@@ -11,12 +11,12 @@ requires       'File::ShareDir'     => undef;
 requires       'Net::SFTP::Foreign' => undef;
 test_requires  'Test::More'         => undef;
 
-install_script 'buildtool.pl';
-install_script 'create-repo-rpm.pl';
-install_script 'generate-yum-repo-html.pl';
-install_script 'update-apt-repo.pl';
-install_script 'update-sourceforge-repo.pl';
-install_script 'update-yum-repo.pl';
+install_script 'script/buildtool.pl';
+install_script 'script/create-repo-rpm.pl';
+install_script 'script/generate-yum-repo-html.pl';
+install_script 'script/update-apt-repo.pl';
+install_script 'script/update-sourceforge-repo.pl';
+install_script 'script/update-yum-repo.pl';
 
 install_share 'share';
 
