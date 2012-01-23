@@ -30,7 +30,7 @@ my $result = GetOptions(
 	"a|all"      => \$all,
 	"s|sign=s"   => \$signing_password,
 	"g|gpg-id=s" => \$signing_id,
-	"r|resign"   => \$resign;
+	"r|resign"   => \$resign,
 );
 
 my ($base, $release, @packages);
