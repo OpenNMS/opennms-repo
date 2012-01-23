@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 
+$|++;
+
 use strict;
 use warnings;
 
@@ -16,8 +18,6 @@ use OpenNMS::Util v2.0;
 use OpenNMS::Release::Repo v2.4;
 use OpenNMS::Release::YumRepo v2.0;
 use OpenNMS::Release::RPMPackage v2.0;
-
-$|++;
 
 my $help             = 0;
 my $all              = 0;
