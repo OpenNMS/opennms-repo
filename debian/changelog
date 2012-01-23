@@ -1,3 +1,15 @@
+libopennms-release-perl (2.5.2-1) unstable; urgency=low
+
+  * fix an issue in the debian package
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Sun, 22 Jan 2012 20:49:02 -0500
+
+libopennms-release-perl (2.5.1-1) unstable; urgency=low
+
+  * new release
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Sun, 22 Jan 2012 20:46:21 -0500
+
 libopennms-release-perl (2.4.1-1) unstable; urgency=low
 
   * add support for re-signing the repo
