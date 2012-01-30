@@ -33,7 +33,7 @@ things.
 
 =cut
 
-our $VERSION = '2.5';
+our $VERSION = '2.5.3';
 
 our $RPM     = undef;
 our $RPMSIGN = undef;
@@ -99,6 +99,8 @@ sub sign ($$) {
 	my $self         = shift;
 	my $gpg_id       = shift;
 	my $gpg_password = shift;
+
+	system($RPMSIGN, '--delsign', $self->path) == 0 or die "Can't run $RPMSIGN --delsign on " . $self->to_string;
 
 	my $expect = Expect->new();
 	$expect->raw_pty(1);
