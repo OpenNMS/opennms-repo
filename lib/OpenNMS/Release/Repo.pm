@@ -11,7 +11,7 @@ use File::Path;
 use File::Basename;
 use File::Temp qw(tempdir);
 
-use OpenNMS::Util v2.5;
+use OpenNMS::Util v2.6;
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ This represents an individual package repository.
 
 =cut
 
-our $VERSION = '2.5';
+our $VERSION = '2.6';
 
 our $DF      = undef;
 our $RSYNC   = undef;
@@ -62,7 +62,9 @@ sub new {
 
 =head1 METHODS
 
-=head2 * new_with_base($newbase)
+=over 4
+
+=item * new_with_base($newbase)
 
 Given a new base path, construct a Repo object matching the current,
 but with the new base path.
@@ -73,30 +75,44 @@ sub new_with_base($) {
 	croak "You must implement 'new_with_base' in your subclass!";
 }
 
+=item * base
+
+The base (root) path of this repository.
+
+=cut
+
 sub base {
 	my $self = shift;
 	return $self->{BASE};
 }
 
+# obsolete
 sub abs_base {
 	return shift->base;
 }
+
+=item * path
+
+The full path to the top-level directory of this repository.  (Must be implemented in subclasses.)
+
+=cut
 
 sub path {
 	croak "You must implement 'path' in your subclass!";
 }
 
+# obsolete
 sub abs_path {
 	return shift->path;
 }
 
-sub dirty {
+sub _dirty {
 	my $self = shift;
 	if (@_) { $self->{DIRTY} = shift }
 	return $self->{DIRTY};
 }
 
-=head2 * copy
+=item * copy($new_base_path)
 
 Given a new base path, copy this repository to the new path using rsync.
 Returns an OpenNMS::Release::Repo object, representing this new base path.
@@ -106,7 +122,7 @@ If possible, it will create the new repository using hard links.
 =cut
 
 sub copy {
-	my $self = shift;
+	my $self    = shift;
 	my $newbase = shift;
 	if (not defined $newbase) {
 		return undef;
@@ -138,7 +154,7 @@ sub copy {
 	return $repo;
 }
 
-=head2 * replace
+=item * replace($target_repository)
 
 Given a target repository, replace the target repository with the contents of the
 current repository.
@@ -164,7 +180,7 @@ sub replace {
 	return $self->new_with_base($target_repo->base);
 }
 
-=head2 * create_temporary
+=item * create_temporary
 
 Creates a temporary repository that is a copy of the current repository.
 This temporary repository is automatically deleted on exit of the calling
@@ -209,7 +225,7 @@ sub _get_fs_for_path($) {
 	return undef;
 }
 
-=head2 * _packageset
+=item * _packageset
 
 Returns a PackageSet of OpenNMS::Release::Package objects in this repository. This
 must be uncached, and implemented by subclasses.
@@ -243,7 +259,7 @@ sub _add_to_packageset($) {
 	}
 }
 
-=head2 * delete
+=item * delete
 
 Delete the repository from the filesystem.
 
@@ -253,7 +269,7 @@ sub delete {
 	my $self = shift;
 
 	$self->clear_cache;
-	$self->dirty(1);
+	$self->_dirty(1);
 
 	return 1 if (not -e $self->path);
 
@@ -295,7 +311,7 @@ sub delete_package($) {
 	my $package = shift;
 
 	my $ret = $self->packageset->remove($package);
-	$self->dirty(1);
+	$self->_dirty(1);
 	$package->delete;
 	return $ret;
 }
@@ -314,7 +330,7 @@ sub copy_package($$) {
 	}
 
 	$self->_add_to_packageset($newpackage);
-	$self->dirty(1);
+	$self->_dirty(1);
 
 	return $newpackage;
 }
@@ -333,7 +349,7 @@ sub link_package($$) {
 	}
 
 	$self->_add_to_packageset($newpackage);
-	$self->dirty(1);
+	$self->_dirty(1);
 
 	return $newpackage;
 }
@@ -343,7 +359,7 @@ sub symlink_package($$) {
 	my $package = shift;
 	my $topath  = shift;
 
-	$self->dirty(1);
+	$self->_dirty(1);
 
 	my $newpackage = $package->symlink($topath);
 	if (not defined $newpackage) {
@@ -353,7 +369,7 @@ sub symlink_package($$) {
 	return $newpackage;
 }
 
-=head2 * install_package($package, $target_path)
+=item * install_package($package, $target_path)
 
 Given an package and an optional target path relative to the repository path, install
 the package into the repository.
@@ -371,7 +387,7 @@ sub install_package($$) {
 	$self->copy_package($package, $topath);
 }
 
-=head2 * share_package($source_repo, $package)
+=item * share_package($source_repo, $package)
 
 Given a source repository and an package object, hard link the package into the
 equivalent location in the current repository, if it is newer than the
@@ -383,6 +399,10 @@ sub share_package($$) {
 	my $self      = shift;
 	my $from_repo = shift;
 	my $package   = shift;
+
+	if (grep { $_ eq $package->name } @{$self->exclude_share}) {
+		return 0;
+	}
 
 	my $topath_r   = dirname($package->relative_path($from_repo->path));
 	my $abs_topath = $topath_r eq '.'? $self->path : File::Spec->catdir($self->path, $topath_r);
@@ -396,7 +416,7 @@ sub share_package($$) {
 	return 0;
 }
 
-=head2 * share_all_packages($source_repo)
+=item * share_all_packages($source_repo)
 
 Given a source repository, share any package in that source repository that is
 newer than the equivalent package in the current repository.  If no equivalent package
@@ -415,8 +435,32 @@ sub share_all_packages($) {
 	return $count;
 }
 
+=item * exclude_share
 
-=head2 * find_all_packages
+A (reference to a) list of package names that should be ignored when sharing
+asource repository with this one.
+
+=cut
+
+sub exclude_share {
+	my $self = shift;
+
+	if (not exists $self->{EXCLUDE_SHARE}) {
+		$self->{EXCLUDE_SHARE} = [];
+
+		my $exclude_file = File::Spec->catfile($self->path, '.exclude-share');
+		if (-e $exclude_file) {
+			for my $name (split(/\s*[\r\n]+\s*/, slurp($exclude_file))) {
+				next if ($name =~ /^\s*$/);
+				push(@{$self->{EXCLUDE_SHARE}}, $name);
+			}
+		}
+	}
+
+	return $self->{EXCLUDE_SHARE};
+}
+
+=item * find_all_packages
 
 Locate all Packages in the repository.  Returns a list of
 L<OpenNMS::Release::Package> objects.
@@ -429,7 +473,7 @@ sub find_all_packages {
 	return $self->packageset->find_all();
 }
 
-=head2 * find_newest_packages
+=item * find_newest_packages
 
 Locate the newest version of each package in the repository (based
 on the name of the package, not filesystem details).  Returns a list
@@ -442,7 +486,7 @@ sub find_newest_packages {
 	return $self->packageset->find_newest();
 }
 
-=head2 * find_obsolete_packages
+=item * find_obsolete_packages
 
 Locate all but the newest version of each package in the repository.
 Returns a list of L<OpenNMS::Release::Package> objects.
@@ -454,7 +498,7 @@ sub find_obsolete_packages {
 	return $self->packageset->find_obsolete();
 }
 
-=head2 * find_newest_package_by_name($name, $arch)
+=item * find_newest_package_by_name($name, $arch)
 
 Given a package name, returns the newest L<OpenNMS::Release::Package> object
 by that name and architecture in the repository.
@@ -483,7 +527,7 @@ sub find_newest_package_by_name {
 	}
 }
 
-=head2 * find_newest_packages_by_name
+=item * find_newest_packages_by_name
 
 Given a package name, returns the newest list f L<OpenNMS::Release::Package> objects
 for each architecture by that name in the repository.  If no package by that name
@@ -498,7 +542,7 @@ sub find_newest_packages_by_name {
 	return $self->packageset->find_newest_by_name($name);
 }
 
-=head2 * delete_obsolete_packages([\&subroutine])
+=item * delete_obsolete_packages([\&subroutine])
 
 Removes all but the newest packages from the repository.
 
@@ -546,7 +590,7 @@ sub delete_obsolete_packages {
 	return $count;
 }
 
-=head2 * sign_all_packages($signing_id, $signing_password, [\&sign], [\&status])
+=item * sign_all_packages($signing_id, $signing_password, [\&sign], [\&status])
 
 Given a GPG id and password, (re-)sign all the packages in the repository.
 
@@ -575,7 +619,7 @@ sub sign_all_packages {
 		my $should_sign = $sign_method->($package, $self);
 		if ($should_sign) {
 			$package->sign($signing_id, $signing_password) or croak "Failed to sign " . $package->to_string;
-			$self->dirty(1);
+			$self->_dirty(1);
 		}
 		$count++;
 		$status_method->($package, $count, $total, $should_sign);
@@ -584,7 +628,7 @@ sub sign_all_packages {
 	return 1;
 }
 
-=head2 * index_if_necessary
+=item * index_if_necessary
 
 Create the YUM indexes for this repository, if any
 changes have been made.
@@ -597,7 +641,7 @@ sub index_if_necessary($) {
 	my $self    = shift;
 	my $options = shift;
 
-	if ($self->dirty) {
+	if ($self->_dirty) {
 		$self->index($options);
 	} else {
 		return 0;
@@ -605,6 +649,14 @@ sub index_if_necessary($) {
 
 	return 1;
 }
+
+=item * begin
+
+Begin a transaction.  Commit changes using commit(), otherwise, abort().
+
+Returns the repository object to be manipulated inside the transaction.
+
+=cut
 
 sub begin() {
 	my $self = shift;
@@ -618,6 +670,15 @@ sub begin() {
 	return $temporary;
 }
 
+=item * commit
+
+Called on the temporary object from begin(), commits the changes that have occurred
+since the start of the transaction.
+
+Returns the committed repository object.
+
+=cut
+
 sub commit($) {
 	my $self    = shift;
 	my $options = shift;
@@ -628,7 +689,7 @@ sub commit($) {
 	# reset the original object
 	my $original = delete $self->{ORIGINAL_REPO};
 	$original->clear_cache;
-	$original->dirty(0);
+	$original->_dirty(0);
 
 	# copy ourselves over the original
 	my $new = $self->copy($original->base);
@@ -638,6 +699,15 @@ sub commit($) {
 
 	return $new;
 }
+
+=item * abort
+
+Called on the temporary object from begin(), aborts the changes that have occurred
+since the start of the transaction.
+
+Returns the original, unmodified repository object.
+
+=cut
 
 sub abort() {
 	my $self = shift;
@@ -651,6 +721,8 @@ sub abort() {
 1;
 
 __END__
+=back
+
 =head1 AUTHOR
 
 Benjamin Reed E<lt>ranger@opennms.orgE<gt>

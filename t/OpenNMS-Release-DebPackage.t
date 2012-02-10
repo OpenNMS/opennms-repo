@@ -1,5 +1,8 @@
 $|++;
 
+use strict;
+use warnings;
+
 use Test::More;
 BEGIN {
 	my $dpkg = `which dpkg 2>/dev/null`;

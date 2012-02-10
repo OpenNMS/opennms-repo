@@ -40,7 +40,7 @@ Repositories are expected to be in the form:
 
 =cut
 
-our $VERSION = '2.5';
+our $VERSION = '2.6';
 our $APT_FTPARCHIVE = undef;
 our @ARCHITECTURES = qw(amd64 i386 powerpc);
 
@@ -305,7 +305,7 @@ sub index($) {
 		# carp "skipping gpg-signing of '$releasefile'";
 	}
 
-	$self->dirty(0);
+	$self->_dirty(0);
 	return 1;
 }
 

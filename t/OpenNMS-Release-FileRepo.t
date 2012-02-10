@@ -1,5 +1,8 @@
 $|++;
 
+use strict;
+use warnings;
+
 use Cwd;
 use File::Path;
 use Data::Dumper;
