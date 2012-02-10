@@ -14,8 +14,9 @@ BEGIN {
 	}
 };
 
-my ($deb);
-my $t = Cwd::abs_path('t');
+my ($t, $deb, $olderdeb);
+
+$t = Cwd::abs_path('t');
 
 # t/packages/deb/dists/opennms-1.8/main/binary-all/opennms_1.8.16-1_all.deb
 # t/packages/deb/dists/nightly-1.11/main/binary-all/opennms_1.11.0-0.20111216.14_all.deb
