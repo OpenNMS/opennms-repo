@@ -21,7 +21,7 @@ This is just a perl module for manipulating package versions.
 
 =cut
 
-our $VERSION = v2.1;
+our $VERSION = '2.6.2';
 
 my $CACHE_HITS = 0;
 my $CACHE_MISSES = 0;
