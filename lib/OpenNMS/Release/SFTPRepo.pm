@@ -37,7 +37,7 @@ This represents a remote SFTP file repository.
 
 =cut
 
-our $VERSION = '2.6.1';
+our $VERSION = v2.3;
 
 =head1 CONSTRUCTOR
 
@@ -182,12 +182,7 @@ sub _delete_package($) {
 	}
 
 	# remove $package
-	my $ls = $self->_sftp->ls($package->path);
-	if (@$ls == 1) {
-		$self->_sftp->remove($package->path) or croak "failed to remove " . $package->path . " from remote repository: " . $self->_sftp->error;
-	} else {
-		carp "expected 1 result from ls '" . $package->path . "' but got " . scalar(@$ls) . " instead.  Skipping rm.";
-	}
+	$self->_sftp->remove($package->path) or croak "failed to remove " . $package->path . " from remote repository: " . $self->_sftp->error;
 	return 1;
 }
 
