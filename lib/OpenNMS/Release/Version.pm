@@ -176,7 +176,13 @@ sub _compare_version {
 		return -1 unless (defined $a[$i]);
 		return  1 unless (defined $b[$i]);
 
-		my $comparison = $a[$i] cmp $b[$i];
+		my $comparison;
+		if ($a[$i] =~ /^\d+$/ and $b[$i] =~ /^\d+$/) {
+			$comparison = $a[$i] <=> $b[$i];
+		} else {
+			$comparison = $a[$i] cmp $b[$i];
+		}
+
 		return $comparison if ($comparison != 0);
 	}
 

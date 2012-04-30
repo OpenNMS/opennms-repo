@@ -6,7 +6,7 @@ use warnings;
 use strict;
 use warnings;
 
-use Test::More tests => 18;
+use Test::More tests => 19;
 use_ok('OpenNMS::Release::Version');
 
 my $one_oh_one     = OpenNMS::Release::Version->new('1.0', '1');
@@ -41,3 +41,8 @@ ok($release->is_newer_than($beta));
 ok($beta->is_older_than($beta2));
 ok($epoch->is_newer_than($release));
 ok($epoch->is_newer_than($beta2));
+
+
+my $one_eight_eighteen = OpenNMS::Release::Version->new('1.8.18', '0.20120117.66');
+my $one_ten_two        = OpenNMS::Release::Version->new('1.10.2', '0.20120430.165');
+ok($one_ten_two->is_newer_than($one_eight_eighteen));
