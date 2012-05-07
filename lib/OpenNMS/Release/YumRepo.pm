@@ -43,7 +43,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = '2.5';
+our $VERSION = '2.6';
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 
@@ -302,7 +302,7 @@ sub index($) {
 		gpg_detach_sign_file($id, $password, File::Spec->catfile($repodata, 'repomd.xml'));
 	}
 
-	$self->dirty(0);
+	$self->_dirty(0);
 	return 1;
 }
 

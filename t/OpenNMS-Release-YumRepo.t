@@ -1,13 +1,18 @@
 $|++;
 
+use strict;
+use warnings;
+
 use Cwd;
 use File::Path;
 use Data::Dumper;
 use Test::More;
+use OpenNMS::Util v2.6;
+
 BEGIN {
 	my $package = `which rpm 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 40;
+		plan tests => 43;
 		use_ok('OpenNMS::Release::RPMPackage');
 		use_ok('OpenNMS::Release::YumRepo');
 	} else {
@@ -123,6 +128,18 @@ ok(! -d "$t/copy");
 $package = $bleeding_rhel5->find_newest_package_by_name("opennms", "noarch");
 ok(defined $package);
 is($package->version->version, "1.8.16");
+ 
+# test excludes
+
+reset_repos();
+spit("$t/testpackages/rpm/bleeding/rhel5/.exclude-share", "iplike\nopennms\n");
+$bleeding_rhel5 = OpenNMS::Release::YumRepo->new("$t/testpackages/rpm", "bleeding", "rhel5");
+is(scalar(@{$bleeding_rhel5->exclude_share}), 2);
+$bleeding_rhel5->share_all_packages($stable_rhel5);
+$package = $bleeding_rhel5->find_newest_package_by_name('iplike', 'i386');
+is($package->version->version, '1.0.7');
+$package = $bleeding_rhel5->find_newest_package_by_name('iplike', 'x86_64');
+is($package->version->version, '1.0.7');
 
 $stable_common->delete;
 $stable_rhel5->delete;

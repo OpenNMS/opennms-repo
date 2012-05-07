@@ -18,7 +18,7 @@ use IO::Handle;
 use Net::SFTP::Foreign;
 
 use OpenNMS::Util;
-use OpenNMS::Release::FilePackage;
+use OpenNMS::Release::FilePackage v2.6.3;
 use OpenNMS::Release::PackageSet;
 
 use base qw(OpenNMS::Release::Repo);
@@ -37,7 +37,7 @@ This represents a remote SFTP file repository.
 
 =cut
 
-our $VERSION = v2.3;
+our $VERSION = '2.6.3';
 
 =head1 CONSTRUCTOR
 

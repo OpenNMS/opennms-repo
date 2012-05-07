@@ -44,7 +44,13 @@ END
 sub get_branch_name() {
 	my $ret = $GIT->command_oneline('name-rev', 'HEAD');
 	if ($ret =~ /^HEAD\s+(.*)\s*$/) {
-		return $1;
+		my $name = $1;
+		if ($name =~ /tags\/[^-]*-([[:alnum:]\.]+)/) {
+			return $1;
+		} else {
+			$name =~ s/[^[:alnum:]]+/-/g;
+			return $name;
+		}
 	} else {
 		return undef;
 	}

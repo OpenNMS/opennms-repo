@@ -1,3 +1,27 @@
+libopennms-release-perl (2.6.3-1) unstable; urgency=low
+
+  * A few cosmetic fixes, and change the SF script to upload, then delete old.
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Mon, 30 Apr 2012 20:28:00 -0400
+
+libopennms-release-perl (2.6.2-1) unstable; urgency=low
+
+  * Fix for sorting of file version numbers.
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Mon, 30 Apr 2012 18:20:56 -0400
+
+libopennms-release-perl (2.6.1-1) unstable; urgency=low
+
+  * Minor update to (hopefully) fix SourceForge uploads
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Mon, 30 Apr 2012 16:59:57 -0400
+
+libopennms-release-perl (2.6-1) unstable; urgency=low
+
+  * cleanups and support for excluding shares
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Fri, 10 Feb 2012 13:19:59 -0500
+
 libopennms-release-perl (2.5.2-1) unstable; urgency=low
 
   * fix an issue in the debian package

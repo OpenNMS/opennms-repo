@@ -6,6 +6,7 @@ use warnings;
 
 use Carp;
 use File::Spec;
+use IO::Handle;
 
 require Exporter;
 
@@ -27,15 +28,18 @@ our @EXPORT = qw(
 	find_executable
 	read_properties
 	slurp
+	spit
 	gpg_write_key
 	gpg_detach_sign_file
 );
 
-our $VERSION = '2.5';
+our $VERSION = '2.6';
 
 =head1 METHODS
 
-=head2 * find_executable($exe)
+=over 4
+
+=item * find_executable($exe)
 
 Locate an executable. It will first look for an all-caps environment variable
 pointing to the binary  (RPM = rpm, APT_FTPARCHIVE = apt-ftparchive, etc.), and
@@ -62,7 +66,7 @@ sub find_executable($) {
 	return undef;
 }
 
-=head2 * read_properties($file)
+=item * read_properties($file)
 
 Reads a property file and returns a hash of the contents.
 
@@ -72,19 +76,20 @@ sub read_properties {
 	my $file = shift;
 	my $return = {};
 
-	open (FILEIN, $file) or die "unable to read from $file: $!";
-	while (<FILEIN>) {
+	my $input = IO::Handle->new();
+	open ($input, $file) or die "unable to read from $file: $!";
+	while (<$input>) {
 		chomp;
 		next if (/^\s*$/);
 		next if (/^\s*\#/);
 		my ($key, $value) = /^\s*([^=]*)\s*=\s*(.*?)\s*$/;
 		$return->{$key} = $value;
 	}
-	close (FILEIN);
+	close ($input);
 	return $return; 
 }	       
 
-=head2 * slurp($file)
+=item * slurp($file)
 
 Reads the contents of a file and returns it as a string.
 
@@ -92,14 +97,32 @@ Reads the contents of a file and returns it as a string.
 
 sub slurp {
 	my $file = shift;
-	open (FILEIN, $file) or die "unable to read from $file: $!";
+
+	my $input = IO::Handle->new();
+	open ($input, $file) or die "unable to read from $file: $!";
 	local $/ = undef;
-	my $ret = <FILEIN>;
-	close (FILEIN);
+	my $ret = <$input>;
+	close ($input);
 	return $ret;
 }
 
-=head2 * gpg_write_key($id, $password, $file)
+=item * spit($file, $contents)
+
+Writes the contents to the specified file.
+
+=cut
+
+sub spit {
+	my $file     = shift;
+	my $contents = shift;
+
+	my $output = IO::Handle->new();
+	open ($output, '>' . $file) or die "unable to write to $file: $!";
+	print $output $contents;
+	return close($output);
+}
+
+=item * gpg_write_key($id, $password, $file)
 
 Given a GPG ID and password, and an output file, writes
 the ASCII-armored version of the GPG key to the given file.
@@ -115,7 +138,7 @@ sub gpg_write_key {
 	return 1;
 }
 
-=head2 * gpg_detach_sign_file($id, $password, $inputfile, [$outputfile])
+=item * gpg_detach_sign_file($id, $password, $inputfile, [$outputfile])
 
 Given a GPG ID and password, and a file, detach-signs the
 specified file and outputs to C<$outputfile>. If no output file
@@ -135,6 +158,8 @@ sub gpg_detach_sign_file {
 
 1;
 __END__
+=back
+
 =head1 AUTHOR
 
 Benjamin Reed E<lt>ranger@opennms.orgE<gt>

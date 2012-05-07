@@ -1,3 +1,8 @@
+$|++;
+
+use strict;
+use warnings;
+
 use Test::More;
 BEGIN {
 	my $rpm = `which rpm 2>/dev/null`;

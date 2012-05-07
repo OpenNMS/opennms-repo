@@ -8,8 +8,8 @@ use warnings;
 use File::Spec;
 use Getopt::Long qw(:config gnu_getopt);
 
-use OpenNMS::Release::FilePackage v2.1;
-use OpenNMS::Release::SFTPRepo v2.1;
+use OpenNMS::Release::FilePackage v2.6.3;
+use OpenNMS::Release::SFTPRepo v2.6.3;
 
 my $help   = 0;
 my $result = GetOptions(
@@ -29,8 +29,10 @@ for my $file (@files) {
 	print "- installing ", $package->to_string, "\n";
 	$repo->install_package($package);
 }
-$repo->delete_obsolete_packages();
 $repo->commit();
+
+$repo = OpenNMS::Release::SFTPRepo->new('frs.sourceforge.net', File::Spec->catdir('/home/frs/project/o/op/opennms/OpenNMS-Snapshots', $release));
+$repo->delete_obsolete_packages();
 
 sub usage {
 	print STDERR <<END;

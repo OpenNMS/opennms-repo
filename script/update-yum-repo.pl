@@ -70,8 +70,8 @@ delete $release_descriptions->{order_sync};
 if ($all) {
 	for my $repo (@{OpenNMS::Release::YumRepo->find_repos($base)}) {
 		if (not grep { $_ eq $repo->release } @sync_order) {
-			warn "Unknown release: " . $repo->release . ", putting at the end of the sync order.";
-			push(@sync_order, $repo->release);
+			warn "Unknown release: " . $repo->release . ", skipping.";
+			# push(@sync_order, $repo->release);
 		}
 		$releases->{$repo->release}->{$repo->platform} = $repo;
 	}

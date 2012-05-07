@@ -1,5 +1,8 @@
 $|++;
 
+use strict;
+use warnings;
+
 use Cwd;
 use File::Path;
 use Data::Dumper;
@@ -16,10 +19,12 @@ BEGIN {
 	}
 };
 
-my $t = Cwd::abs_path('t');
+my ($t, $package, $packageset, $packagelist);
+
+$t = Cwd::abs_path('t');
 rmtree("$t/testpackages");
 
-my $packageset = OpenNMS::Release::PackageSet->new();
+$packageset = OpenNMS::Release::PackageSet->new();
 isa_ok($packageset, 'OpenNMS::Release::PackageSet');
 
 is(scalar(@{$packageset->find_all()}), 0);

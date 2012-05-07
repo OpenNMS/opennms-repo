@@ -1,5 +1,8 @@
 $|++;
 
+use strict;
+use warnings;
+
 use Cwd;
 use Test::More;
 BEGIN {
@@ -12,8 +15,9 @@ BEGIN {
 	}
 };
 
-my $t = Cwd::abs_path("t");
-my ($rpm);
+my ($t, $rpm, $olderrpm);
+
+$t = Cwd::abs_path("t");
 
 $rpm = OpenNMS::Release::RPMPackage->new();
 is($rpm, undef, "Check for invalid RPM when no path is provided.");

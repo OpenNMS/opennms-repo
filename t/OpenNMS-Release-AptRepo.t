@@ -1,13 +1,18 @@
 $|++;
 
+use strict;
+use warnings;
+
 use Cwd;
 use File::Path;
 use Data::Dumper;
 use Test::More;
+use OpenNMS::Util v2.6;
+
 BEGIN {
 	my $package = `which dpkg 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 50;
+		plan tests => 53;
 		use_ok('OpenNMS::Release::DebPackage');
 		use_ok('OpenNMS::Release::AptRepo');
 	} else {
@@ -137,6 +142,18 @@ is($package->version->version, "1.11.0");
 
 $opennms_18->delete;
 $nightly_111->delete;
+
+# test excludes
+
+reset_repos();
+spit("$t/testpackages-debrepo/deb/dists/nightly-1.11/.exclude-share", "iplike-pgsql84\nopennms\n");
+$nightly_111 = OpenNMS::Release::AptRepo->new("$t/testpackages-debrepo/deb", "nightly-1.11");
+is(scalar(@{$nightly_111->exclude_share}), 2);
+$nightly_111->share_all_packages($opennms_18);
+$package = $nightly_111->find_newest_package_by_name('iplike-pgsql84', 'i386');
+is($package->version->version, '1.0.8');
+$package = $nightly_111->find_newest_package_by_name('iplike-pgsql84', 'amd64');
+is($package->version->version, '1.0.8');
 
 # test begin/commit
 

@@ -1,8 +1,13 @@
+$|++;
+
+use strict;
+use warnings;
+
 use Test::More;
 BEGIN {
 	my $dpkg = `which dpkg 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 18;
+		plan tests => 19;
 		use_ok('OpenNMS::Release::DebVersion');
 	} else {
 		plan skip_all => '`dpkg` not found, skipping Debian tests.';
@@ -41,3 +46,7 @@ ok($release->is_newer_than($beta));
 ok($beta->is_older_than($beta2));
 ok($epoch->is_newer_than($release));
 ok($epoch->is_newer_than($beta2));
+
+my $one_eight_eighteen = OpenNMS::Release::DebVersion->new('1.8.18', '0.20120117.66');
+my $one_ten_two        = OpenNMS::Release::DebVersion->new('1.10.2', '0.20120430.165');
+ok($one_ten_two->is_newer_than($one_eight_eighteen));

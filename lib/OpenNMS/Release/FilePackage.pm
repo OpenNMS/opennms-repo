@@ -13,7 +13,7 @@ use Expect;
 
 use base qw(OpenNMS::Release::Package);
 
-use OpenNMS::Release::Version;
+use OpenNMS::Release::Version v2.6.2;
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ This is just a perl module for manipulating files, including version comparisons
 
 =cut
 
-our $VERSION = v2.1;
+our $VERSION = '2.6.3';
 
 =head1 CONSTRUCTOR
 

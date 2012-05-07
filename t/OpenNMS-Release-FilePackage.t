@@ -1,12 +1,16 @@
 $|++;
 
+use strict;
+use warnings;
+
 use Cwd;
 use Test::More tests => 70;
 
 use_ok('OpenNMS::Release::FilePackage');
 
-my ($tarball);
-my $t = Cwd::abs_path('t');
+my ($t, $tarball, $older_tarball, $newer_tarball);
+
+$t = Cwd::abs_path('t');
 
 # newer_than is based on t/packages/source/test-1.0-2.tar.gz
 # undef = throw exception
