@@ -48,11 +48,13 @@ for my $release (@display_order) {
 	my $description          = $latest_rpm->description();
 	my ($git_url, $git_hash) = $description =~ /(https:\/\/github\.com\/OpenNMS\/opennms\/commit\/(\S+))$/gs;
 
-	$index_text .= "<h2><a name=\"$release\">$release_description</a></h2>\n";
-	$index_text .= "<h3>Current Version: <a href=\"$release/common/opennms\">" . $latest_rpm->version->display_version . "</a></h3>\n";
+	$index_text .= "<h3><a name=\"$release\" href=\"$release/common/opennms\">$release_description</a>: ";
+	$index_text .= "<a href=\"$release/common/opennms\">" . $latest_rpm->version->display_version . "</a>";
 	if (defined $git_url and defined $git_hash) {
-		$index_text .= "<h3>Git Commit: <a href=\"$git_url\">" . $git_hash . "</a></h3>\n";
+		$index_text .= " <span style=\"float: right\">Git Commit: <a href=\"$git_url\">" . $git_hash . "</a></span>";
 	}
+	$index_text .= "</h3>\n";
+
 	$index_text .= "<ul>\n";
 
 	$index_text .= "<li>$platform_descriptions->{'common'} (<a href=\"$release/common\">browse</a>)</li>\n";
