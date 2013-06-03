@@ -6,9 +6,11 @@ use warnings;
 
 use Carp;
 use Cwd;
+use Expect;
 use File::Basename;
 use File::Copy qw();
-use Expect;
+use IO::Handle;
+use IPC::Open2;
 
 use base qw(OpenNMS::Release::LocalPackage);
 
@@ -33,7 +35,7 @@ things.
 
 =cut
 
-our $VERSION = '2.5.3';
+our $VERSION = '2.6.7';
 
 our $RPM     = undef;
 our $RPMSIGN = undef;
@@ -96,7 +98,7 @@ Given a GPG id and password, sign (or resign) the RPM.
 =cut
 
 sub sign ($$) {
-	my $self         = shift;
+	my $self	 = shift;
 	my $gpg_id       = shift;
 	my $gpg_password = shift;
 
@@ -117,6 +119,26 @@ sub sign ($$) {
 	return $expect->exitstatus() == 0;
 }
 
+=head1 * description()
+
+Get the description of the RPM.
+
+=cut
+
+sub description() {
+	my $self = shift;
+
+	my $output = IO::Handle->new();
+	my $input  = IO::Handle->new();
+	my $pid = open2($output, $input, $RPM, '-q', '-i', '-p', $self->path) or die "Can't spawn $RPM -qip " . $self->path . ": " . $!;
+	close($input);
+	my $return = do { local $/; <$output> };
+	close($output);
+	waitpid($pid, 0);
+
+	return $return; 
+}
+
 1;
 __END__
 =head1 AUTHOR
@@ -126,7 +148,7 @@ Matt Brozowski, E<lt>brozow@opennms.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by The OpenNMS Group, Inc.
+Copyright (C) 2013 by The OpenNMS Group, Inc.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,

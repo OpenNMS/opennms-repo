@@ -8,7 +8,7 @@ require Exporter;
 
 our @ISA = qw(Exporter);
 
-our $VERSION = '2.6.6';
+our $VERSION = '2.6.7';
 
 1;
 __END__
@@ -27,7 +27,7 @@ Matt Brozowski E<lt>brozow@opennms.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by The OpenNMS Group, Inc.
+Copyright (C) 2013 by The OpenNMS Group, Inc.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
