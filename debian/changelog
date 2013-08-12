@@ -1,3 +1,9 @@
+libopennms-release-perl (2.7.3-1) unstable; urgency=low
+
+  * Latest OpenNMS repository release
+
+ -- Benjamin Reed <ranger@debian.opennms.org>  Mon, 12 Aug 2013 14:39:30 -0400
+
 libopennms-release-perl (2.6.3-1) unstable; urgency=low
 
   * A few cosmetic fixes, and change the SF script to upload, then delete old.
