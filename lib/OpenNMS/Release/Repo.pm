@@ -199,7 +199,7 @@ sub create_temporary {
 
 	my $CLEANUP = exists $ENV{OPENNMS_CLEANUP}? $ENV{OPENNMS_CLEANUP} : 1;
 	# create a temporary directory at the same level as the current base
-	my $newbase = tempdir('.repoXXXXXX', DIR => $self->abs_base, CLEANUP => $CLEANUP);
+	my $newbase = tempdir('.temporary-repository-XXXXXX', DIR => $self->abs_base, CLEANUP => $CLEANUP);
 	return $self->copy($newbase);
 }
 
