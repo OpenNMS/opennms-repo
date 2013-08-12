@@ -105,7 +105,7 @@ if (defined $BRANCH) {
 	}
 
 	# then, update with the new RPMs
-	my $repo = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH, $platform);
+	my $repo = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH, $PLATFORM);
 	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
 
 	exit 0;
