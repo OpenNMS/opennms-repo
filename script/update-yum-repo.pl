@@ -214,7 +214,7 @@ sub sync_repo {
 
 	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
 	my $num_shared = $temp_repo->share_all_packages($from_repo);
-	print $num_shared . " RPMS udpated.\n";
+	print $num_shared . " RPMS updated.\n";
 
 	print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
 	my $num_removed = $temp_repo->delete_obsolete_packages(\&not_opennms);
