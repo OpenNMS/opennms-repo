@@ -170,10 +170,14 @@ sub replace {
 
 	croak "paths match -- this should not be" if ($self_path eq $target_path);
 
-	File::Copy::move($target_path, $target_path . '.bak') or croak "failed to rename $target_path to $target_path.bak: $!";
+	if (-e $target_path) {
+		File::Copy::move($target_path, $target_path . '.bak') or croak "failed to rename $target_path to $target_path.bak: $!";
+	}
 	File::Copy::move($self_path, $target_path) or croak "failed to rename $self_path to $target_path: $!";
 
-	rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
+	if (-e $target_path . '.bak') {
+		rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
+	}
 
 	$self->delete;
 
