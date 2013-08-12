@@ -33,6 +33,7 @@ my $repos = OpenNMS::Release::YumRepo->find_repos($base);
 # convenience hash for looking up repositories
 my $repo_map = {};
 for my $repo (@$repos) {
+	next if ($repo->base =~ m,/branches/,);
 	$repo_map->{$repo->release}->{$repo->platform} = $repo;
 }
 
