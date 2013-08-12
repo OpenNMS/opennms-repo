@@ -173,6 +173,8 @@ sub replace {
 	if (-e $target_path) {
 		File::Copy::move($target_path, $target_path . '.bak') or croak "failed to rename $target_path to $target_path.bak: $!";
 	}
+
+	mkpath($target_path);
 	File::Copy::move($self_path, $target_path) or croak "failed to rename $self_path to $target_path: $!";
 
 	if (-e $target_path . '.bak') {
