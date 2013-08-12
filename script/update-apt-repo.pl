@@ -18,41 +18,43 @@ use OpenNMS::Release::Repo v2.4;
 use OpenNMS::Release::AptRepo v2.1.2;
 use OpenNMS::Release::DebPackage v2.1;
 
-my $help             = 0;
-my $all              = 0;
-my $resign           = 0;
+my $HELP             = 0;
+my $ALL              = 0;
+my $RESIGN           = 0;
 
-my $signing_password = undef;
-my $signing_id       = 'opennms@opennms.org';
+my $BRANCH           = undef;
+my $SIGNING_PASSWORD = undef;
+my $SIGNING_ID       = 'opennms@opennms.org';
 
 my $result = GetOptions(
-	"h|help"     => \$help,
-	"a|all"      => \$all,
-	"s|sign=s"   => \$signing_password,
-	"g|gpg-id=s" => \$signing_id,
-	"r|resign"   => \$resign,
+	"h|help"     => \$HELP,
+	"a|all"      => \$ALL,
+	"b|branch"   => \$BRANCH,
+	"s|sign=s"   => \$SIGNING_PASSWORD,
+	"g|gpg-id=s" => \$SIGNING_ID,
+	"r|resign"   => \$RESIGN,
 );
 
-my ($base, $release, @packages);
+my ($BASE, $RELEASE, @PACKAGES);
 
-$base = shift @ARGV;
-if (not defined $base) {
+$BASE = shift @ARGV;
+if (not defined $BASE) {
 	usage("You did not specify an APT repository base!");
 }
-$base = Cwd::abs_path($base);
+$BASE = Cwd::abs_path($BASE);
 
-if ($help) {
+if ($HELP) {
 	usage();
 }
 
-if (not $all) {
-	($release, @packages) = @ARGV;
-	if (not defined $release) {
+if (not $ALL) {
+	($RELEASE, @PACKAGES) = @ARGV;
+	if (not defined $RELEASE) {
 		usage("You must specify a repository base and release!");
 	}
 }
 
-my @all_repositories = @{OpenNMS::Release::AptRepo->find_repos($base)};
+my @all_repositories = @{OpenNMS::Release::AptRepo->find_repos($BASE)};
 
 @all_repositories = sort {
 	my ($a_name, $a_version) = $a->release =~ /^(.*?)-([\d\.]+)$/;
@@ -68,17 +70,67 @@ my @all_repositories = @{OpenNMS::Release::AptRepo->find_repos($base)};
 } @all_repositories;
 
 my $scan_repositories = [];
-if ($all) {
+if ($ALL) {
 	$scan_repositories = \@all_repositories;
 } else {
-	my $releasedir = File::Spec->catdir($base, 'dists', $release);
+	my $releasedir = File::Spec->catdir($BASE, 'dists', $RELEASE);
 	if (-l $releasedir) {
-		$release = basename(readlink($releasedir));
+		$RELEASE = basename(readlink($releasedir));
 	}
-	$scan_repositories = [ OpenNMS::Release::AptRepo->new($base, $release) ];
+	$scan_repositories = [ OpenNMS::Release::AptRepo->new($BASE, $RELEASE) ];
+}
+
+if (defined $BRANCH) {
+	my $branch_base = File::Spec->catdir($BASE, 'branches');
+
+	# first, copy from the release branch to the temporary one
+	my $from_repo = OpenNMS::Release::AptRepo->new($BASE, $RELEASE);
+	my $to_repo   = OpenNMS::Release::AptRepo->new($branch_base, $BRANCH);
+	sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+
+	# then, update with the new RPMs
+	update_repo($to_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
+
+	exit 0;
 }
 
 my @sync_order = map { $_->release } @all_repositories;
+
+for my $orig_repo (@$scan_repositories) {
+	update_repo($orig_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
+	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+}
+
+sub update_repo {
+	my $from_repo        = shift;
+	my $resign           = shift;
+	my $signing_id       = shift;
+	my $signing_password = shift;
+	my @packages         = @_;
+
+	my $base     = $from_repo->abs_base;
+	my $release  = $from_repo->release;
+
+	print "=== Updating repo files in: $base/dists/$release/ ===\n";
+
+	my $to_repo = $from_repo->create_temporary;
+
+	if ($resign) {
+		$to_repo->sign_all_packages($signing_id, $signing_password, undef, \&display);
+	}
+
+	if (@packages) {
+		install_packages($to_repo, @packages);
+	}
+
+	index_repo($to_repo, $signing_id, $signing_password);
+
+	$to_repo->replace($from_repo) or die "Unable to replace " . $from_repo->to_string . " with " . $to_repo->to_string . "!";
+}
+
+if (defined $SIGNING_ID and defined $SIGNING_PASSWORD) {
+	gpg_write_key($SIGNING_ID, $SIGNING_PASSWORD, File::Spec->catfile($BASE, 'OPENNMS-GPG-KEY'));
+}
 
 sub display {
 	my $package = shift;
@@ -87,33 +139,6 @@ sub display {
 	my $sign    = shift;
 
 	print "- " . $package->to_string . " ($count/$total, " . ($sign? 'resigned':'skipped') . ")\n";
-}
-
-for my $orig_repo (@$scan_repositories) {
-	my $base     = $orig_repo->abs_base;
-	my $release  = $orig_repo->release;
-
-	print "=== Updating repo files in: $base/dists/$release/ ===\n";
-	
-	my $release_repo = $orig_repo->create_temporary;
-
-	if ($resign) {
-		$release_repo->sign_all_packages($signing_id, $signing_password, undef, \&display);
-	}
-
-	if (@packages) {
-		install_packages($release_repo, @packages);
-	}
-
-	index_repo($release_repo, $signing_id, $signing_password);
-	
-	$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
-	
-	sync_repos($release_repo, $signing_id, $signing_password);
-}
-
-if (defined $signing_id and defined $signing_password) {
-	gpg_write_key($signing_id, $signing_password, File::Spec->catfile($base, 'OPENNMS-GPG-KEY'));
 }
 
 # return 1 if the obsolete package given should be deleted
@@ -125,7 +150,7 @@ sub not_opennms {
 			return 0;
 		}
 	}
-	
+
 	return 1;
 }
 
@@ -154,32 +179,42 @@ sub index_repo {
 }
 
 sub sync_repos {
+	my $base             = shift;
 	my $release_repo     = shift;
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
 	my $last_repo = $release_repo;
-	
+
 	for my $i ((get_release_index($release_repo->release) + 1) .. $#sync_order) {
 		my $rel = $sync_order[$i];
 
-		my $orig_repo = OpenNMS::Release::AptRepo->new($base, $rel);
-		my $next_repo = $orig_repo->create_temporary;
-	
-		print "- sharing from repo: " . $last_repo->to_string . " to " . $next_repo->to_string . "... ";
-		my $num_shared = $next_repo->share_all_packages($last_repo);
-		print $num_shared . " packages updated.\n";
-	
-		print "- removing obsolete packages from repo: " . $next_repo->to_string . "... ";
-		my $num_removed = $next_repo->delete_obsolete_packages(\&not_opennms);
-		print $num_removed . " packages removed.\n";
-
-		print "- indexing repo: " . $next_repo->to_string . "... ";
-		my $indexed = $next_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
-		print $indexed? "done.\n" : "skipped.\n";
-	
-		$last_repo = $next_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $next_repo->to_string . "!";
+		my $to_repo = OpenNMS::Release::AptRepo->new($base, $rel);
+		$last_repo = sync_repo($last_repo, $to_repo, $signing_id, $signing_password);
 	}
+}
+
+sub sync_repo {
+	my $from_repo        = shift;
+	my $to_repo          = shift;
+	my $signing_id       = shift;
+	my $signing_password = shift;
+
+	my $temp_repo = $to_repo->create_temporary;
+
+	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
+	my $num_shared = $temp_repo->share_all_packages($from_repo);
+	print $num_shared . " packages updated.\n";
+
+	print "- removing obsolete packages from repo: " . $temp_repo->to_string . "... ";
+	my $num_removed = $temp_repo->delete_obsolete_packages(\&not_opennms);
+	print $num_removed . " packages removed.\n";
+
+	print "- indexing repo: " . $temp_repo->to_string . "... ";
+	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
+	print $indexed? "done.\n" : "skipped.\n";
+
+	return $temp_repo->replace($to_repo, 1) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
 }
 
 sub get_release_index {
@@ -193,7 +228,7 @@ sub usage {
 	my $error = shift;
 
 	print <<END;
-usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | <base> <release> [package...] )
+usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | [-b <branch_name>] <base> <release> [package...] )
 
 	-h            : print this help
 	-a            : update all repositories (release and packages will be ignored in this case)

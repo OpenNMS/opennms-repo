@@ -201,10 +201,13 @@ current repository.
 =cut
 
 sub replace {
-	my $self	= shift;
-	my $target_repo = shift;
+	my $self	          = shift;
+	my $target_repo    = shift;
+	my $ignore_release = shift || 0;
 
-	croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
+	if (not $ignore_release) {
+		croak "releases do not match! (" . $self->release . " != " . $target_repo->release . ")" if ($self->release ne $target_repo->release);
+	}
 
 	my $ret = $self->SUPER::replace($target_repo);
 

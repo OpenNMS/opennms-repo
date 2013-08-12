@@ -40,6 +40,7 @@ META.yml
 README
 script/buildtool.pl
 script/create-repo-rpm.pl
+script/deploy-debs.pl
 script/deploy-rpms.pl
 script/generate-yum-repo-html.pl
 script/update-apt-repo.pl

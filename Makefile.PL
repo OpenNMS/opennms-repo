@@ -14,6 +14,7 @@ test_requires  'Test::More'         => undef;
 
 install_script 'script/buildtool.pl';
 install_script 'script/create-repo-rpm.pl';
+install_script 'script/deploy-debs.pl';
 install_script 'script/deploy-rpms.pl';
 install_script 'script/generate-yum-repo-html.pl';
 install_script 'script/update-apt-repo.pl';
