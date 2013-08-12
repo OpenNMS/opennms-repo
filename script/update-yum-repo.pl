@@ -19,56 +19,62 @@ use OpenNMS::Release::Repo v2.4;
 use OpenNMS::Release::YumRepo v2.0;
 use OpenNMS::Release::RPMPackage v2.0;
 
-my $help             = 0;
-my $all              = 0;
-my $resign           = 0;
+my $HELP             = 0;
+my $ALL              = 0;
+my $RESIGN           = 0;
 
-my $signing_password = undef;
-my $signing_id       = 'opennms@opennms.org';
+my $BRANCH           = undef;
+my $SIGNING_PASSWORD = undef;
+my $SIGNING_ID       = 'opennms@opennms.org';
 
 my $result = GetOptions(
-	"h|help"     => \$help,
-	"a|all"      => \$all,
-	"s|sign=s"   => \$signing_password,
-	"g|gpg-id=s" => \$signing_id,
-	"r|resign"   => \$resign,
+	"h|help"     => \$HELP,
+	"a|all"      => \$ALL,
+	"b|branch=s" => \$BRANCH,
+	"s|sign=s"   => \$SIGNING_PASSWORD,
+	"g|gpg-id=s" => \$SIGNING_ID,
+	"r|resign"   => \$RESIGN,
 );
 
-my ($base, $release, $platform, $subdirectory, @rpms);
+my ($BASE, $RELEASE, $PLATFORM, $SUBDIRECTORY, @RPMS);
 
-$base = shift @ARGV;
-if (not defined $base) {
+$BASE = shift @ARGV;
+if (not defined $BASE) {
 	usage("You did not specify a YUM repository base!");
 }
-$base = Cwd::abs_path($base);
+$BASE = Cwd::abs_path($BASE);
 
-if ($help) {
+if ($HELP) {
 	usage();
 }
 
-if ($resign and not defined $signing_password) {
+if ($RESIGN and not defined $SIGNING_PASSWORD) {
 	usage("You specified --resign, but did not provide a password!");
 }
 
-if (not $all) {
-	($release, $platform, $subdirectory, @rpms) = @ARGV;
-	if (not defined $release or not defined $platform) {
+if (not $ALL) {
+	($RELEASE, $PLATFORM, $SUBDIRECTORY, @RPMS) = @ARGV;
+	if (not defined $RELEASE or not defined $PLATFORM) {
 		usage("You must specify a YUM repository base, release, and platform!");
 	}
 	
-	if (not defined $subdirectory) {
+	if (not defined $SUBDIRECTORY) {
 		usage("You must specify a subdirectory.");
 	}
 }
 
-my $release_descriptions = read_properties(dist_file('OpenNMS-Release', 'release.properties'));
-
 my $releases = {};
+
+my $release_descriptions = read_properties(dist_file('OpenNMS-Release', 'release.properties'));
 my @sync_order = split(/\s*,\s*/, $release_descriptions->{order_sync});
 delete $release_descriptions->{order_sync};
 
-if ($all) {
-	for my $repo (@{OpenNMS::Release::YumRepo->find_repos($base)}) {
+my $platforms = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
+my @platform_order = split(/\s*,\s*/, $platforms->{order_display});
+delete $platforms->{order_display};
+
+if ($ALL) {
+	for my $repo (@{OpenNMS::Release::YumRepo->find_repos($BASE)}) {
 		if (not grep { $_ eq $repo->release } @sync_order) {
 			warn "Unknown release: " . $repo->release . ", skipping.";
 			# push(@sync_order, $repo->release);
@@ -76,7 +82,7 @@ if ($all) {
 		$releases->{$repo->release}->{$repo->platform} = $repo;
 	}
 } else {
-	$releases->{$release}->{$platform} = OpenNMS::Release::YumRepo->new($base, $release, $platform);
+	$releases->{$RELEASE}->{$PLATFORM} = OpenNMS::Release::YumRepo->new($BASE, $RELEASE, $PLATFORM);
 }
 
 sub display {
@@ -88,31 +94,60 @@ sub display {
 	print "- " . $package->to_string . " ($count/$total, " . ($sign? 'resigned':'skipped') . ")\n";
 }
 
+if (defined $BRANCH) {
+	my $branch_base = File::Spec->catdir($BASE, 'branches');
+
+	# first, make sure we have all the platform repos for the branch
+	for my $platform (@platform_order) {
+		my $from_repo = OpenNMS::Release::YumRepo->new($BASE, $RELEASE, $platform);
+		my $to_repo   = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH,  $platform);
+		sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+	}
+
+	# then, update with the new RPMs
+	my $repo = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH, $platform);
+	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+
+	exit 0;
+}
+
 for my $release (@sync_order) {
 	next unless (exists $releases->{$release});
 
 	for my $platform (sort keys %{$releases->{$release}}) {
-		my $orig_repo = $releases->{$release}->{$platform};
-		my $base      = $orig_repo->abs_base;
-
-		print "=== Updating repo files in: $base/$release/$platform/ ===\n";
-
-		my $release_repo = $orig_repo->create_temporary;
-	
-		if ($resign) {
-			$release_repo->sign_all_packages($signing_id, $signing_password, undef, \&display);
-		}
-
-		if (defined $subdirectory and @rpms) {
-			install_rpms($release_repo, $subdirectory, @rpms);
-		}
-	
-		index_repo($release_repo, $signing_id, $signing_password);
-		
-		$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
-		
-		sync_repos($release_repo, $signing_id, $signing_password);
+		my $repo = $releases->{$release}->{$platform};
+		update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
 	}
+}
+
+sub update_platform {
+	my $orig_repo        = shift;
+	my $resign           = shift;
+	my $signing_id       = shift;
+	my $signing_password = shift;
+	my $subdirectory     = shift;
+	my @rpms             = @_;
+
+	my $base     = $orig_repo->abs_base;
+	my $release  = $orig_repo->release;
+	my $platform = $orig_repo->platform;
+
+	print "=== Updating repo files in: $base/$release/$platform/ ===\n";
+
+	my $release_repo = $orig_repo->create_temporary;
+
+	if ($resign) {
+		$release_repo->sign_all_packages($signing_id, $signing_password, undef, \&display);
+	}
+
+	if (defined $subdirectory and @rpms) {
+		install_rpms($release_repo, $subdirectory, @rpms);
+	}
+
+	index_repo($release_repo, $signing_id, $signing_password);
+	
+	$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
 }
 
 # return 1 if the obsolete RPM given should be deleted
@@ -154,6 +189,7 @@ sub index_repo {
 }
 
 sub sync_repos {
+	my $base             = shift;
 	my $release_repo     = shift;
 	my $signing_id       = shift;
 	my $signing_password = shift;
@@ -163,23 +199,32 @@ sub sync_repos {
 	for my $i ((get_release_index($release_repo->release) + 1) .. $#sync_order) {
 		my $rel = $sync_order[$i];
 
-		my $orig_repo = OpenNMS::Release::YumRepo->new($base, $rel, $release_repo->platform);
-		my $next_repo = $orig_repo->create_temporary;
-	
-		print "- sharing from repo: " . $last_repo->to_string . " to " . $next_repo->to_string . "... ";
-		my $num_shared = $next_repo->share_all_packages($last_repo);
-		print $num_shared . " RPMs updated.\n";
-	
-		print "- removing obsolete RPMs from repo: " . $next_repo->to_string . "... ";
-		my $num_removed = $next_repo->delete_obsolete_packages(\&not_opennms);
-		print $num_removed . " RPMs removed.\n";
-
-		print "- indexing repo: " . $next_repo->to_string . "... ";
-		my $indexed = $next_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
-		print $indexed? "done.\n" : "skipped.\n";
-	
-		$last_repo = $next_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $next_repo->to_string . "!";
+		my $to_repo = OpenNMS::Release::YumRepo->new($base, $rel, $release_repo->platform);
+		$last_repo = sync_repo($last_repo, $to_repo, $signing_id, $signing_password);
 	}
+}
+
+sub sync_repo {
+	my $from_repo        = shift;
+	my $to_repo          = shift;
+	my $signing_id       = shift;
+	my $signing_password = shift;
+
+	my $temp_repo = $from_repo->create_temporary;
+
+	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
+	my $num_shared = $temp_repo->share_all_packages($from_repo);
+	print $num_shared . " RPMS udpated.\n";
+
+	print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
+	my $num_removed = $temp_repo->delete_obsolete_packages(\&not_opennms);
+	print $num_removed . " RPMs removed.\n";
+
+	print "- indexing repo: " . $temp_repo->to_string . "... ";
+	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
+	print $indexed? "done.\n" : "skipped.\n";
+
+	return $temp_repo->replace($to_repo) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
 }
 
 sub get_release_index {
