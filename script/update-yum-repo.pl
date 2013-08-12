@@ -224,7 +224,7 @@ sub sync_repo {
 	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
 	print $indexed? "done.\n" : "skipped.\n";
 
-	return $temp_repo->replace($to_repo) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
+	return $temp_repo->replace($to_repo, 1) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
 }
 
 sub get_release_index {
@@ -238,7 +238,7 @@ sub usage {
 	my $error = shift;
 
 	print <<END;
-usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | <base> <release> <platform> <subdirectory> [rpm...] )
+usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | [-b <branch_name>] <base> <release> <platform> <subdirectory> [rpm...] )
 
 	-h            : print this help
 	-a            : update all repositories (release, platform, subdirectory, and rpms will be ignored in this case)
