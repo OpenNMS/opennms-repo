@@ -40,7 +40,7 @@ Repositories are expected to be in the form:
 
 =cut
 
-our $VERSION = '2.6';
+our $VERSION = '2.7.3';
 our $APT_FTPARCHIVE = undef;
 our @ARCHITECTURES = qw(amd64 i386 powerpc);
 
@@ -370,6 +370,10 @@ sub create_indexfile() {
 
 	my $outputfile = IO::Handle->new();
 	my $filename = $self->indexfile();
+
+	my $filepath = dirname($filename);
+	mkpath($filepath);
+
 	open ($outputfile, '>' . $filename) or croak "Unable to write to $filename: $!";
 
 	my $archivedir = $self->base;

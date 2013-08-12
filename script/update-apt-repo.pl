@@ -14,8 +14,8 @@ use Getopt::Long qw(:config gnu_getopt);
 use IO::Handle;
 
 use OpenNMS::Util v2.0;
-use OpenNMS::Release::Repo v2.4;
-use OpenNMS::Release::AptRepo v2.1.2;
+use OpenNMS::Release::Repo v2.7.3;
+use OpenNMS::Release::AptRepo v2.7.3;
 use OpenNMS::Release::DebPackage v2.1;
 
 my $HELP             = 0;
@@ -29,7 +29,7 @@ my $SIGNING_ID       = 'opennms@opennms.org';
 my $result = GetOptions(
 	"h|help"     => \$HELP,
 	"a|all"      => \$ALL,
-	"b|branch"   => \$BRANCH,
+	"b|branch=s" => \$BRANCH,
 	"s|sign=s"   => \$SIGNING_PASSWORD,
 	"g|gpg-id=s" => \$SIGNING_ID,
 	"r|resign"   => \$RESIGN,
@@ -81,11 +81,9 @@ if ($ALL) {
 }
 
 if (defined $BRANCH) {
-	my $branch_base = File::Spec->catdir($BASE, 'branches');
-
 	# first, copy from the release branch to the temporary one
 	my $from_repo = OpenNMS::Release::AptRepo->new($BASE, $RELEASE);
-	my $to_repo   = OpenNMS::Release::AptRepo->new($branch_base, $BRANCH);
+	my $to_repo   = OpenNMS::Release::AptRepo->new($BASE, 'branches/' . $BRANCH);
 	sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
 
 	# then, update with the new RPMs

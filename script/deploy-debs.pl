@@ -31,7 +31,7 @@ $APTDIR    = "/var/ftp/pub/releases/opennms/debian";
 
 die "$APTDIR does not exist!" unless (-d $APTDIR);
 
-$CMD_UPDATE_REPO    = File::Spec->catfile($SCRIPTDIR, 'update-apt-repo.pl');
+$CMD_UPDATE_REPO = File::Spec->catfile($SCRIPTDIR, 'update-apt-repo.pl');
 
 my $passfile = File::Spec->catfile($ENV{'HOME'}, '.signingpass');
 if (-e $passfile) {
@@ -87,6 +87,7 @@ Branch (scrubbed): $BRANCH_NAME_SCRUBBED
 END
 
 print STDOUT "- adding DEBs for $BRANCH_NAME to the APT repo, based on $RELEASE:\n";
+print "$CMD_UPDATE_REPO -s XXXXX -b '$BRANCH_NAME_SCRUBBED' '$APTDIR' '$RELEASE' @FILES_DEBS\n";
 system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $APTDIR, $RELEASE, @FILES_DEBS) == 0 or die "Failed to update repository: $!";
 
 exit 0;

@@ -27,7 +27,7 @@ This represents an individual package repository.
 
 =cut
 
-our $VERSION = '2.6';
+our $VERSION = '2.7.3';
 
 our $DF      = undef;
 our $RSYNC   = undef;
@@ -199,6 +199,7 @@ sub create_temporary {
 
 	my $CLEANUP = exists $ENV{OPENNMS_CLEANUP}? $ENV{OPENNMS_CLEANUP} : 1;
 	# create a temporary directory at the same level as the current base
+	mkpath($self->abs_base);
 	my $newbase = tempdir('.temporary-repository-XXXXXX', DIR => $self->abs_base, CLEANUP => $CLEANUP);
 	return $self->copy($newbase);
 }
