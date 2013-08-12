@@ -210,7 +210,7 @@ sub sync_repo {
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
-	my $temp_repo = $from_repo->create_temporary;
+	my $temp_repo = $to_repo->create_temporary;
 
 	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
 	my $num_shared = $temp_repo->share_all_packages($from_repo);
