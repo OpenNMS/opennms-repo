@@ -82,7 +82,7 @@ if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
 my $branch_text = `rpm -qip "$FILES_RPMS[0]"`;
 ($BRANCH_NAME) = $branch_text =~ /This is an OpenNMS build from the (.*?) branch/mg;
 $BRANCH_NAME_SCRUBBED = $BRANCH_NAME;
-$BRANCH_NAME_SCRUBBED =~ s/[^[:alnum:]]+/\-/g;
+$BRANCH_NAME_SCRUBBED =~ s/[^[:alnum:]\.]+/\-/g;
 $BRANCH_NAME_SCRUBBED =~ s/\-*$//g;
 
 print STDOUT <<END;

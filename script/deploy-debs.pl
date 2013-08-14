@@ -71,7 +71,7 @@ if (-e $repo_file) {
 
 chomp($BRANCH_NAME = read_file('opennms-build-branch.txt'));
 $BRANCH_NAME_SCRUBBED = $BRANCH_NAME;
-$BRANCH_NAME_SCRUBBED =~ s/[^[:alnum:]]+/\-/g;
+$BRANCH_NAME_SCRUBBED =~ s/[^[:alnum:]\.]+/\-/g;
 $BRANCH_NAME_SCRUBBED =~ s/\-*$//g;
 
 print STDOUT <<END;
