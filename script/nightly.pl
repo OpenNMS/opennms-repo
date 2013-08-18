@@ -155,7 +155,7 @@ sub buildtool {
 
 sub clean_for_build {
 	if (-d '.git') {
-		my $git = Git->repository( Directory => '.' );
+		my $git = Git->repository( Directory => $SOURCEDIR );
 		$git->command('clean', '-fdx');
 		$git->command('reset', '--hard', 'HEAD');
 	}
