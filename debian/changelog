@@ -1,3 +1,9 @@
+libopennms-release-perl (2.8.0-1) unstable; urgency=low
+
+  * OpenNMS Release tools 2.8.0
+
+ -- Benjamin Reed <ranger@debian.opennms.org>  Sun, 18 Aug 2013 18:02:04 -0400
+
 libopennms-release-perl (2.7.4-1) unstable; urgency=low
 
   * OpenNMS Release tools 2.7.4
