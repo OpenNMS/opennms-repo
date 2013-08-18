@@ -71,11 +71,14 @@ $scrubbed_branch =~ s/\.+$//;
 
 $MICRO_REVISION = $scrubbed_branch . '.' . $REVISION;
 print <<END;
-Type:       $TYPE
-Branch:     $BRANCH
-Timestamp:  $TIMESTAMP
-Revision:   $MICRO_REVISION
-Repository: $REPOSITORY
+Build Root:    $ROOTDIR
+Source Root:   $SOURCEDIR
+
+Type:          $TYPE
+Source Branch: $BRANCH
+Timestamp:     $TIMESTAMP
+Revision:      $MICRO_REVISION
+Repository:    $REPOSITORY
 
 END
 
