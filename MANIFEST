@@ -43,6 +43,7 @@ script/create-repo-rpm.pl
 script/deploy-debs.pl
 script/deploy-rpms.pl
 script/generate-yum-repo-html.pl
+script/nightly.pl
 script/update-apt-repo.pl
 script/update-sourceforge-repo.pl
 script/update-yum-repo.pl

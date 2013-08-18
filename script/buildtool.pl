@@ -28,7 +28,7 @@ use vars qw(
 
 sub usage() {
 	print STDERR <<END;
-usage: $0 <project_name> <command>
+usage: $0 <project_name> <command> [branch_name [git_directory]]
 
 available commands:
 	get              Get the latest build ID (format: 0.<timestamp>.<revision>)
@@ -129,13 +129,12 @@ sub update_build_state() {
 
 $PROJECT = shift @ARGV;
 $COMMAND = shift @ARGV;
+$BRANCH  = shift @ARGV || get_branch_name();
 $GITDIR  = shift @ARGV || Cwd::abs_path('.');
 usage() unless (defined $COMMAND);
+die "Unable to determine branch!" unless (defined $BRANCH);
 
 $GIT     = Git->repository( Directory => $GITDIR );
-
-$BRANCH = get_branch_name();
-die "Unable to determine branch!" unless (defined $BRANCH);
 
 $TIMESTAMPFILE = "$ENV{HOME}/.buildtool-$PROJECT-$BRANCH-timestamp";
 $REVISIONFILE  = "$ENV{HOME}/.buildtool-$PROJECT-$BRANCH-revision";
