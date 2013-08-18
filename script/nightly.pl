@@ -164,9 +164,9 @@ sub get_repository {
 	my $ret    = undef;
 
 	open($handle, '<', '.nightly') or die "Failed to read from .nightly: $!\n";
-	while (<$handle>) {
-		chomp($handle);
-		if ($handle =~ /^repo:\s*(.*?)\s*$/) {
+	while (my $line = <$handle>) {
+		chomp($line);
+		if ($line =~ /^repo:\s*(.*?)\s*$/) {
 			$ret = $1;
 			last;
 		}
