@@ -173,6 +173,10 @@ sub get_repository {
 	}
 	close($handle) or die "Failed to close .nightly filehandle: $!\n";
 
+	if (not defined $ret) {
+		die "Unable to determine repository from .nightly file!\n";
+	}
+
 	return $ret;
 }
 
