@@ -159,7 +159,20 @@ sub get_repository {
 	if (not -r '.nightly') {
 		die "Unable to locate .nightly file in the current directory!\n";
 	}
-	chomp(my $ret = read_file('.nightly'));
+
+	my $handle = IO::Handle->new();
+	my $ret    = undef;
+
+	open($handle, '<', '.nightly') or die "Failed to read from .nightly: $!\n";
+	while (<$handle>) {
+		chomp($handle);
+		if ($handle =~ /^repo:\s*(.*?)\s*$/) {
+			$ret = $1;
+			last;
+		}
+	}
+	close($handle) or die "Failed to close .nightly filehandle: $!\n";
+
 	return $ret;
 }
 
