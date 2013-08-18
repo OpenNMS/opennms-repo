@@ -198,26 +198,27 @@ sub get_password {
 
 sub get_repository {
 	my $nightlyfile = File::Spec->catfile($SOURCEDIR, '.nightly');
+	my $buildrepofile = File::Spec->catfile($ROOTDIR, 'opennms-build-repo.txt');
 
-	if (not -r $nightlyfile) {
-		die "Unable to locate .nightly file in $SOURCEDIR!\n";
-	}
+	my $ret = undef;
 
-	my $handle = IO::Handle->new();
-	my $ret    = undef;
+	FILELOOP: for my $file ($nightlyfile, $buildrepofile) {
+		next FILELOOP unless (-r $file);
 
-	open($handle, '<', $nightlyfile) or die "Failed to read from .nightly: $!\n";
-	while (my $line = <$handle>) {
-		chomp($line);
-		if ($line =~ /^repo:\s*(.*?)\s*$/) {
-			$ret = $1;
-			last;
+		my $handle = IO::Handle->new();
+		open($handle, '<', $file) or die "Failed to read from $file: $!\n";
+		while (my $line = <$handle>) {
+			chomp($line);
+			if ($line =~ /^repo:\s*(.*?)\s*$/) {
+				$ret = $1;
+				last FILELOOP;
+			}
 		}
+		close($handle) or die "Failed to close $file filehandle: $!\n";
 	}
-	close($handle) or die "Failed to close .nightly filehandle: $!\n";
 
 	if (not defined $ret) {
-		die "Unable to determine repository from .nightly file!\n";
+		die "Unable to determine repository from nightly files!\n";
 	}
 
 	return $ret;
