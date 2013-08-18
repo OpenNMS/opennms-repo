@@ -167,10 +167,12 @@ sub usage {
 	my $error = shift;
 
 	print <<END;
-usage: $0 [-h] -t <type>
+usage: $0 [-h] -t <type> [-b <branch_name>] [-a]
 
-	-h            : print this help
-	-t <type>     : type of build: rpm, debian, installer
+	-h               : print this help
+	-t <type>        : type of build: rpm, debian, installer
+	-b <branch_name> : specify the branch name, rather than detecting it
+	-a               : do an assembly-only build
 
 END
 
