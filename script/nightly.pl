@@ -16,6 +16,8 @@ use IO::Handle;
 
 use vars qw(
 	$SCRIPTDIR
+	$ROOTDIR
+	$SOURCEDIR
 	$GIT
 
 	$CMD_BUILDTOOL
@@ -33,6 +35,8 @@ use vars qw(
 );
 
 $SCRIPTDIR     = abs_path(dirname($0));
+$ROOTDIR       = abs_path('.');
+$SOURCEDIR     = abs_path('.');
 $CMD_BUILDTOOL = File::Spec->catfile($SCRIPTDIR, 'buildtool.pl');
 
 $ASSEMBLY_ONLY = 0;
@@ -45,6 +49,8 @@ GetOptions(
 	"t|type=s"        => \$TYPE,
 	"a|assembly-only" => \$ASSEMBLY_ONLY,
 	"b|branch=s"      => \$BRANCH,
+	"r|rootdir=s"     => \$ROOTDIR,
+	"s|sourcedir=s"   => \$SOURCEDIR,
 ) or die "Unable to parse command-line: $@\n";
 
 usage() if ($HELP);
@@ -79,9 +85,9 @@ clean_for_build();
 if ($TYPE eq 'rpm') {
 	make_rpm();
 } elsif ($TYPE eq 'debian') {
-	exit(1);
+	make_debian();
 } elsif ($TYPE eq 'installer') {
-	exit(1);
+	make_installer();
 } else {
 	usage("unknown build type: $TYPE");
 }
@@ -90,10 +96,10 @@ buildtool('save');
 
 sub make_rpm {
 	my @command = (
-		'./makerpm.sh',
+		File::Spec->catfile($SOURCEDIR, 'makerpm.sh'),
 		'-s', $PASSWORD,
 		'-m', $TIMESTAMP,
-		'-u', $MICRO_REVISION
+		'-u', $MICRO_REVISION,
 	);
 
 	if ($ASSEMBLY_ONLY) {
@@ -103,12 +109,41 @@ sub make_rpm {
 	system(@command) == 0 or die "Failed to run makerpm.sh: $!\n";
 }
 
+sub make_debian {
+	my @command = (
+		File::Spec->catfile($SOURCEDIR, 'makedeb.sh'),
+		'-s', $PASSWORD,
+		'-m', $TIMESTAMP,
+		'-u', $MICRO_REVISION,
+	);
+
+	if ($ASSEMBLY_ONLY) {
+		push(@command, '-a');
+	}
+
+	system(@command) == 0 or die "Failed to run makedeb.sh: $!\n";
+}
+
+sub make_installer {
+	my @command = (
+		File::Spec->catfile($ROOTDIR, 'make-installer.sh'),
+		'-m', $TIMESTAMP,
+		'-u', $MICRO_REVISION,
+	);
+
+	if ($ASSEMBLY_ONLY) {
+		push(@command, '-a');
+	}
+
+	system(@command) == 0 or die "Failed to run make-installer.sh: $!\n";
+}
+
 sub buildtool {
 	my $command = shift;
 
 	my $handle = IO::Handle->new();
 
-	open($handle, '-|', "$CMD_BUILDTOOL 'snapshot-$TYPE' '$command' '$BRANCH'") or die "Unable to run $CMD_BUILDTOOL 'snapshot-$TYPE' '$command' '$BRANCH': $!\n";
+	open($handle, '-|', "$CMD_BUILDTOOL 'snapshot-$TYPE' '$command' '$BRANCH' '$SOURCEDIR'") or die "Unable to run $CMD_BUILDTOOL 'snapshot-$TYPE' '$command' '$BRANCH' '$SOURCEDIR': $!\n";
 	chomp(my $output = read_file($handle));
 	close($handle) or die "Failed to close $CMD_BUILDTOOL call: $!\n";
 
@@ -127,8 +162,11 @@ sub clean_for_build {
 }
 
 sub get_branch {
-	if (-d '.git') {
-		my $git = Git->repository( Directory => '.' );
+	my $gitdir     = File::Spec->catdir($SOURCEDIR, '.git');
+	my $branchfile = File::Spec->catfile($SOURCEDIR, 'opennms-build-branch.txt');
+
+	if (-d $gitdir) {
+		my $git = Git->repository( Directory => $SOURCEDIR );
 		try {
 			my $ref = $git->command_oneline('symbolic-ref', 'HEAD');
 			if (defined $ref and $ref =~ /refs/) {
@@ -137,13 +175,13 @@ sub get_branch {
 			}
 		} catch {
 		}
-		die "Found a .git directory, but we were unable to determine the branch name!\n";
-	} elsif (-r 'opennms-build-branch.txt') {
-		chomp(my $branch_name = read_file('opennms-build-branch.txt'));
+		die "Found a .git directory in $SOURCEDIR, but we were unable to determine the branch name!\n";
+	} elsif (-r $branchfile) {
+		chomp(my $branch_name = read_file($branchfile));
 		return $branch_name;
 	}
 
-	die "No .git directory found, and opennms-build-branch.txt does not exist!  You must specify a branch name on the command-line." unless (-d '.git');
+	die "No valid .git directory found, and opennms-build-branch.txt does not exist!  Please specify a branch name on the command-line.";
 }
 
 sub get_password {
@@ -156,14 +194,16 @@ sub get_password {
 }
 
 sub get_repository {
-	if (not -r '.nightly') {
-		die "Unable to locate .nightly file in the current directory!\n";
+	my $nightlyfile = File::Spec->catfile($SOURCEDIR, '.nightly');
+
+	if (not -r $nightlyfile) {
+		die "Unable to locate .nightly file in $SOURCEDIR!\n";
 	}
 
 	my $handle = IO::Handle->new();
 	my $ret    = undef;
 
-	open($handle, '<', '.nightly') or die "Failed to read from .nightly: $!\n";
+	open($handle, '<', $nightlyfile) or die "Failed to read from .nightly: $!\n";
 	while (my $line = <$handle>) {
 		chomp($line);
 		if ($line =~ /^repo:\s*(.*?)\s*$/) {
