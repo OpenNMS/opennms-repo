@@ -228,12 +228,14 @@ sub usage {
 	my $error = shift;
 
 	print <<END;
-usage: $0 [-h] -t <type> [-b <branch_name>] [-a]
+usage: $0 [-h] -t <type> [-b <branch_name>] [-a] [-r <rootdir>] [-s <sourcedir>]
 
 	-h               : print this help
 	-t <type>        : type of build: rpm, debian, installer
 	-b <branch_name> : specify the branch name, rather than detecting it
 	-a               : do an assembly-only build
+	-r <rootdir>     : the root directory where building should take place
+	-s <sourcedir>   : the location of the OpenNMS source, if not rootdir
 
 END
 
