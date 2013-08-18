@@ -47,6 +47,8 @@ GetOptions(
 	"b|branch=s"      => \$BRANCH,
 ) or die "Unable to parse command-line: $@\n";
 
+usage() if ($HELP);
+
 if (not defined $BRANCH) {
 	$BRANCH = get_branch();
 }
