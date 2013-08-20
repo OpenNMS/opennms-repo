@@ -9,7 +9,7 @@ Homepage: http://search.cpan.org/dist/OpenNMS-Release/
 
 Package: libopennms-release-perl
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}
+Depends: ${misc:Depends}, ${perl:Depends}, libfile-slurp-perl
 Description: Manage OpenNMS packaging/release repositories.
  This is a set of tools for managing packages, repositories, and
  releases for the OpenNMS project.
