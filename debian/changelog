@@ -1,3 +1,9 @@
+libopennms-release-perl (2.8.2-1) unstable; urgency=low
+
+  * OpenNMS Release tools 2.8.2, fixes buildtool.pl with / in branch names
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Tue, 20 Aug 2013 11:52:14 -0400
+
 libopennms-release-perl (2.8.0-1) unstable; urgency=low
 
   * OpenNMS Release tools 2.8.0
