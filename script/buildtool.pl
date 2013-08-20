@@ -136,9 +136,14 @@ die "Unable to determine branch!" unless (defined $BRANCH);
 
 $GIT     = Git->repository( Directory => $GITDIR );
 
-$TIMESTAMPFILE = "$ENV{HOME}/.buildtool-$PROJECT-$BRANCH-timestamp";
-$REVISIONFILE  = "$ENV{HOME}/.buildtool-$PROJECT-$BRANCH-revision";
-$GITHASHFILE   = "$ENV{HOME}/.buildtool-$PROJECT-$BRANCH-githash";
+my $clean_branch_name = $BRANCH;
+$clean_branch_name =~ s/[^[:alnum:]]+/\./gs;
+$clean_branch_name =~ s/^\.//;
+$clean_branch_name =~ s/\.$//;
+
+$TIMESTAMPFILE = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-timestamp";
+$REVISIONFILE  = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-revision";
+$GITHASHFILE   = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-githash";
 
 if ($COMMAND eq 'get') {
 	print get_build_id(), "\n";
