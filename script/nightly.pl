@@ -7,6 +7,7 @@ $|++;
 
 use Cwd qw(abs_path);
 use File::Basename;
+use File::Find;
 use File::Path;
 use File::Slurp;
 use File::Spec;
@@ -153,6 +154,15 @@ sub buildtool {
 	return $output;
 }
 
+sub erase_invalid_jar {
+	my $name = $File::Find::name;
+	return unless (-f $name and $name =~ /\.jar$/);
+	chomp(my $type = `file '$name'`);
+	if ($type !~ /zip archive/i) {
+		unlink($name);
+	}
+}
+
 sub clean_for_build {
 	if (-d '.git') {
 		my $git = Git->repository( Directory => $SOURCEDIR );
@@ -162,6 +172,8 @@ sub clean_for_build {
 
 	my $maven_dir = File::Spec->catdir($ENV{'HOME'}, '.m2', 'repository');
 	rmtree($maven_dir);
+
+	find(\&erase_invalid_jar, $maven_dir);
 }
 
 sub get_branch {
