@@ -45,6 +45,7 @@ script/deploy-debs.pl
 script/deploy-rpms.pl
 script/generate-yum-repo-html.pl
 script/nightly.pl
+script/smoke.pl
 script/update-apt-repo.pl
 script/update-sourceforge-repo.pl
 script/update-yum-repo.pl
@@ -53,6 +54,7 @@ share/generate-yum-repo-html.pre
 share/platform.properties
 share/release.properties
 share/repo.spec
+share/selenium-server-standalone-2.35.0.jar
 t/OpenNMS-Release-AptRepo.t
 t/OpenNMS-Release-DebPackage.t
 t/OpenNMS-Release-DebSet.t

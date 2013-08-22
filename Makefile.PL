@@ -19,6 +19,7 @@ install_script 'script/deploy-debs.pl';
 install_script 'script/deploy-rpms.pl';
 install_script 'script/generate-yum-repo-html.pl';
 install_script 'script/nightly.pl';
+install_script 'script/smoke.pl';
 install_script 'script/update-apt-repo.pl';
 install_script 'script/update-sourceforge-repo.pl';
 install_script 'script/update-yum-repo.pl';
