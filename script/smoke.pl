@@ -10,7 +10,7 @@ use IO::Handle;
 use POSIX;
 use Proc::ProcessTable;
 
-use OpenNMS::Release "2.9.0";
+use OpenNMS::Release;
 
 use vars qw(
 	$SELENIUM_LOG
