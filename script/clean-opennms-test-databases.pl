@@ -7,20 +7,26 @@ use IO::Handle;
 
 use vars qw(
 	$PSQL
+	$SUDO
 );
+
+chomp($SUDO = `which sudo 2>/dev/null`);
+if (not defined $SUDO or $SUDO eq '' or ! -x $SUDO) {
+	die "Unable to locate sudo!\n";
+}
 
 if (-x '/sw/bin/pgsql.sh') {
 	print STDOUT "- resetting PostgreSQL:\n";
-	system('/sw/bin/pgsql.sh', 'stop');
+	system($SUDO, '/sw/bin/pgsql.sh', 'stop');
 	sleep(5);
-	system('/sw/bin/pgsql.sh', 'start');
+	system($SUDO, '/sw/bin/pgsql.sh', 'start');
 	sleep(5);
 	$PSQL = '/sw/bin/psql';
 }
 
 if (-x '/etc/init.d/postgresql') {
 	print STDOUT "- resetting PostgreSQL:\n";
-	system('/etc/init.d/postgresql', 'restart');
+	system($SUDO, '/etc/init.d/postgresql', 'restart');
 	sleep(5);
 	$PSQL = '/usr/bin/psql';
 }
