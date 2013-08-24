@@ -99,7 +99,7 @@ update_selenium_pids();
 
 my $dir = dirname($SCRIPT);
 chdir($dir);
-my $result = system($SCRIPT);
+my $result = system($XVFB_RUN, $SCRIPT);
 my $ret = $? >> 8;
 
 exit($ret);
