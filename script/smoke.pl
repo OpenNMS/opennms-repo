@@ -39,7 +39,7 @@ END {
 			$uid = getpwnam('opennms');
 		}
 		find(
-			\sub {
+			sub {
 				chown($uid, $_);
 			},
 			dirname($SCRIPT)
