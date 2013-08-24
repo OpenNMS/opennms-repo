@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use File::Basename;
+use File::Find;
 use File::ShareDir qw(:ALL);
 use File::Spec;
 use IO::Handle;
@@ -31,6 +32,20 @@ END {
 	if (defined $SELENIUM_WEBDRIVER and $SELENIUM_WEBDRIVER =~ /^\d+$/) {
 		kill('TERM', $SELENIUM_WEBDRIVER);
 	}
+
+	if (defined $SCRIPT and -x $SCRIPT) {
+		my $uid = getpwnam('bamboo');
+		if (not defined $uid) {
+			$uid = getpwnam('opennms');
+		}
+		find(
+			\sub {
+				chown($uid, $_);
+			},
+			dirname($SCRIPT)
+		);
+	}
+
 	print "Finished.\n";
 }
 
