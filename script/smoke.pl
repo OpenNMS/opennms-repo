@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+use Config qw();
 use File::Basename;
 use File::Find;
 use File::ShareDir qw(:ALL);
@@ -48,6 +49,8 @@ END {
 
 	print "Finished.\n";
 }
+
+$ENV{'PATH'} = $ENV{'PATH'} . $Config::Config{path_sep} . '/usr/sbin' . $Config::Config{path_sep} . '/sbin';
 
 $SCRIPT = shift(@ARGV);
 if (not defined $SCRIPT or $SCRIPT eq '' or not -x $SCRIPT) {
