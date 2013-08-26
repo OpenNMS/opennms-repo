@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+use Config qw();
 use IO::Handle;
 
 use vars qw(
@@ -14,6 +15,8 @@ chomp($SUDO = `which sudo 2>/dev/null`);
 if (not defined $SUDO or $SUDO eq '' or ! -x $SUDO) {
 	die "Unable to locate sudo!\n";
 }
+
+$ENV{'PATH'} = $ENV{'PATH'} . $Config::Config{path_sep} . '/usr/sbin' . $Config::Config{path_sep} . '/sbin';
 
 if (-x '/sw/bin/pgsql.sh') {
 	print STDOUT "- resetting PostgreSQL:\n";
