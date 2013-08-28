@@ -1,3 +1,10 @@
+libopennms-release-perl (2.9.4-1) unstable; urgency=low
+
+  * A few small changes, including smarter .m2/repository cleanup in the
+    nightly script.
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Wed, 28 Aug 2013 10:38:44 -0400
+
 libopennms-release-perl (2.9.3-1) unstable; urgency=low
 
   * New release, handles cleaning up postgresql properly, a few other RPM-related
