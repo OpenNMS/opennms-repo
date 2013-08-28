@@ -15,6 +15,8 @@ use Getopt::Long;
 use Git;
 use IO::Handle;
 
+use OpenNMS::Release 2.9.4;
+
 use vars qw(
 	$SCRIPTDIR
 	$ROOTDIR
@@ -154,12 +156,19 @@ sub buildtool {
 	return $output;
 }
 
-sub erase_invalid_jar {
+sub clean_up_jars {
 	my $name = $File::Find::name;
 	return unless (-f $name and $name =~ /\.jar$/);
+
 	chomp(my $type = `file '$name'`);
 	if ($type !~ /zip archive/i) {
 		unlink($name);
+		return;
+	}
+
+	if (-M $name > 7 or -C $name > 7) {
+		unlink($name);
+		return;
 	}
 }
 
@@ -171,9 +180,7 @@ sub clean_for_build {
 	}
 
 	my $maven_dir = File::Spec->catdir($ENV{'HOME'}, '.m2', 'repository');
-	rmtree($maven_dir);
-
-	find(\&erase_invalid_jar, $maven_dir);
+	find(\&clean_up_jars, $maven_dir);
 }
 
 sub get_branch {
