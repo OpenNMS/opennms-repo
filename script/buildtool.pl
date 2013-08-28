@@ -11,7 +11,7 @@ use File::Basename;
 use Git;
 use IO::Handle;
 
-use OpenNMS::Release v2.8.2;
+use OpenNMS::Release 2.8.2;
 use OpenNMS::Util;
 
 use vars qw(

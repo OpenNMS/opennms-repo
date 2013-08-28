@@ -8,8 +8,8 @@ use warnings;
 use File::Spec;
 use Getopt::Long qw(:config gnu_getopt);
 
-use OpenNMS::Release::FilePackage v2.6.3;
-use OpenNMS::Release::SFTPRepo v2.6.3;
+use OpenNMS::Release::FilePackage 2.6.3;
+use OpenNMS::Release::SFTPRepo 2.6.3;
 
 my $help   = 0;
 my $result = GetOptions(

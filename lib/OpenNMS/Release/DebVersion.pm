@@ -6,7 +6,7 @@ use warnings;
 
 use Carp;
 
-use OpenNMS::Util v2.5;
+use OpenNMS::Util 2.5;
 
 use base qw(OpenNMS::Release::Version);
 

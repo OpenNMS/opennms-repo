@@ -13,10 +13,10 @@ use File::Path;
 use Getopt::Long qw(:config gnu_getopt);
 use IO::Handle;
 
-use OpenNMS::Util v2.0;
-use OpenNMS::Release::Repo v2.7.3;
-use OpenNMS::Release::AptRepo v2.7.3;
-use OpenNMS::Release::DebPackage v2.1;
+use OpenNMS::Util 2.0;
+use OpenNMS::Release::Repo 2.7.3;
+use OpenNMS::Release::AptRepo 2.7.3;
+use OpenNMS::Release::DebPackage 2.1;
 
 my $HELP             = 0;
 my $ALL              = 0;

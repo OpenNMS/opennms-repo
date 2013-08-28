@@ -10,8 +10,8 @@ use File::Basename;
 use File::ShareDir qw(:ALL);
 use File::Spec;
 
-use OpenNMS::Util v2.0;
-use OpenNMS::Release::YumRepo v2.0;
+use OpenNMS::Util 2.0;
+use OpenNMS::Release::YumRepo 2.0;
 
 my $base = shift @ARGV;
 
