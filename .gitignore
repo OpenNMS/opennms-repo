@@ -8,3 +8,7 @@ Makefile
 blib
 inc
 pm_to_blib
+debian/files
+debian/*.log
+debian/libopennms-release-perl.substvars
+debian/libopennms-release-perl
