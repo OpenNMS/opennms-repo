@@ -6,6 +6,7 @@ use warnings;
 use Config qw();
 use File::Basename;
 use File::Find;
+use File::Path;
 use File::ShareDir qw(:ALL);
 use File::Spec;
 use IO::Handle;
@@ -98,7 +99,8 @@ sleep(5);
 
 update_selenium_pids();
 
-#print "hub = $SELENIUM_HUB, webdriver = $SELENIUM_WEBDRIVER\n";
+my $m2_repo = File::Spec->catdir($ENV{'HOME'}, '.m2', 'repository');
+rmtree($m2_repo);
 
 my $dir = dirname($SCRIPT);
 chdir($dir);
