@@ -181,6 +181,9 @@ sub clean_for_build {
 
 	my $maven_dir = File::Spec->catdir($ENV{'HOME'}, '.m2', 'repository');
 	find(\&clean_up_jars, $maven_dir);
+
+	my $opennms_dir = File::Spec->catdir($maven_dir, 'org', 'opennms');
+	rmtree($opennms_dir) unless (not -d $opennms_dir);
 }
 
 sub get_branch {
