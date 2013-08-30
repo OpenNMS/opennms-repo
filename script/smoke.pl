@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Config qw();
+use Cwd qw(abs_path);
 use File::Basename;
 use File::Find;
 use File::Path;
@@ -28,28 +29,10 @@ use vars qw(
 );
 
 END {
-	if (defined $SELENIUM_HUB and $SELENIUM_HUB =~ /^\d+$/) {
-		kill('TERM', $SELENIUM_HUB);
-	}
-	if (defined $SELENIUM_WEBDRIVER and $SELENIUM_WEBDRIVER =~ /^\d+$/) {
-		kill('TERM', $SELENIUM_WEBDRIVER);
-	}
-
-	if (defined $SCRIPT and -x $SCRIPT) {
-		my $uid = getpwnam('bamboo');
-		if (not defined $uid) {
-			$uid = getpwnam('opennms');
-		}
-		find(
-			sub {
-				chown($uid, $_);
-			},
-			dirname($SCRIPT)
-		);
-	}
-
-	print "Finished.\n";
+	clean_up();
 }
+
+print $0, " version ", $OpenNMS::Release::VERSION, "\n";
 
 $ENV{'PATH'} = $ENV{'PATH'} . $Config::Config{path_sep} . '/usr/sbin' . $Config::Config{path_sep} . '/sbin';
 
@@ -149,4 +132,84 @@ sub nohup {
 		system(@command) == 0 or die "Failed to run @command: $!\n";
 		exit(0);
 	}
+}
+
+sub clean_up {
+	if (defined $SELENIUM_HUB and $SELENIUM_HUB =~ /^\d+$/) {
+		print "- stopping Selenium hub... ";
+		kill('TERM', $SELENIUM_HUB);
+		print "done\n";
+	}
+	if (defined $SELENIUM_WEBDRIVER and $SELENIUM_WEBDRIVER =~ /^\d+$/) {
+		print "- stopping Selenium web driver... ";
+		kill('TERM', $SELENIUM_WEBDRIVER);
+		print "done\n";
+	}
+
+	# make sure everything is owned by non-root
+	if (defined $SCRIPT and -x $SCRIPT) {
+		my $smokedir = dirname(abs_path($SCRIPT));
+		my $rootdir = dirname($smokedir);
+
+		print "- fixing ownership of $rootdir... ";
+		my $uid = getpwnam('bamboo');
+		if (not defined $uid) {
+			$uid = getpwnam('opennms');
+		}
+		my $gid = getgrnam('bamboo');
+		if (not defined $gid) {
+			$gid = getgrnam('opennms');
+		}
+		if (defined $uid and defined $gid) {
+			find(
+				sub {
+					chown($uid, $gid, $File::Find::name);
+				},
+				$rootdir
+			);
+			print "done\n";
+		} else {
+			print "unable to determine proper owner\n";
+		}
+
+		my $surefiredir = File::Spec->catdir($smokedir, 'target', 'surefire-reports');
+		if (-d $surefiredir) {
+			my $top_surefiredir = File::Spec->catdir($rootdir, 'target', 'surefire-reports');
+			print "- syncing surefire-reports to top-of-tree... ";
+			mkpath($top_surefiredir);
+			if (system('rsync', '-ar', '--delete', $surefiredir . '/', $top_surefiredir . '/') == 0) {
+				print "done\n";
+
+				my $relative_script = File::Spec->abs2rel($SCRIPT, $rootdir);
+				print "- deleting remaining files... ";
+				my @remove;
+				find(
+					{
+						bydepth => 1,
+						wanted => sub {
+							my $name = $File::Find::name;
+							my $relative = File::Spec->abs2rel($name, $rootdir);
+							return if ($relative =~ /^target/);
+							return if ($relative eq $relative_script);
+
+							push(@remove, $name);
+						}
+					},
+					$rootdir
+				);
+
+				for my $file (@remove) {
+					if (-d $name) {
+						rmdir($name);
+					} else {
+						unlink($name);
+					}
+				}
+				print "done\n";
+			} else {
+				print "failed\n";
+			}
+		}
+	}
+
 }

@@ -5,11 +5,14 @@ use warnings;
 
 use Config qw();
 use IO::Handle;
+use OpenNMS::Release;
 
 use vars qw(
 	$PSQL
 	$SUDO
 );
+
+print $0, " version ", $OpenNMS::Release::VERSION, "\n";
 
 chomp($SUDO = `which sudo 2>/dev/null`);
 if (not defined $SUDO or $SUDO eq '' or ! -x $SUDO) {
@@ -51,9 +54,14 @@ while (my $line = <$handle>) {
 }
 close($handle);
 
-for my $database (@databases) {
+DATABASE: for my $database (@databases) {
 	print STDOUT "- deleting $database... ";
-	system($PSQL, '-U', 'opennms', '-c', "DROP DATABASE $database;") == 0 or die "Failed to drop $database: $!\n";
+	for my $user ('opennms', 'postgres') {
+		if (system($PSQL, '-U', $user, '-c', "DROP DATABASE $database;") == 0) {
+			next DATABASE;
+		}
+	}
+	die "Failed to drop $database: $!\n";
 }
 
 exit(0);

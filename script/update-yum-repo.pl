@@ -15,9 +15,12 @@ use Getopt::Long qw(:config gnu_getopt);
 use IO::Handle;
 
 use OpenNMS::Util 2.0;
+use OpenNMS::Release;
 use OpenNMS::Release::Repo 2.7.2;
 use OpenNMS::Release::YumRepo 2.7.2;
 use OpenNMS::Release::RPMPackage 2.0;
+
+print $0, " version ", $OpenNMS::Release::VERSION, "\n";
 
 my $HELP             = 0;
 my $ALL              = 0;

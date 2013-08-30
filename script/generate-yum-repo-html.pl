@@ -11,7 +11,10 @@ use File::ShareDir qw(:ALL);
 use File::Spec;
 
 use OpenNMS::Util 2.0;
+use OpenNMS::Release;
 use OpenNMS::Release::YumRepo 2.0;
+
+print $0, " version ", $OpenNMS::Release::VERSION, "\n";
 
 my $base = shift @ARGV;
 

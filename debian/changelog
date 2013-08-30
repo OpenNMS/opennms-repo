@@ -1,3 +1,9 @@
+libopennms-release-perl (2.9.6-1) unstable; urgency=low
+
+  * Make smoke.pl do cleanup itself
+
+ -- OpenNMS Build User <opennms@debian.opennms.org>  Fri, 30 Aug 2013 14:55:00 -0400
+
 libopennms-release-perl (2.9.5-1) unstable; urgency=low
 
   * Clean up ~/.m2/repository/org/opennms
