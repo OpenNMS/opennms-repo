@@ -149,7 +149,7 @@ sub clean_up {
 	# make sure everything is owned by non-root
 	if (defined $SCRIPT and -x $SCRIPT) {
 		my $smokedir = dirname(abs_path($SCRIPT));
-		my $rootdir = dirname($rootdir);
+		my $rootdir = dirname($smokedir);
 
 		print "- fixing ownership of $rootdir... ";
 		my $uid = getpwnam('bamboo');
