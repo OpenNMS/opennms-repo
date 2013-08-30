@@ -27,8 +27,6 @@ use vars qw(
 	$GITDIR
 );
 
-print $0, " version ", $OpenNMS::Release::VERSION, "\n";
-
 sub usage() {
 	print STDERR <<END;
 usage: $0 <project_name> <command> [branch_name [git_directory]]
