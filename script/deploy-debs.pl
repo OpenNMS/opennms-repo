@@ -9,6 +9,7 @@ use Cwd qw(abs_path);
 use File::Basename;
 use File::Slurp;
 use File::Spec;
+use OpenNMS::Release;
 
 use vars qw(
 	$SCRIPTDIR
@@ -25,6 +26,8 @@ use vars qw(
 	@FILES_DEBS
 	$FILE_NIGHTLY
 );
+
+print $0, " version ", $OpenNMS::Release::VERSION, "\n";
 
 $SCRIPTDIR = abs_path(dirname($0));
 $APTDIR    = "/var/ftp/pub/releases/opennms/debian";

@@ -19,6 +19,8 @@ use OpenNMS::Util;
 use OpenNMS::Release::YumRepo 2.0;
 use OpenNMS::Release::RPMPackage 2.0;
 
+print $0, " version ", $OpenNMS::Release::VERSION, "\n";
+
 my $default_rpm_version  = '1.0';
 my $default_rpm_release  = 1;
 my $help                 = 0;
