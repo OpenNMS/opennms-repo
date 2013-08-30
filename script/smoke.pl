@@ -182,6 +182,7 @@ sub clean_up {
 
 				my $relative_script = File::Spec->abs2rel($SCRIPT, $rootdir);
 				print "- deleting remaining files... ";
+				my @remove;
 				find(
 					{
 						bydepth => 1,
@@ -191,15 +192,19 @@ sub clean_up {
 							return if ($relative =~ /^target/);
 							return if ($relative eq $relative_script);
 
-							if (-d $name) {
-								rmdir($name);
-							} else {
-								unlink($name);
-							}
+							push(@remove, $name);
 						}
 					},
 					$rootdir
 				);
+
+				for my $file (@remove) {
+					if (-d $name) {
+						rmdir($name);
+					} else {
+						unlink($name);
+					}
+				}
 				print "done\n";
 			} else {
 				print "failed\n";
