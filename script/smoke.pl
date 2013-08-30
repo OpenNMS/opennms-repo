@@ -156,10 +156,14 @@ sub clean_up {
 		if (not defined $uid) {
 			$uid = getpwnam('opennms');
 		}
-		if (defined $uid) {
+		my $gid = getgrnam('bamboo');
+		if (not defined $gid) {
+			$gid = getgrnam('opennms');
+		}
+		if (defined $uid and defined $gid) {
 			find(
 				sub {
-					chown($uid, $_);
+					chown($uid, $gid, $File::Find::name);
 				},
 				$rootdir
 			);
@@ -187,7 +191,11 @@ sub clean_up {
 							return if ($relative =~ /^target/);
 							return if ($relative eq $relative_script);
 
-							unlink($name);
+							if (-d $name) {
+								rmdir($name);
+							} else {
+								unlink($name);
+							}
 						}
 					},
 					$rootdir
