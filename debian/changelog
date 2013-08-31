@@ -1,3 +1,9 @@
+libopennms-release-perl (2.9.9-1) unstable; urgency=low
+
+  * More cleanups and fixes for smoke tests.
+
+ -- Benjamin Reed <ranger@opennms.org>  Sat, 31 Aug 2013 17:58:00 -0400
+
 libopennms-release-perl (2.9.6-1) unstable; urgency=low
 
   * Make smoke.pl do cleanup itself
