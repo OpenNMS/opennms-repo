@@ -151,27 +151,6 @@ sub clean_up {
 		my $smokedir = dirname(abs_path($SCRIPT));
 		my $rootdir = dirname($smokedir);
 
-		print "- fixing ownership of $rootdir... ";
-		my $uid = getpwnam('bamboo');
-		if (not defined $uid) {
-			$uid = getpwnam('opennms');
-		}
-		my $gid = getgrnam('bamboo');
-		if (not defined $gid) {
-			$gid = getgrnam('opennms');
-		}
-		if (defined $uid and defined $gid) {
-			find(
-				sub {
-					chown($uid, $gid, $File::Find::name);
-				},
-				$rootdir
-			);
-			print "done\n";
-		} else {
-			print "unable to determine proper owner\n";
-		}
-
 		my $surefiredir = File::Spec->catdir($smokedir, 'target', 'surefire-reports');
 		if (-d $surefiredir) {
 			my $top_surefiredir = File::Spec->catdir($rootdir, 'target', 'surefire-reports');
@@ -199,10 +178,10 @@ sub clean_up {
 				);
 
 				for my $file (@remove) {
-					if (-d $name) {
-						rmdir($name);
+					if (-d $file) {
+						rmdir($file);
 					} else {
-						unlink($name);
+						unlink($file);
 					}
 				}
 				print "done\n";
@@ -210,6 +189,28 @@ sub clean_up {
 				print "failed\n";
 			}
 		}
+
+		print "- fixing ownership of $rootdir... ";
+		my $uid = getpwnam('bamboo');
+		if (not defined $uid) {
+			$uid = getpwnam('opennms');
+		}
+		my $gid = getgrnam('bamboo');
+		if (not defined $gid) {
+			$gid = getgrnam('opennms');
+		}
+		if (defined $uid and defined $gid) {
+			find(
+				sub {
+					chown($uid, $gid, $File::Find::name);
+				},
+				$rootdir
+			);
+			print "done\n";
+		} else {
+			print "unable to determine proper owner\n";
+		}
+
 	}
 
 }
