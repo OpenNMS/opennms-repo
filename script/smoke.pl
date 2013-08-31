@@ -199,10 +199,10 @@ sub clean_up {
 				);
 
 				for my $file (@remove) {
-					if (-d $name) {
-						rmdir($name);
+					if (-d $file) {
+						rmdir($file);
 					} else {
-						unlink($name);
+						unlink($file);
 					}
 				}
 				print "done\n";
