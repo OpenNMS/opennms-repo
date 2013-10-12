@@ -70,7 +70,11 @@ for my $release (@display_order) {
 		if (-e "$base/repofiles/$rpmname") {
 			$index_text .= "<li><a href=\"repofiles/$rpmname\">$platform_descriptions->{$platform}</a> (<a href=\"$release/$platform\">browse</a>)</li>\n";
 		} else {
-			$index_text .= "<li>$platform_descriptions->{$platform} (<a href=\"$release/$platform\">browse</a>)</li>\n";
+			if (defined $platform and exists $platform_descriptions->{$platform}) {
+				$index_text .= "<li>$platform_descriptions->{$platform} (<a href=\"$release/$platform\">browse</a>)</li>\n";
+			} else {
+				print STDERR "WARNING: unknown release/platform $release / $platform.\n";
+			}
 		}
 
 	}

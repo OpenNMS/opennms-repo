@@ -134,13 +134,17 @@ sub find_repos($) {
 		if (-d $File::Find::name and $File::Find::name =~ /\/repodata$/) {
 			push(@repodirs, dirname($File::Find::name));
 		}
-	}, no_chdir => 1 }, $base);
+	}, no_chdir => 1, follow_fast => 1, follow_skip => 2 }, $base);
 
 	for my $repodir (@repodirs) {
 		$repodir = File::Spec->abs2rel($repodir, $base);
 		my @parts = File::Spec->splitdir($repodir);
+		if ($parts[0] eq 'branches' and scalar(@parts) == 3) {
+			push(@repos, OpenNMS::Release::YumRepo->new(File::Spec->catdir($base, 'branches'), $parts[1], $parts[2]));
+			next;
+		}
 		if (scalar(@parts) != 2) {
-			carp "not sure how to determine release and platform for $base/$repodir";
+			carp "not sure how to determine release and platform for base '$base', repo '$repodir'.";
 			next;
 		}
 		push(@repos, OpenNMS::Release::YumRepo->new($base, $parts[0], $parts[1]));
