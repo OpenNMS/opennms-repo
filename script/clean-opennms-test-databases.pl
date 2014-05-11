@@ -46,7 +46,7 @@ my $handle = IO::Handle->new();
 
 my @databases = qw();
 
-open($handle, '-|', "$PSQL -U opennms -l -t") or die "Unable to run $PSQL: $!\n";
+open($handle, '-|', "$PSQL -U opennms -l -t template1") or die "Unable to run $PSQL: $!\n";
 while (my $line = <$handle>) {
 	if ($line =~ /^\s*(opennms_test_.*?)\s*\|/) {
 		push(@databases, $1);
@@ -57,7 +57,7 @@ close($handle);
 DATABASE: for my $database (@databases) {
 	print STDOUT "- deleting $database... ";
 	for my $user ('opennms', 'postgres') {
-		if (system($PSQL, '-U', $user, '-c', "DROP DATABASE $database;") == 0) {
+		if (system($PSQL, '-U', $user, '-c', "DROP DATABASE $database;", 'template1') == 0) {
 			next DATABASE;
 		}
 	}
