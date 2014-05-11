@@ -216,7 +216,8 @@ sub get_password {
 	if (not -r $passfile) {
 		die "Unable to locate $passfile!\n";
 	}
-	chomp(my $ret = read_file($passfile));
+	my $ret = read_file($passfile);
+	$ret =~ s/\r?\n$//;
 	return $ret;
 }
 
