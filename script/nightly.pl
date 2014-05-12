@@ -121,6 +121,7 @@ sub make_rpm {
 	opendir(DIR, $rpmdir) or die "Failed to open $rpmdir: $!\n";
 	my @rpms = grep { /\.rpm$/ } readdir(DIR) or die "Failed to read entries in $rpmdir: $!\n";
 	for my $rpmfile (@rpms) {
+		$rpmfile = File::Spec->catfile($rpmdir, $rpmfile);
 		my $rpm = OpenNMS::Release::RPMPackage->new($rpmfile) or die "Failed to create RPM object from $rpmfile: $!\n";
 		$rpm->sign('opennms@opennms.org', $PASSWORD) or die "Failed to sign RPM $rpmfile: $!\n";
 	}
