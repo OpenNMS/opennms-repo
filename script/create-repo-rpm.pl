@@ -14,12 +14,13 @@ use File::Spec;
 use File::Temp qw(tempdir);
 use Getopt::Long qw(:config gnu_getopt);
 use IO::Handle;
+use version;
 
 use OpenNMS::Util;
-use OpenNMS::Release::YumRepo 2.0;
-use OpenNMS::Release::RPMPackage 2.0;
+use OpenNMS::Release::YumRepo 2.0.0;
+use OpenNMS::Release::RPMPackage 2.0.0;
 
-print $0, " version ", $OpenNMS::Release::VERSION, "\n";
+print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $default_rpm_version  = '1.0';
 my $default_rpm_release  = 1;

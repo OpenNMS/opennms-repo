@@ -14,6 +14,7 @@ use File::Spec;
 use Getopt::Long;
 use Git;
 use IO::Handle;
+use version;
 
 use OpenNMS::Release 2.9.4;
 
@@ -37,7 +38,7 @@ use vars qw(
 	$HELP
 );
 
-print $0, " version ", $OpenNMS::Release::VERSION, "\n";
+print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $SCRIPTDIR     = abs_path(dirname($0));
 $ROOTDIR       = abs_path('.');

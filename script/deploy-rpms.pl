@@ -9,6 +9,8 @@ use Cwd qw(abs_path);
 use File::Basename;
 use File::Slurp;
 use File::Spec;
+use version;
+
 use OpenNMS::Release;
 
 use vars qw(
@@ -30,7 +32,7 @@ use vars qw(
 	$FILE_NIGHTLY
 );
 
-print $0, " version ", $OpenNMS::Release::VERSION, "\n";
+print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $SCRIPTDIR = abs_path(dirname($0));
 $YUMDIR    = "/var/www/sites/opennms.org/site/yum";

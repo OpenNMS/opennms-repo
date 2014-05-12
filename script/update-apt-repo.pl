@@ -12,14 +12,15 @@ use File::Find;
 use File::Path;
 use Getopt::Long qw(:config gnu_getopt);
 use IO::Handle;
+use version;
 
-use OpenNMS::Util 2.0;
+use OpenNMS::Util 2.0.0;
 use OpenNMS::Release;
 use OpenNMS::Release::Repo 2.7.3;
 use OpenNMS::Release::AptRepo 2.7.3;
-use OpenNMS::Release::DebPackage 2.1;
+use OpenNMS::Release::DebPackage 2.1.0;
 
-print $0, " version ", $OpenNMS::Release::VERSION, "\n";
+print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $HELP             = 0;
 my $ALL              = 0;

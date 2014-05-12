@@ -9,12 +9,13 @@ use Data::Dumper;
 use File::Basename;
 use File::ShareDir qw(:ALL);
 use File::Spec;
+use version;
 
-use OpenNMS::Util 2.0;
+use OpenNMS::Util 2.0.0;
 use OpenNMS::Release;
-use OpenNMS::Release::YumRepo 2.0;
+use OpenNMS::Release::YumRepo 2.0.0;
 
-print $0, " version ", $OpenNMS::Release::VERSION, "\n";
+print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $base = shift @ARGV;
 
