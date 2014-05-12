@@ -35,7 +35,7 @@ things.
 
 =cut
 
-our $VERSION = '2.6.7';
+our $VERSION = 2.6.7;
 
 our $RPM     = undef;
 our $RPMSIGN = undef;

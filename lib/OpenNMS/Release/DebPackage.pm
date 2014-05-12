@@ -35,7 +35,7 @@ things.
 =cut
 
 our $DPKG_SIG = undef;
-our $VERSION = '2.5';
+our $VERSION = 2.5.0;
 
 =head1 CONSTRUCTOR
 

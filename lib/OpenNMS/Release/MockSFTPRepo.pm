@@ -9,6 +9,8 @@ use File::Basename;
 
 use base qw(OpenNMS::Release::SFTPRepo);
 
+our $VERSION = 2.9.10;
+
 sub _init {
 	return 1;
 }

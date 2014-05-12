@@ -25,7 +25,7 @@ This is just a perl module for manipulating Debian versions.
 
 =cut
 
-our $VERSION = '2.5';
+our $VERSION = 2.5.0;
 our $DPKG    = undef;
 
 =head1 CONSTRUCTOR

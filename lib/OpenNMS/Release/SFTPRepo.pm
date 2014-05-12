@@ -37,7 +37,7 @@ This represents a remote SFTP file repository.
 
 =cut
 
-our $VERSION = '2.6.3';
+our $VERSION = 2.6.3;
 
 =head1 CONSTRUCTOR
 

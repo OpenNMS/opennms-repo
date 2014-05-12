@@ -7,7 +7,7 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
-our $VERSION = '2.1';
+our $VERSION = 2.1.0;
 
 sub new {
 	my $proto = shift;

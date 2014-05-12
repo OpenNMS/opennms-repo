@@ -33,7 +33,7 @@ our @EXPORT = qw(
 	gpg_detach_sign_file
 );
 
-our $VERSION = '2.6';
+our $VERSION = 2.6.0;
 
 =head1 METHODS
 

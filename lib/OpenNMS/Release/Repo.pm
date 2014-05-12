@@ -27,7 +27,7 @@ This represents an individual package repository.
 
 =cut
 
-our $VERSION = '2.7.3';
+our $VERSION = 2.7.3;
 
 our $DF      = undef;
 our $RSYNC   = undef;
