@@ -54,7 +54,7 @@ share/generate-yum-repo-html.pre
 share/platform.properties
 share/release.properties
 share/repo.spec
-share/selenium-server-standalone-2.35.0.jar
+share/selenium-server-standalone-2.41.0.jar
 t/OpenNMS-Release-AptRepo.t
 t/OpenNMS-Release-DebPackage.t
 t/OpenNMS-Release-DebSet.t
