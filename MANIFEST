@@ -45,6 +45,7 @@ script/deploy-debs.pl
 script/deploy-rpms.pl
 script/generate-yum-repo-html.pl
 script/nightly.pl
+script/opennms-release.pl
 script/smoke.pl
 script/update-apt-repo.pl
 script/update-sourceforge-repo.pl
