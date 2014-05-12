@@ -11,7 +11,7 @@ use File::Path;
 use File::Basename;
 use File::Temp qw(tempdir);
 
-use OpenNMS::Util 2.6;
+use OpenNMS::Util 2.6.0;
 
 =head1 NAME
 

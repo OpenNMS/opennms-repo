@@ -14,7 +14,7 @@ use IPC::Open2;
 
 use base qw(OpenNMS::Release::LocalPackage);
 
-use OpenNMS::Util 2.5;
+use OpenNMS::Util 2.5.0;
 use OpenNMS::Release::RPMVersion;
 
 =head1 NAME

@@ -15,7 +15,7 @@ use File::Spec;
 use File::Temp qw(tempdir);
 use IO::Handle;
 
-use OpenNMS::Util 2.5;
+use OpenNMS::Util 2.5.0;
 use OpenNMS::Release::DebPackage;
 use OpenNMS::Release::PackageSet;
 

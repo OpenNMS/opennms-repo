@@ -13,7 +13,7 @@ use Expect;
 
 use base qw(OpenNMS::Release::LocalPackage);
 
-use OpenNMS::Util 2.5;
+use OpenNMS::Util 2.5.0;
 use OpenNMS::Release::DebVersion;
 
 =head1 NAME
