@@ -15,7 +15,7 @@ use OpenNMS::Util 2.0.0;
 use OpenNMS::Release;
 use OpenNMS::Release::YumRepo 2.0.0;
 
-print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
+print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $base = shift @ARGV;
 

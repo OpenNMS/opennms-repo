@@ -14,7 +14,7 @@ use vars qw(
 	$SUDO
 );
 
-print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
+print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 chomp($SUDO = `which sudo 2>/dev/null`);
 if (not defined $SUDO or $SUDO eq '' or ! -x $SUDO) {

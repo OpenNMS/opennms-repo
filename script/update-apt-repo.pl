@@ -20,7 +20,7 @@ use OpenNMS::Release::Repo 2.7.3;
 use OpenNMS::Release::AptRepo 2.7.3;
 use OpenNMS::Release::DebPackage 2.1.0;
 
-print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
+print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $HELP             = 0;
 my $ALL              = 0;

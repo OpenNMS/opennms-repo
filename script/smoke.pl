@@ -33,7 +33,7 @@ END {
 	clean_up();
 }
 
-print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
+print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $ENV{'PATH'} = $ENV{'PATH'} . $Config::Config{path_sep} . '/usr/sbin' . $Config::Config{path_sep} . '/sbin';
 

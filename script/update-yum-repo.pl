@@ -20,7 +20,7 @@ use OpenNMS::Release::Repo 2.7.2;
 use OpenNMS::Release::YumRepo 2.7.2;
 use OpenNMS::Release::RPMPackage 2.0.0;
 
-print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
+print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $HELP             = 0;
 my $ALL              = 0;

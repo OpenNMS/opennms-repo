@@ -29,7 +29,7 @@ use vars qw(
 	$FILE_NIGHTLY
 );
 
-print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
+print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $SCRIPTDIR = abs_path(dirname($0));
 $APTDIR    = "/var/ftp/pub/releases/opennms/debian";

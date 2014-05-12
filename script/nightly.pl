@@ -38,7 +38,7 @@ use vars qw(
 	$HELP
 );
 
-print $0 . version->new($OpenNMS::Release::VERSION) . "\n";
+print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $SCRIPTDIR     = abs_path(dirname($0));
 $ROOTDIR       = abs_path('.');
