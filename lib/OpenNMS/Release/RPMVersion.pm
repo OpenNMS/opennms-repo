@@ -7,6 +7,7 @@ use warnings;
 use Carp;
 
 use OpenNMS::Util 2.5.0;
+use Module::Load::Conditional qw[can_load];
 
 use base qw(OpenNMS::Release::Version);
 
@@ -27,6 +28,7 @@ This is just a perl module for manipulating RPM versions.
 
 our $VERSION = 2.5.0;
 our $RPMVER  = undef;
+our $USEPERL = undef;
 
 =head1 CONSTRUCTOR
 
@@ -46,7 +48,13 @@ sub new {
 
 	my $self    = bless($class->SUPER::new($version, $release, $epoch), $class);
 
-	if (not defined $RPMVER) {
+	if (can_load( modules => { 'RPM::VersionCompare' => undef } )) {
+		require RPM::VersionCompare;
+		RPM::VersionCompare->import();
+		$USEPERL = 1;
+	}
+
+	if (not defined $RPMVER and not defined $USEPERL) {
 		$RPMVER = find_executable('rpmver');
 		if (not defined $RPMVER) {
 			croak "Unable to locate \`rpmver\` executable: $!\n";
@@ -78,13 +86,17 @@ sub _compare_to {
 		return 0;
 	}
 
-	if (system("$RPMVER '$thisversion' '=' '$thatversion'") == 0) {
-		return 0;
-	}
-	if (system("$RPMVER '$thisversion' '<' '$thatversion'") == 0) {
-		return -1;
+	if ($USEPERL) {
+		return RPM::VersionCompare::labelCompare($thisversion, $thatversion);
 	} else {
-		return 1;
+		if (system("$RPMVER '$thisversion' '=' '$thatversion'") == 0) {
+			return 0;
+		}
+		if (system("$RPMVER '$thisversion' '<' '$thatversion'") == 0) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 }
 
