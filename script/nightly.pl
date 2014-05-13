@@ -17,7 +17,6 @@ use IO::Handle;
 use version;
 
 use OpenNMS::Release 2.9.4;
-use OpenNMS::Release::RPMPackage 2.6.7;
 
 use vars qw(
 	$SCRIPTDIR
@@ -107,6 +106,7 @@ buildtool('save');
 sub make_rpm {
 	my @command = (
 		File::Spec->catfile($SOURCEDIR, 'makerpm.sh'),
+		'-s', $PASSWORD,
 		'-m', $TIMESTAMP,
 		'-u', $MICRO_REVISION,
 	);
@@ -116,16 +116,6 @@ sub make_rpm {
 	}
 
 	system(@command) == 0 or die "Failed to run makerpm.sh: $!\n";
-
-	my $rpmdir = File::Spec->catdir($SOURCEDIR, 'target', 'rpm', 'RPMS', 'noarch');
-	opendir(DIR, $rpmdir) or die "Failed to open $rpmdir: $!\n";
-	my @rpms = grep { /\.rpm$/ } readdir(DIR) or die "Failed to read entries in $rpmdir: $!\n";
-	for my $rpmfile (@rpms) {
-		$rpmfile = File::Spec->catfile($rpmdir, $rpmfile);
-		my $rpm = OpenNMS::Release::RPMPackage->new($rpmfile) or die "Failed to create RPM object from $rpmfile: $!\n";
-		$rpm->sign('opennms@opennms.org', $PASSWORD) or die "Failed to sign RPM $rpmfile: $!\n";
-	}
-	closedir($rpmdir) or die "Failed to close $rpmdir: $!\n";
 }
 
 sub make_debian {
