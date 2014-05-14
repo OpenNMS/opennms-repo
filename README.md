@@ -6,6 +6,7 @@ It can be used for updating YUM, APT, and SourceForge trees, including
 adding and removing packages, updating indexes, etc.
 
 INSTALLATION
+------------
 
 To install this module type the following:
 
@@ -15,13 +16,10 @@ To install this module type the following:
    make install
 
 COPYRIGHT AND LICENCE
+---------------------
 
-Put the correct copyright and licence information here.
-
-Copyright (C) 2012 by The OpenNMS Group, Inc.
+Copyright (C) 2012-2014 by The OpenNMS Group, Inc.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
-
-
