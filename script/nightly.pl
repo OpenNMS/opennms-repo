@@ -70,6 +70,10 @@ $REVISION   = buildtool('get_revision');
 $REPOSITORY = get_repository();
 $PASSWORD   = get_password();
 
+if (exists $ENV{'BAMBOO_BUILD_NUMBER'} and $ENV{'BAMBOO_BUILD_NUMBER'} ne '' and $ENV{'BAMBOO_BUILD_NUMBER'} =~ /^\d+$/) {
+	$REVISION = $ENV{'BAMBOO_BUILD_NUMBER'};
+}
+
 my $scrubbed_branch = $BRANCH;
 $scrubbed_branch =~ s/[^[:alnum:]]+/\./gs;
 $scrubbed_branch =~ s/^\.+//;
