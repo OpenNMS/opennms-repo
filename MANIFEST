@@ -37,7 +37,7 @@ lib/OpenNMS/Util.pm
 Makefile.PL
 MANIFEST
 META.yml
-README
+README.md
 script/buildtool.pl
 script/clean-opennms-test-databases.pl
 script/create-repo-rpm.pl
