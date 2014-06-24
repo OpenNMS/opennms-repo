@@ -1,3 +1,9 @@
+libopennms-release-perl (2.9.11-1) unstable; urgency=low
+
+  * Support ARM architectures.
+
+ -- Benjamin Reed <ranger@opennms.org>  Tue, 24 Jun 2014 14:07:00 -0400
+
 libopennms-release-perl (2.9.9-1) unstable; urgency=low
 
   * More cleanups and fixes for smoke tests.
