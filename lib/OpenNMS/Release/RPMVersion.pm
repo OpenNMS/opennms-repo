@@ -55,6 +55,7 @@ sub new {
 	}
 
 	if (not defined $RPMVER and not defined $USEPERL) {
+		carp "RPM::VersionCompare not found, attempting to fall back to `rpmver` executable.\n";
 		$RPMVER = find_executable('rpmver');
 		if (not defined $RPMVER) {
 			croak "Unable to locate \`rpmver\` executable: $!\n";
