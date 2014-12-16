@@ -24,6 +24,8 @@ use vars qw(
 	$XVFB_RUN
 	$JAVA
 
+	$NON_DESTRUCTIVE
+
 	$SELENIUM_JAR
 	$SELENIUM_HUB
 	$SELENIUM_WEBDRIVER
@@ -59,6 +61,8 @@ if (not defined $XVFB_RUN or $XVFB_RUN eq "" or ! -x $XVFB_RUN) {
 	die "Unable to locate xvfb-run!\n";
 }
 
+$NON_DESTRUCTIVE = (exists $ENV{'NON_DESTRUCTIVE'} and $ENV{'NON_DESTRUCTIVE'});
+
 update_selenium_pids();
 
 $SELENIUM_JAR = get_selenium_jar();
@@ -84,7 +88,11 @@ sleep(5);
 update_selenium_pids();
 
 my $m2_repo = File::Spec->catdir($ENV{'HOME'}, '.m2', 'repository');
-rmtree($m2_repo);
+if ($NON_DESTRUCTIVE) {
+	print "Skipping repository cleanup, \$NON_DESTRUCTIVE is set.\n";
+} else {
+	rmtree($m2_repo);
+}
 
 my $dir = dirname($SCRIPT);
 chdir($dir);
@@ -152,42 +160,46 @@ sub clean_up {
 		my $smokedir = dirname(abs_path($SCRIPT));
 		my $rootdir = dirname($smokedir);
 
-		my $surefiredir = File::Spec->catdir($smokedir, 'target', 'surefire-reports');
-		if (-d $surefiredir) {
-			my $top_surefiredir = File::Spec->catdir($rootdir, 'target', 'surefire-reports');
-			print "- syncing surefire-reports to top-of-tree... ";
-			mkpath($top_surefiredir);
-			if (system('rsync', '-ar', '--delete', $surefiredir . '/', $top_surefiredir . '/') == 0) {
-				print "done\n";
-
-				my $relative_script = File::Spec->abs2rel($SCRIPT, $rootdir);
-				print "- deleting remaining files... ";
-				my @remove;
-				find(
-					{
-						bydepth => 1,
-						wanted => sub {
-							my $name = $File::Find::name;
-							my $relative = File::Spec->abs2rel($name, $rootdir);
-							return if ($relative =~ /^target/);
-							return if ($relative eq $relative_script);
-
-							push(@remove, $name);
+		if ($NON_DESTRUCTIVE) {
+			print "- skipping sync and delete, \$NON_DESTRUCTIVE is set...\n";
+		} else {
+			my $surefiredir = File::Spec->catdir($smokedir, 'target', 'surefire-reports');
+			if (-d $surefiredir) {
+				my $top_surefiredir = File::Spec->catdir($rootdir, 'target', 'surefire-reports');
+				print "- syncing surefire-reports to top-of-tree... ";
+				mkpath($top_surefiredir);
+				if (system('rsync', '-ar', '--delete', $surefiredir . '/', $top_surefiredir . '/') == 0) {
+					print "done\n";
+	
+					my $relative_script = File::Spec->abs2rel($SCRIPT, $rootdir);
+					print "- deleting remaining files... ";
+					my @remove;
+					find(
+						{
+							bydepth => 1,
+							wanted => sub {
+								my $name = $File::Find::name;
+								my $relative = File::Spec->abs2rel($name, $rootdir);
+								return if ($relative =~ /^target/);
+								return if ($relative eq $relative_script);
+	
+								push(@remove, $name);
+							}
+						},
+						$rootdir
+					);
+	
+					for my $file (@remove) {
+						if (-d $file) {
+							rmdir($file);
+						} else {
+							unlink($file);
 						}
-					},
-					$rootdir
-				);
-
-				for my $file (@remove) {
-					if (-d $file) {
-						rmdir($file);
-					} else {
-						unlink($file);
 					}
+					print "done\n";
+				} else {
+					print "failed\n";
 				}
-				print "done\n";
-			} else {
-				print "failed\n";
 			}
 		}
 
