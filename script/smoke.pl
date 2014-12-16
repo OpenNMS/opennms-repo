@@ -96,7 +96,7 @@ if ($NON_DESTRUCTIVE) {
 
 my $dir = dirname($SCRIPT);
 chdir($dir);
-my $result = system($XVFB_RUN, '--server-args=-screen 0 1920x1080x24', '--server-num=80', '--auto-servernum', '--listen-tcp', $SCRIPT);
+my $result = system($XVFB_RUN, '--wait=10', '--server-args=-screen 0 1920x1080x24', '--server-num=80', '--auto-servernum', '--listen-tcp', $SCRIPT);
 my $ret = $? >> 8;
 
 exit($ret);
