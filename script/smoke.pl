@@ -46,7 +46,7 @@ if (not defined $SCRIPT or $SCRIPT eq '' or not -x $SCRIPT) {
 $SELENIUM_LOG = IO::Handle->new();
 open($SELENIUM_LOG, '>', '/tmp/selenium.log') or die "Failed to open /tmp/selenium.log for writing: $!\n";
 
-$ENV{'DISPLAY'} = ':99';
+delete $ENV{'DISPLAY'};
 
 if (not exists $ENV{'JAVA_HOME'} or not -d $ENV{'JAVA_HOME'}) {
 	die "\$JAVA_HOME is not set, or not valid!";
@@ -88,7 +88,7 @@ rmtree($m2_repo);
 
 my $dir = dirname($SCRIPT);
 chdir($dir);
-my $result = system($XVFB_RUN, $SCRIPT);
+my $result = system($XVFB_RUN, '--server-args=-screen 0 1920x1080x24', '--server-num=80', '--auto-servernum', '--error-file=target/xvfb-run.log', $SCRIPT);
 my $ret = $? >> 8;
 
 exit($ret);
