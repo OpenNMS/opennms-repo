@@ -88,7 +88,7 @@ rmtree($m2_repo);
 
 my $dir = dirname($SCRIPT);
 chdir($dir);
-my $result = system($XVFB_RUN, '--server-args=-screen 0 1920x1080x24', '--server-num=80', '--auto-servernum', '--error-file=target/xvfb-run.log', $SCRIPT);
+my $result = system($XVFB_RUN, '--server-args=-screen 0 1920x1080x24', '--server-num=80', '--auto-servernum', $SCRIPT);
 my $ret = $? >> 8;
 
 exit($ret);
