@@ -17,6 +17,7 @@ use IO::Handle;
 use version;
 
 use OpenNMS::Util;
+use OpenNMS::Release;
 use OpenNMS::Release::YumRepo 2.0.0;
 use OpenNMS::Release::RPMPackage 2.0.0;
 
