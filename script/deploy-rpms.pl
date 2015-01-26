@@ -35,7 +35,7 @@ use vars qw(
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $SCRIPTDIR = abs_path(dirname($0));
-$YUMDIR    = "/var/www/sites/opennms.org/site/yum";
+$YUMDIR    = "/var/www/html/meridian/packages";
 
 die "$YUMDIR does not exist!" unless (-d $YUMDIR);
 
@@ -54,7 +54,7 @@ opendir(FILES, '.') or die "Unable to read current directory: $!";
 while (my $line = readdir(FILES)) {
 	next if ($line =~ /^\.\.?$/);
 	chomp($line);
-	if ($line =~ /^opennms-source-.*\.tar.gz$/) {
+	if ($line =~ /^meridian-source-.*\.tar.gz$/) {
 		$FILE_SOURCE_TARBALL = $line;
 	} elsif ($line =~ /\.rpm$/) {
 		push(@FILES_RPMS, $line);
@@ -106,7 +106,7 @@ print STDOUT "- uploading $FILE_SOURCE_TARBALL to the $BRANCH_NAME directory on 
 system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
 
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
-system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", "opennms", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", "meridian", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 
 print STDOUT "- generating YUM HTML index:\n";
 system($CMD_GENERATE, $YUMDIR) == 0 or die "Failed to generate YUM HTML: $!";
