@@ -59,8 +59,8 @@ GetOptions(
 	"t|type=s"        => \$TYPE,
 	"a|assembly-only" => \$ASSEMBLY_ONLY,
 	"b|branch=s"      => \$BRANCH,
-	"n|name=s"        -> \$NAME,
-	"x|description=s" -> \$DESCRIPTION,
+	"n|name=s"        => \$NAME,
+	"x|description=s" => \$DESCRIPTION,
 	"r|rootdir=s"     => \$ROOTDIR,
 	"s|sourcedir=s"   => \$SOURCEDIR,
 ) or die "Unable to parse command-line: $@\n";
