@@ -48,6 +48,8 @@ $CMD_BUILDTOOL = File::Spec->catfile($SCRIPTDIR, 'buildtool.pl');
 $ASSEMBLY_ONLY = 0;
 $BRANCH        = undef;
 $HELP          = 0;
+$NAME          = undef;
+$DESCRIPTION   = undef;
 $TYPE          = undef;
 
 GetOptions(
@@ -55,6 +57,8 @@ GetOptions(
 	"t|type=s"        => \$TYPE,
 	"a|assembly-only" => \$ASSEMBLY_ONLY,
 	"b|branch=s"      => \$BRANCH,
+	"n|name=s"        -> \$NAME,
+	"x|description=s" -> \$DESCRIPTION,
 	"r|rootdir=s"     => \$ROOTDIR,
 	"s|sourcedir=s"   => \$SOURCEDIR,
 ) or die "Unable to parse command-line: $@\n";
@@ -83,6 +87,9 @@ $MICRO_REVISION = $scrubbed_branch . '.' . $REVISION;
 print <<END;
 Build Root:    $ROOTDIR
 Source Root:   $SOURCEDIR
+
+Package Name:  $NAME
+Package Desc:  $DESCRIPTION
 
 Type:          $TYPE
 Source Branch: $BRANCH
@@ -117,6 +124,12 @@ sub make_rpm {
 
 	if ($ASSEMBLY_ONLY) {
 		push(@command, '-a');
+	}
+	if ($NAME) {
+		push(@command, '-n', $NAME);
+	}
+	if ($DESCRIPTION) {
+		push(@command, '-x', $DESCRIPTION);
 	}
 
 	system(@command) == 0 or die "Failed to run makerpm.sh: $!\n";
