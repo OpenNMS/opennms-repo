@@ -54,7 +54,7 @@ opendir(FILES, '.') or die "Unable to read current directory: $!";
 while (my $line = readdir(FILES)) {
 	next if ($line =~ /^\.\.?$/);
 	chomp($line);
-	if ($line =~ /^meridian-source-.*\.tar.gz$/) {
+	if ($line =~ /^[^\-]*-source-.*\.tar.gz$/) {
 		$FILE_SOURCE_TARBALL = $line;
 	} elsif ($line =~ /\.rpm$/) {
 		push(@FILES_RPMS, $line);
