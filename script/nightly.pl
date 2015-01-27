@@ -127,10 +127,10 @@ sub make_rpm {
 	if ($ASSEMBLY_ONLY) {
 		push(@command, '-a');
 	}
-	if ($NAME) {
+	if (defined $NAME) {
 		push(@command, '-n', $NAME);
 	}
-	if ($DESCRIPTION) {
+	if (defined $DESCRIPTION) {
 		push(@command, '-x', $DESCRIPTION);
 	}
 
