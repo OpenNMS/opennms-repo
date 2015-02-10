@@ -90,9 +90,6 @@ print <<END;
 Build Root:    $ROOTDIR
 Source Root:   $SOURCEDIR
 
-Package Name:  $NAME
-Package Desc:  $DESCRIPTION
-
 Type:          $TYPE
 Source Branch: $BRANCH
 Timestamp:     $TIMESTAMP
@@ -100,6 +97,14 @@ Revision:      $MICRO_REVISION
 Repository:    $REPOSITORY
 
 END
+
+if (defined $NAME) {
+	print <<END;
+Package Name:  $NAME
+Package Desc:  $DESCRIPTION
+
+END
+}
 
 print "- cleaning up git and \$M2_REPO:\n";
 clean_for_build();
