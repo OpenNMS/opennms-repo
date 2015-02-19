@@ -106,7 +106,9 @@ END
 #system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
 
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
-system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", "meridian", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel5", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel6", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel7", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 
 #print STDOUT "- generating YUM HTML index:\n";
 #system($CMD_GENERATE, $YUMDIR) == 0 or die "Failed to generate YUM HTML: $!";
