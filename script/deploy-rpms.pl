@@ -35,7 +35,7 @@ use vars qw(
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $SCRIPTDIR = abs_path(dirname($0));
-$YUMDIR    = "/var/www/html/meridian/packages";
+$YUMDIR    = "/var/www/packages";
 
 die "$YUMDIR does not exist!" unless (-d $YUMDIR);
 
