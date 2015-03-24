@@ -66,7 +66,9 @@ sub copy_dirs {
 	my $subdir  = shift;
 
 	my $dest = File::Spec->catdir($to, $year, $version, $subdir);
-	mkpath($dest) or die "Failed to create '$dest' directory: $!\n";
+	if (! -d $dest) {
+		mkpath($dest) or die "Failed to create '$dest' directory: $!\n";
+	}
 
 	for my $target ('index.html', 'index.pdf', 'images') {
 		my $source = File::Spec->catdir($from, $target);
