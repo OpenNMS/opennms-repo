@@ -42,6 +42,7 @@ script/buildtool.pl
 script/clean-opennms-test-databases.pl
 script/create-repo-rpm.pl
 script/deploy-debs.pl
+script/deploy-docs.pl
 script/deploy-rpms.pl
 script/generate-yum-repo-html.pl
 script/nightly.pl
