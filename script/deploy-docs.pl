@@ -17,7 +17,7 @@ use vars qw(
 	$DESTPATH
 );
 
-$DESTPATH = '/var/www/sites/opennms.org/site/docs/OpenNMS';
+$DESTPATH = '/var/www';
 
 my $dir = shift @ARGV || '.';
 
