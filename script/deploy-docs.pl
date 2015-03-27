@@ -49,7 +49,7 @@ if (defined $TARBALL) {
 	system('tar', '-xzf', $TARBALL) == 0 or die "Failed to unpack '$TARBALL' into '$tempdir': $!\n";
 	print "done.\n";
 
-	for my $dir ('guide-admin', 'guide-development', 'guide-doc', 'guide-install', 'guide-user') {
+	for my $dir ('guide-admin', 'guide-concepts', 'guide-development', 'guide-doc', 'guide-install', 'guide-user') {
 		copy_dirs(File::Spec->catdir($tempdir, $dir), File::Spec->catdir($DESTPATH, 'docs'), $year, $version, $dir);
 	}
 	copy_dirs(File::Spec->catdir($tempdir, 'releasenotes'), File::Spec->catdir($DESTPATH, 'releasenotes'), $year, $version, $dir);
@@ -64,6 +64,11 @@ sub copy_dirs {
 	my $year    = shift;
 	my $version = shift;
 	my $subdir  = shift;
+
+	if (! -d $from) {
+		print "* $from does not exist.  Skipping copy.\n";
+		return;
+	}
 
 	my $dest = File::Spec->catdir($to, $year, $version, $subdir);
 	if (! -d $dest) {
