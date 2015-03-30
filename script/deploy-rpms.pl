@@ -12,6 +12,7 @@ use File::Spec;
 use version;
 
 use OpenNMS::Release;
+use OpenNMS::Release::RPMPackage 2.6.7;
 
 use vars qw(
 	$SCRIPTDIR
@@ -101,6 +102,13 @@ Branch:            $BRANCH_NAME
 Branch (scrubbed): $BRANCH_NAME_SCRUBBED
 
 END
+
+for my $file (@FILES_RPMS) {
+	print "- signing $file... ";
+	my $package = OpenNMS::Release::RPMPackage->new($file);
+	$package->sign('opennms@opennms.org', $PASSWORD);
+	print "done\n";
+}
 
 #print STDOUT "- uploading $FILE_SOURCE_TARBALL to the $BRANCH_NAME directory on SourceForge:\n";
 #system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
