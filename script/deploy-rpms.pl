@@ -105,7 +105,7 @@ END
 
 for my $file (@FILES_RPMS) {
 	print "- signing $file... ";
-	my $package = OpenNMS::Release::RPMPackage->new($file);
+	my $package = OpenNMS::Release::RPMPackage->new(abs_path($file));
 	$package->sign('opennms@opennms.org', $PASSWORD);
 	print "done\n";
 }
