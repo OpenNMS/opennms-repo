@@ -40,12 +40,16 @@ sub update_build_state();
 
 $PROJECT = shift @ARGV;
 $COMMAND = shift @ARGV;
-$BRANCH  = shift @ARGV || get_branch_name();
+$BRANCH  = shift @ARGV;
 $GITDIR  = shift @ARGV || Cwd::abs_path('.');
 usage() unless (defined $COMMAND);
-die "Unable to determine branch!" unless (defined $BRANCH);
 
 $GIT     = Git->repository( Directory => $GITDIR );
+
+if (not defined $BRANCH) {
+       $BRANCH = get_branch_name();
+}
+die "Unable to determine branch!" unless (defined $BRANCH);
 
 my $clean_branch_name = $BRANCH;
 $clean_branch_name =~ s/[^[:alnum:]]+/\./gs;
