@@ -27,6 +27,52 @@ use vars qw(
 	$GITDIR
 );
 
+sub usage();
+sub get_branch_name();
+sub get_stored_value($);
+sub get_current_timestamp();
+sub get_current_revision();
+sub get_current_githash();
+sub get_build_id();
+sub has_hash_changed();
+sub update_file($$);
+sub update_build_state();
+
+$PROJECT = shift @ARGV;
+$COMMAND = shift @ARGV;
+$BRANCH  = shift @ARGV || get_branch_name();
+$GITDIR  = shift @ARGV || Cwd::abs_path('.');
+usage() unless (defined $COMMAND);
+die "Unable to determine branch!" unless (defined $BRANCH);
+
+$GIT     = Git->repository( Directory => $GITDIR );
+
+my $clean_branch_name = $BRANCH;
+$clean_branch_name =~ s/[^[:alnum:]]+/\./gs;
+$clean_branch_name =~ s/^\.//;
+$clean_branch_name =~ s/\.$//;
+
+$TIMESTAMPFILE = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-timestamp";
+$REVISIONFILE  = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-revision";
+$GITHASHFILE   = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-githash";
+
+if ($COMMAND eq 'get') {
+	print get_build_id(), "\n";
+} elsif ($COMMAND eq 'get_stamp') {
+	print get_current_timestamp(), "\n";
+} elsif ($COMMAND eq 'get_revision') {
+	print get_current_revision(), "\n";
+} elsif ($COMMAND eq 'has_hash_changed') {
+	exit (has_hash_changed()? 0 : 1);
+} elsif ($COMMAND eq 'save') {
+	update_build_state();
+} else {
+	print STDERR "unknown command: $COMMAND\n\n";
+	usage();
+}
+
+exit 0;
+
 sub usage() {
 	print STDERR <<END;
 usage: $0 <project_name> <command> [branch_name [git_directory]]
@@ -128,37 +174,3 @@ sub update_build_state() {
 	update_file($GITHASHFILE,   get_current_githash());
 }
 
-$PROJECT = shift @ARGV;
-$COMMAND = shift @ARGV;
-$BRANCH  = shift @ARGV || get_branch_name();
-$GITDIR  = shift @ARGV || Cwd::abs_path('.');
-usage() unless (defined $COMMAND);
-die "Unable to determine branch!" unless (defined $BRANCH);
-
-$GIT     = Git->repository( Directory => $GITDIR );
-
-my $clean_branch_name = $BRANCH;
-$clean_branch_name =~ s/[^[:alnum:]]+/\./gs;
-$clean_branch_name =~ s/^\.//;
-$clean_branch_name =~ s/\.$//;
-
-$TIMESTAMPFILE = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-timestamp";
-$REVISIONFILE  = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-revision";
-$GITHASHFILE   = "$ENV{HOME}/.buildtool-$PROJECT-$clean_branch_name-githash";
-
-if ($COMMAND eq 'get') {
-	print get_build_id(), "\n";
-} elsif ($COMMAND eq 'get_stamp') {
-	print get_current_timestamp(), "\n";
-} elsif ($COMMAND eq 'get_revision') {
-	print get_current_revision(), "\n";
-} elsif ($COMMAND eq 'has_hash_changed') {
-	exit (has_hash_changed()? 0 : 1);
-} elsif ($COMMAND eq 'save') {
-	update_build_state();
-} else {
-	print STDERR "unknown command: $COMMAND\n\n";
-	usage();
-}
-
-exit 0;
