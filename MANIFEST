@@ -49,6 +49,7 @@ script/nightly.pl
 script/opennms-release.pl
 script/smoke.pl
 script/update-apt-repo.pl
+script/update-doc-repo.pl
 script/update-sourceforge-repo.pl
 script/update-yum-repo.pl
 share/generate-yum-repo-html.post

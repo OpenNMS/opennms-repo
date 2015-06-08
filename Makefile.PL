@@ -25,6 +25,7 @@ install_script 'script/nightly.pl';
 install_script 'script/opennms-release.pl';
 install_script 'script/smoke.pl';
 install_script 'script/update-apt-repo.pl';
+install_script 'script/update-doc-repo.pl';
 install_script 'script/update-sourceforge-repo.pl';
 install_script 'script/update-yum-repo.pl';
 
