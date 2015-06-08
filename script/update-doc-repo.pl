@@ -255,7 +255,9 @@ sub process_tree {
 
 	if ($treebase eq 'releases') {
 		my $latestdir = File::Spec->catdir($treedir, 'latest');
-		unlink($latestdir);
+		if (-e $latestdir) {
+			unlink($latestdir) or die "Unable to unlink $latestdir: $!\n";
+		}
 		if (@names > 0) {
 			symlink($names[0], $latestdir);
 		}
@@ -319,7 +321,9 @@ END
 END
 	close(FILEOUT) or die "Failed to close $file: $!\n!";
 
-	unlink($file) or die "Failed to unlink $file: $!\n";
+	if (-e $file) {
+		unlink($file) or die "Failed to unlink $file: $!\n";
+	}
 	link($file . '.new', $file) or die "Failed to link $file.new to $file: $!\n";
 	unlink($file . '.new') or die "Failed to remove $file.new: $!\n";
 }
