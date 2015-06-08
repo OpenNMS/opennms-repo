@@ -154,8 +154,9 @@ sub get_link {
 # $ROOT / tree / release / doc
 sub process_tree {
 	my $treedir = shift;
+	my $treebase = basename($treedir);
 
-	my $headertype = 'OpenNMS ' . ucfirst(lc(basename($treedir)));
+	my $headertype = 'OpenNMS ' . ucfirst(lc($treebase));
 
 	# relative to the $treedir directory (ie: branches, releases)
 	my $treetext = "<h3>$headertype</h3>\n";
@@ -166,9 +167,21 @@ sub process_tree {
 	$toptext   .= "<ul>\n";
 
 	opendir(DIR, $treedir) or die "Failed to open $treedir for reading: $!\n";
-	while (my $name = readdir(DIR)) {
-		next if ($name =~ /^\.\.?$/);
+	my @names = sort { versioncmp($a, $b) } grep { !/^(\..*|index\.html|latest)$/ && -d File::Spec->catdir($treedir, $_) } readdir(DIR);
+	if ($treebase eq 'releases') {
+		@names = reverse @names;
+	} elsif ($treebase eq 'branches') {
+		@names = sort {
+			if ($a eq 'develop') {
+				return -1;
+			} elsif ($b eq 'develop') {
+				return 1;
+			}
+			return 0;
+		} @names;
+	}
 
+	for my $name (@names) {
 		my $releasedir = File::Spec->catdir($treedir, $name);
 		next unless (-d $releasedir);
 
@@ -237,6 +250,14 @@ sub process_tree {
 	write_html($headertype, $treetext, File::Spec->catfile($treedir, 'index.html'));
 
 	closedir(DIR) or die "Failed to close $treedir: $!\n";
+
+	if ($treebase eq 'releases') {
+		my $latestdir = File::Spec->catdir($treedir, 'latest');
+		unlink($latestdir);
+		if (@names > 0) {
+			symlink($names[0], $latestdir);
+		}
+	}
 
 	return $toptext;
 }
