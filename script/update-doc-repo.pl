@@ -116,7 +116,9 @@ if (-f $DOCS) {
 
 if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DOCDIR, 'guide-admin')) {
 	process_asciidoc_docdir($DOCDIR);
-} elsif (-d File::Spec->catdir($DOCDIR, 'docs') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.pdf')) {
+} elsif (-d File::Spec->catdir($DOCDIR, 'docs', 'common') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.html')) {
+	process_docbook_docdir(File::Spec->catdir($DOCDIR, 'docs'));
+} elsif (-d File::Spec->catdir($DOCDIR, 'common') and -f File::Spec->catfile($DOCDIR, 'adminref.html')) {
 	process_docbook_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'apidocs', 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'apidocs', 'allclasses-frame.html')) {
 	process_javadoc_docdir(File::Spec->catdir($DOCDIR, 'apidocs'));
@@ -378,7 +380,7 @@ sub process_docbook_docdir {
 		'releasenotes' => 'releasenotes',
 	};
 
-	my $from = File::Spec->catdir($docdir, 'docs');
+	my $from = File::Spec->catdir($docdir);
 
 	opendir(DIR, $from) or die "Failed to open $from for reading: $!\n";
 	my @files = sort grep { /\.(pdf|html)$/ } readdir(DIR);
