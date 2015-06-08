@@ -427,6 +427,8 @@ sub process_docbook_docdir {
 			my $fromfile = File::Spec->catfile($from, $name . '.' . $extension);
 			my $tofile   = File::Spec->catfile($to, 'index.' . $extension);
 
+			next unless (-f $fromfile);
+
 			my $dirname  = dirname($tofile);
 			mkpath($dirname) unless (-d $dirname);
 
