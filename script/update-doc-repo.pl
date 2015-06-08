@@ -448,25 +448,7 @@ sub process_javadoc_docdir {
 	mkpath($to) unless (-d $to);
 
 	print "- Copying javadoc to '$to'... ";
-
-	find({
-		wanted => sub {
-			return unless (-f $File::Find::name);
-			my $rel = File::Spec->abs2rel($_, $from);
-
-			my $fromfile = File::Spec->catfile($from, $rel);
-			my $tofile = File::Spec->catfile($to, $rel);
-
-			my $dirname = dirname($tofile);
-			mkpath($dirname) unless (-d $dirname);
-
-			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-		},
-		bydepth => 1,
-		follow => 1,
-		no_chdir => 1,
-	}, $from);
-
+	system('rsync', '-ar', '--delete', $from, $to) == 0 or die "Failed to rsync from '$from' to '$to': $!\n";
 	print "done\n";
 }
 
