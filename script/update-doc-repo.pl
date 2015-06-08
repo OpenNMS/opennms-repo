@@ -129,6 +129,7 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 }
 
 update_indexes();
+fix_permissions($INSTALLDIR);
 
 exit 0;
 
@@ -221,7 +222,7 @@ sub process_tree {
 
 			if ($docname eq 'javadoc') {
 				#$treetext    .= get_link('html', File::Spec->catfile($docdir, 'index.html'), $treedir);
-				$treetext    .= get_link($description, File::Spec->catfile($docdir, 'index.html'), $treedir) . ', ';
+				$treetext    .= get_link($description, File::Spec->catfile($docdir, 'index.html'), $treedir);
 				$releasetext .= get_link('html', File::Spec->catfile($docdir, 'index.html'), $releasedir);
 			} else {
 				my $pdf = File::Spec->catfile($docdir, $docname . '.pdf');
@@ -230,12 +231,13 @@ sub process_tree {
 
 				if (-f $pdf) {
 					#$treetext    .= get_link('pdf', File::Spec->catfile($docdir, $docname . '.pdf'), $treedir) . ', ';
-					$treetext    .= ' (' . get_link('pdf', File::Spec->catfile($docdir, $docname . '.pdf'), $treedir) . '), ';
+					$treetext    .= ' (' . get_link('pdf', File::Spec->catfile($docdir, $docname . '.pdf'), $treedir) . ')';
 					$releasetext .= get_link('pdf', File::Spec->catfile($docdir, $docname . '.pdf'), $releasedir) . ', ';
 				}
 				$releasetext .= get_link('html', File::Spec->catfile($docdir, $docname . '.html'), $releasedir);
 			}
 			#$treetext  .= '), ';
+			$treetext    .= ', ';
 			$releasetext .= ")</li>\n";
 		}
 		$treetext =~ s/, $/\n/;
@@ -274,7 +276,7 @@ sub write_html {
 	my $dirname = dirname($file);
 	my $relative_top = File::Spec->abs2rel(File::Spec->catfile($ROOT, 'index.html'), $dirname);
 
-	open(FILEOUT, '>', $file .'.new') or die "Failed to open $file for writing: $!\n";
+	open(FILEOUT, '+>', $file .'.new') or die "Failed to open $file for writing: $!\n";
 	print FILEOUT <<END;
 <!DOCTYPE html>
 <html lang="en">
@@ -361,12 +363,12 @@ sub copy_asciidoc_guide {
 			my $dirname = dirname($tofile);
 			if (not -d $dirname) {
 				mkpath($dirname);
-				chmod 2775, $dirname;
+				chmod '2775', $dirname;
 			}
 
 			#print "- copy: $fromfile -> $tofile\n";
 			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-			chmod 0664, $tofile;
+			chmod '0664', $tofile;
 
 			if ($rel =~ /^index.(html|pdf)$/) {
 				symlink('index.' . $1, File::Spec->catfile($to, $guide . '.' . $1)), "\n";
@@ -412,11 +414,11 @@ sub process_docbook_docdir {
 				my $dirname = dirname($tofile);
 				if (not -d $dirname) {
 					mkpath($dirname);
-					chmod 2775, $dirname;
+					chmod '2775', $dirname;
 				}
 
 				copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-				chmod 0664, $tofile;
+				chmod '0664', $tofile;
 			},
 			bydepth => 1,
 			follow => 1,
@@ -446,11 +448,11 @@ sub process_docbook_docdir {
 			my $dirname  = dirname($tofile);
 			if (not -d $dirname) {
 				mkpath($dirname);
-				chmod 2775, $dirname;
+				chmod '2775', $dirname;
 			}
 
 			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-			chmod 0664, $tofile;
+			chmod '0664', $tofile;
 
 			symlink('index.' . $extension, File::Spec->catfile($to, $mappedname . '.' . $extension));
 
@@ -470,8 +472,36 @@ sub process_javadoc_docdir {
 	mkpath($to) unless (-d $to);
 
 	print "- Copying javadoc to '$to'... ";
-	system('rsync', '-r', '--delete', $from.'/', $to.'/') == 0 or die "Failed to rsync from '$from' to '$to': $!\n";
+#	find({
+#		wanted => sub {
+#			my $rel = File::Spec->abs2rel($File::Find::name, $from);
+#			return unless (-f $File::Find::name);
+#
+#			my $fromfile = File::Spec->catfile($from, $rel);
+#			my $tofile = File::Spec->catfile($to, $rel);
+#
+#			my $dirname = dirname($tofile);
+#			if (not -d $dirname) {
+#				mkpath($dirname);
+#				chmod '2775', $dirname;
+#			}
+#
+#			#print "- copy: $fromfile -> $tofile\n";
+#			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
+#			chmod '0664', $tofile;
+#		},
+#		bydepth => 1,
+#		follow => 1,
+#		no_chdir => 1,
+#	}, $from);
+	system('rsync', '-r', '--delete', $from.'/', $to.'/') == 0 or die "Failed to sync from $from to $to: $!\n";
 	print "done\n";
+}
+
+sub fix_permissions {
+	my $dir = shift;
+	system('chown', '-R', 'opennms:opennms', $dir) == 0 or die "Failed to fix ownership on $dir: $!\n";
+	system('chmod', '-R', 'a+r', $dir) == 0 or die "Failed to fix permissions on $dir: $!\n";
 }
 
 sub usage {
