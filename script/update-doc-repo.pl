@@ -363,12 +363,12 @@ sub copy_asciidoc_guide {
 			my $dirname = dirname($tofile);
 			if (not -d $dirname) {
 				mkpath($dirname);
-				chmod '2775', $dirname;
+				#system('chmod', '755', $dirname) == 0 or die "Failed to fix ownership on $dirname: $!\n";
 			}
 
 			#print "- copy: $fromfile -> $tofile\n";
 			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-			chmod '0664', $tofile;
+			#system('chmod', '644', $tofile) == 0 or die "Failed to fix ownership on $tofile: $!\n";
 
 			if ($rel =~ /^index.(html|pdf)$/) {
 				symlink('index.' . $1, File::Spec->catfile($to, $guide . '.' . $1)), "\n";
@@ -414,11 +414,11 @@ sub process_docbook_docdir {
 				my $dirname = dirname($tofile);
 				if (not -d $dirname) {
 					mkpath($dirname);
-					chmod '2775', $dirname;
+					#system('chmod', '755', $dirname) == 0 or die "Failed to fix ownership on $dirname: $!\n";
 				}
 
 				copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-				chmod '0664', $tofile;
+				#system('chmod', '644', $tofile) == 0 or die "Failed to fix ownership on $tofile: $!\n";
 			},
 			bydepth => 1,
 			follow => 1,
@@ -448,11 +448,11 @@ sub process_docbook_docdir {
 			my $dirname  = dirname($tofile);
 			if (not -d $dirname) {
 				mkpath($dirname);
-				chmod '2775', $dirname;
+				#system('chmod', '755', $dirname) == 0 or die "Failed to fix ownership on $dirname: $!\n";
 			}
 
 			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-			chmod '0664', $tofile;
+			#system('chmod', '644', $tofile) or die "Failed to fix ownership on $tofile: $!\n";
 
 			symlink('index.' . $extension, File::Spec->catfile($to, $mappedname . '.' . $extension));
 
@@ -483,12 +483,12 @@ sub process_javadoc_docdir {
 #			my $dirname = dirname($tofile);
 #			if (not -d $dirname) {
 #				mkpath($dirname);
-#				chmod '2775', $dirname;
+#				#system('chmod', '755', $dirname) or die "Failed to fix ownership on $dirname: $!\n";
 #			}
 #
 #			#print "- copy: $fromfile -> $tofile\n";
 #			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-#			chmod '0664', $tofile;
+#			#system('chmod', '644', $tofile) == 0 or die "Failed to fix ownership on $tofile: $!\n";
 #		},
 #		bydepth => 1,
 #		follow => 1,
@@ -500,8 +500,8 @@ sub process_javadoc_docdir {
 
 sub fix_permissions {
 	my $dir = shift;
-	system('chown', '-R', 'opennms:opennms', $dir) == 0 or die "Failed to fix ownership on $dir: $!\n";
-	system('chmod', '-R', 'a+r', $dir) == 0 or die "Failed to fix permissions on $dir: $!\n";
+	#system('chown', '-R', 'opennms:opennms', $dir) == 0 or die "Failed to fix ownership on $dir: $!\n";
+	#system('chmod', '-R', 'a+r', $dir) == 0 or die "Failed to fix permissions on $dir: $!\n";
 }
 
 sub usage {
