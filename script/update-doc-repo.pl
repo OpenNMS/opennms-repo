@@ -451,12 +451,12 @@ sub process_docbook_docdir {
 }
 
 sub process_javadoc_docdir {
-	my $from = shift;
+	my $from = File::Spec->catdir(shift);
 	my $to   = File::Spec->catdir($INSTALLDIR, 'javadoc');
 	mkpath($to) unless (-d $to);
 
 	print "- Copying javadoc to '$to'... ";
-	system('rsync', '-ar', '--delete', $from, $to) == 0 or die "Failed to rsync from '$from' to '$to': $!\n";
+	system('rsync', '-ar', '--delete', $from.'/', $to.'/') == 0 or die "Failed to rsync from '$from' to '$to': $!\n";
 	print "done\n";
 }
 
