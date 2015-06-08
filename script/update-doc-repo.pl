@@ -272,7 +272,7 @@ sub write_html {
 	my $dirname = dirname($file);
 	my $relative_top = File::Spec->abs2rel(File::Spec->catfile($ROOT, 'index.html'), $dirname);
 
-	open(FILEOUT, '>', $file) or die "Failed to open $file for writing: $!\n";
+	open(FILEOUT, '>', $file .'.new') or die "Failed to open $file for writing: $!\n";
 	print FILEOUT <<END;
 <!DOCTYPE html>
 <html lang="en">
@@ -318,6 +318,10 @@ END
 </html>
 END
 	close(FILEOUT) or die "Failed to close $file: $!\n!";
+
+	unlink($file) or die "Failed to unlink $file: $!\n";
+	link($file . '.new', $file) or die "Failed to link $file.new to $file: $!\n";
+	unlink($file . '.new') or die "Failed to remove $file.new: $!\n";
 }
 
 sub process_asciidoc_docdir {
