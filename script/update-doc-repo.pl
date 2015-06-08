@@ -355,12 +355,14 @@ sub copy_asciidoc_guide {
 			my $tofile = File::Spec->catfile($to, $rel);
 
 			my $dirname = dirname($tofile);
-			if (! -d $dirname) {
+			if (not -d $dirname) {
 				mkpath($dirname);
+				chmod 2775, $dirname;
 			}
 
 			#print "- copy: $fromfile -> $tofile\n";
 			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
+			chmod 0664, $tofile;
 
 			if ($rel =~ /^index.(html|pdf)$/) {
 				symlink('index.' . $1, File::Spec->catfile($to, $guide . '.' . $1)), "\n";
@@ -404,9 +406,13 @@ sub process_docbook_docdir {
 				my $tofile = File::Spec->catfile($tocommon, $rel);
 
 				my $dirname = dirname($tofile);
-				mkpath($dirname) unless (-d $dirname);
+				if (not -d $dirname) {
+					mkpath($dirname);
+					chmod 2775, $dirname;
+				}
 
 				copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
+				chmod 0664, $tofile;
 			},
 			bydepth => 1,
 			follow => 1,
@@ -434,9 +440,13 @@ sub process_docbook_docdir {
 			next unless (-f $fromfile);
 
 			my $dirname  = dirname($tofile);
-			mkpath($dirname) unless (-d $dirname);
+			if (not -d $dirname) {
+				mkpath($dirname);
+				chmod 2775, $dirname;
+			}
 
 			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
+			chmod 0664, $tofile;
 
 			symlink('index.' . $extension, File::Spec->catfile($to, $mappedname . '.' . $extension));
 
@@ -456,7 +466,7 @@ sub process_javadoc_docdir {
 	mkpath($to) unless (-d $to);
 
 	print "- Copying javadoc to '$to'... ";
-	system('rsync', '-ar', '--delete', $from.'/', $to.'/') == 0 or die "Failed to rsync from '$from' to '$to': $!\n";
+	system('rsync', '-r', '--delete', $from.'/', $to.'/') == 0 or die "Failed to rsync from '$from' to '$to': $!\n";
 	print "done\n";
 }
 
