@@ -159,7 +159,7 @@ sub update_indexes {
 	} grep { !/^\./ && -d File::Spec->catdir($ROOT, $_) } readdir(DIR);
 	for my $project (@projects) {
 		my $desc = (exists $DESCRIPTIONS->{$project}? $DESCRIPTIONS->{$project} : ucfirst($project));
-		$roottext .= '	<li>' . get_link($desc, File::Spec->catfile($ROOT, $project, 'index.html')) . "</li>\n";
+		$roottext .= '	<li>' . get_link($desc, File::Spec->catfile($ROOT, $project, 'index.html'), $ROOT) . "</li>\n";
 	}
 	$roottext .= "</ul>\n";
 	write_html('OpenNMS Projects', $roottext, File::Spec->catfile($ROOT, 'index.html'));
