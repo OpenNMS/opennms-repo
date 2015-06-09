@@ -24,9 +24,11 @@ use vars qw(
 	$DESCRIPTIONS
 
 	$ROOT
+	$PROJECTROOT
 	$BRANCH
 
 	$DOCS
+	$PROJECT
 	$VERSION
 
 	$BRANCHDIR
@@ -46,6 +48,7 @@ $DESCRIPTIONS = {
 	'guide-user'        => 'Users Guide',
 	'releasenotes'      => 'Release Notes',
 	'javadoc'           => 'Java API Documentation',
+	'opennms'           => 'OpenNMS Horizon',
 };
 
 my $result = GetOptions(
@@ -60,11 +63,17 @@ if (not defined $ROOT or $ROOT eq "") {
 	usage();
 }
 
-$DOCS = shift @ARGV;
+$DOCS    = shift @ARGV;
+$PROJECT = shift @ARGV;
 $VERSION = shift @ARGV;
 
 if (not defined $DOCS or $DOCS eq "") {
 	print STDERR "ERROR: You must specify a document directory/file and a version!\n";
+	usage();
+}
+
+if (not defined $PROJECT or $PROJECT eq "") {
+	print STDERR "ERROR: Youst must also specify a project!\n";
 	usage();
 }
 
@@ -78,18 +87,21 @@ if ($VERSION =~ /-SNAPSHOT$/ and not defined $BRANCH) {
 	usage();
 }
 
-if (! -d $ROOT) {
-	print STDERR "WARNING: Creating document root: $ROOT\n";
-	mkpath($ROOT);
+$PROJECT = lc($PROJECT);
+$PROJECTROOT = File::Spec->catdir($ROOT, $PROJECT);
+
+if (! -d $PROJECTROOT) {
+	print STDERR "WARNING: Creating project root: $PROJECTROOT\n";
+	mkpath($PROJECTROOT);
 }
 
 if (not defined $BRANCH or $BRANCH eq "") {
 	$BRANCH = undef;
-	$INSTALLDIR = File::Spec->catdir($ROOT, 'releases', $VERSION);
+	$INSTALLDIR = File::Spec->catdir($PROJECTROOT, 'releases', $VERSION);
 } else {
 	$BRANCHDIR = $BRANCH;
 	$BRANCHDIR =~ s/[^[:alnum:]\.\-]+/-/g;
-	$INSTALLDIR = File::Spec->catdir($ROOT, 'branches', $BRANCHDIR);
+	$INSTALLDIR = File::Spec->catdir($PROJECTROOT, 'branches', $BRANCHDIR);
 }
 
 print "- Creating document directory '$INSTALLDIR'... ";
@@ -134,16 +146,35 @@ fix_permissions($INSTALLDIR);
 exit 0;
 
 sub update_indexes {
-	my $index = "";
-	if (-d File::Spec->catdir($ROOT, 'releases')) {
-		$index .= process_tree(File::Spec->catdir($ROOT, 'releases'));
+	my $roottext = "<h3>OpenNMS Projects</h3>\n<ul>\n";
+	opendir(DIR, $ROOT) or die "Failed to open $ROOT for reading: $!\n";
+	my @projects = sort {
+		if ($a eq 'opennms') {
+			return -1;
+		} elsif ($b eq 'opennms') {
+			return 1;
+		} else {
+			return $a cmp $b;
+		}
+	} grep { !/^\./ && -d File::Spec->catdir($ROOT, $_) } readdir(DIR);
+	for my $project (@projects) {
+		my $desc = (exists $DESCRIPTIONS->{$project}? $DESCRIPTIONS->{$project} : ucfirst($project));
+		$roottext .= '	<li>' . get_link($desc, File::Spec->catfile($ROOT, $project, 'index.html')) . "</li>\n";
+	}
+	$roottext .= "</ul>\n";
+	write_html('OpenNMS Projects', $roottext, File::Spec->catfile($ROOT, 'index.html'));
+
+	my $projecttext = "";
+	if (-d File::Spec->catdir($PROJECTROOT, 'releases')) {
+		$projecttext .= process_tree(File::Spec->catdir($PROJECTROOT, 'releases'));
 	}
 
-	if (-d File::Spec->catdir($ROOT, 'branches')) {
-		$index .= process_tree(File::Spec->catdir($ROOT, 'branches'));
+	if (-d File::Spec->catdir($PROJECTROOT, 'branches')) {
+		$projecttext .= process_tree(File::Spec->catdir($PROJECTROOT, 'branches'));
 	}
 
-	write_html('OpenNMS Documentation', $index, File::Spec->catfile($ROOT, 'index.html'));
+	my $project = (exists $DESCRIPTIONS->{$PROJECT}? $DESCRIPTIONS->{$PROJECT} : ucfirst($PROJECT));
+	write_html($project . ' Documentation', $projecttext, File::Spec->catfile($PROJECTROOT, 'index.html'));
 }
 
 sub get_link {
@@ -154,7 +185,7 @@ sub get_link {
 	return "<a href=\"" . File::Spec->abs2rel($file, $relative_to) . "\">$description</a>";
 }
 
-# $ROOT / tree / release / doc
+# $ROOT / $PROJECTROOT / tree / release / doc
 sub process_tree {
 	my $treedir = shift;
 	my $treebase = basename($treedir);
@@ -165,8 +196,8 @@ sub process_tree {
 	my $treetext = "<h3>$headertype</h3>\n";
 	$treetext   .= "<ul>\n";
 
-	# relative to the $ROOT directory
-	my $toptext = "<h3>" . get_link($headertype, File::Spec->catfile($treedir, 'index.html'), $ROOT) . "</h3>\n";
+	# relative to the $PROJECTROOT directory
+	my $toptext = "<h3>" . get_link($headertype, File::Spec->catfile($treedir, 'index.html'), $PROJECTROOT) . "</h3>\n";
 	$toptext   .= "<ul>\n";
 
 	opendir(DIR, $treedir) or die "Failed to open $treedir for reading: $!\n";
@@ -190,7 +221,7 @@ sub process_tree {
 
 		$treetext .= "<li>" . get_link($name, File::Spec->catfile($releasedir, 'index.html'), $treedir) . "<br>\n";
 
-		$toptext .= "	<li>" . get_link($name, File::Spec->catfile($releasedir, 'index.html'), $ROOT) . "</li>\n";
+		$toptext .= "	<li>" . get_link($name, File::Spec->catfile($releasedir, 'index.html'), $PROJECTROOT) . "</li>\n";
 
 		opendir(SUBDIR, $releasedir) or die "Failed to open $releasedir for reading: $!\n";
 		my @docdirs = sort {
@@ -274,7 +305,7 @@ sub write_html {
 	my $file  = shift;
 
 	my $dirname = dirname($file);
-	my $relative_top = File::Spec->abs2rel(File::Spec->catfile($ROOT, 'index.html'), $dirname);
+	my $relative_top = File::Spec->abs2rel(File::Spec->catfile($PROJECTROOT, 'index.html'), $dirname);
 
 	open(FILEOUT, '+>', $file .'.new') or die "Failed to open $file for writing: $!\n";
 	print FILEOUT <<END;
@@ -506,7 +537,7 @@ sub fix_permissions {
 
 sub usage {
 	print STDERR <<END;
-usage: $0 [--root=/path/to/doc/root] [--branch=branch_name] <docs> <version>
+usage: $0 [--root=/path/to/doc/root] [--branch=branch_name] <docs> <project> <version>
 
 OPTIONS:
 
