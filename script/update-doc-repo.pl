@@ -28,6 +28,7 @@ use vars qw(
 	$BRANCH
 
 	$DOCS
+	$PROJECTS
 	$PROJECT
 	$PROJECTNAME
 	$VERSION
@@ -42,14 +43,16 @@ $ROOT = '/var/www/sites/opennms.org/site/doc';
 
 $BOOTSTRAPVERSION = '3.3.4';
 $DESCRIPTIONS = {
-	'guide-admin'       => 'Administrators Guide',
-	'guide-development' => 'Developers Guide',
-	'guide-doc'         => 'Documentation Guide',
-	'guide-install'     => 'Installation Guide',
-	'guide-user'        => 'Users Guide',
+	'guide-admin'       => 'Admin',
+	'guide-development' => 'Developers',
+	'guide-doc'         => 'Documentation',
+	'guide-install'     => 'Installation',
+	'guide-user'        => 'Users',
 	'releasenotes'      => 'Release Notes',
-	'javadoc'           => 'Java API Documentation',
-	'opennms'           => 'OpenNMS Horizon',
+	'javadoc'           => 'Java API',
+	'opennms'           => 'OpenNMS',
+	'branches'          => 'Development',
+	'releases'          => 'Releases',
 };
 
 my $result = GetOptions(
@@ -142,15 +145,148 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 	die "Unknown documentation type: $DOCS\n";
 }
 
+$PROJECTS = get_projects($ROOT);
 update_indexes();
 fix_permissions($INSTALLDIR);
 
 exit 0;
 
+sub get_projects {
+	my $projectsroot = shift;
+
+	print STDERR "! Getting projects from $projectsroot:\n" if ($DEBUG);
+	my $projects = {};
+	opendir(DIR, $projectsroot) or die "Failed to open $projectsroot for reading: $!\n";
+	while (my $entry = readdir(DIR)) {
+		my $path = File::Spec->catdir($projectsroot, $entry);
+		next if ($entry =~ /^\./);
+		next if ($entry =~ /^index\.html$/);
+		next if (-l $path);
+		next unless (-d $path);
+
+		my $project = {
+			name        => $entry,
+			description => (exists $DESCRIPTIONS->{$entry}? $DESCRIPTIONS->{$entry}:ucfirst($entry)),
+			path        => $path,
+		};
+
+		print STDERR "! * Found: ", $project->{'description'}, "\n" if ($DEBUG);
+		$projects->{$entry} = $project;
+	}
+	closedir(DIR) or die "Failed to close $projectsroot: $!\n";
+
+	for my $project (sort keys %$projects) {
+		my $releases = get_releases($projects->{$project});
+		$projects->{$project}->{'releases'} = $releases;
+	}
+
+	return $projects;
+}
+
+sub get_releases {
+	my $project = shift;
+	my @releases;
+
+	print STDERR "! Getting release types for project " . $project->{'description'} . "\n" if ($DEBUG);
+	opendir(DIR, $project->{'path'}) or die "Failed to open " . $project->{'path'} . " for reading: $!\n";
+	for my $entry (sort readdir(DIR)) {
+		my $path = File::Spec->catdir($project->{'path'}, $entry);
+		next unless ($entry =~ /^(branches|releases)$/);
+		print STDERR "! * Found release type: $entry\n" if ($DEBUG);
+		print STDERR "! * Searching for releases:\n" if ($DEBUG);
+
+		my $releasesdir = File::Spec->catdir($project->{'path'}, $entry);
+		opendir(RELEASESDIR, $releasesdir) or die "Failed to open $releasesdir for reading: $!\n";
+		for my $releaseentry (sort readdir(RELEASESDIR)) {
+			my $releasedir = File::Spec->catdir($releasesdir, $releaseentry);
+			next if ($releaseentry =~ /^\./);
+			next if ($releaseentry =~ /^index\.html$/);
+			next if (-l $releasedir);
+			next unless (-d $releasedir);
+
+			print STDERR "!   * Found: $releaseentry\n" if ($DEBUG);
+
+			my $release = {
+				type    => $entry,
+				name    => $releaseentry,
+				path    => $releasedir,
+				project => $project,
+			};
+
+			push(@releases, $release);
+		}
+		closedir(RELEASESDIR) or die "Failed to close $releasesdir: $!\n";
+	}
+	closedir(DIR) or die "Failed to close " . $project->{'path'} . "\n";
+
+	for my $release (@releases) {
+		my $docs = get_docs_for_release($release);
+		$release->{'docs'} = $docs;
+	}
+
+	return \@releases;
+}
+
+sub get_docs_for_release {
+	my $release = shift;
+	my $docs = {};
+
+	my $display = $release->{'type'} . '/' . $release->{'name'};
+	print STDERR "! Finding documentation in $display... " if ($DEBUG);
+	opendir(DIR, $release->{'path'}) or die "Failed to open " . $release->{'path'} . " for reading: $!\n";
+	for my $entry (sort readdir(DIR)) {
+		my $docpath = File::Spec->catdir($release->{'path'}, $entry);
+		next if ($entry =~ /^\./);
+		next if ($entry =~ /^index\.html$/);
+		next if (-l $docpath);
+		next unless (-d $docpath);
+
+		print STDERR "$entry... " if ($DEBUG);
+
+		my $doc = {
+			name => $entry,
+			description => (exists $DESCRIPTIONS->{$entry}? $DESCRIPTIONS->{$entry}:$entry),
+			path        => $docpath,
+			release     => $release,
+		};
+
+		for my $extension ('html', 'pdf') {
+			my $path = File::Spec->catfile($docpath, $entry.'.'.$extension);
+			$doc->{'types'}->{$extension} = $path if (-e $path);
+		}
+
+		if (not $doc->{'types'}) {
+			$doc->{'types'} = {
+				html => File::Spec->catfile($docpath, 'index.html')
+			};
+		}
+
+		$docs->{$entry} = $doc;
+	}
+	print STDERR "done\n" if ($DEBUG);
+
+	return $docs;
+}
+
+sub get_releases_for_project {
+	my $project = shift;
+	return sort { versioncmp($b->{'name'}, $a->{'name'}) } grep { $_->{'type'} eq 'releases' } @{$project->{'releases'}};
+}
+
+sub get_branches_for_project {
+	my $project = shift;
+
+	my @ret = sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} =~ /^(develop|foundation)$/ } @{$project->{'releases'}};
+	push(@ret, sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} !~ /^(develop|foundation)$/ } @{$project->{'releases'}});
+	return @ret;
+}
+
 sub update_indexes {
-	my $roottext = "<h3>OpenNMS Projects</h3>\n<ul>\n";
+
 	opendir(DIR, $ROOT) or die "Failed to open $ROOT for reading: $!\n";
-	my @projects = sort {
+
+	my $roottext = "<h3>OpenNMS Projects</h3>\n<ul>\n";
+	for my $project (sort {
 		if ($a eq 'opennms') {
 			return -1;
 		} elsif ($b eq 'opennms') {
@@ -158,41 +294,151 @@ sub update_indexes {
 		} else {
 			return $a cmp $b;
 		}
-	} grep { !/^\./ && -d File::Spec->catdir($ROOT, $_) } readdir(DIR);
-	for my $project (@projects) {
-		my $desc = $PROJECTNAME;
-		my $projectdir = File::Spec->catdir($ROOT, $project);
+	} keys %$PROJECTS) {
+		my $project = $PROJECTS->{$project};
+		my $desc = $project->{'description'};
+		my $projectdir = $project->{'path'};
 
-		$roottext .= '	<li>';
-		$roottext .= get_link($desc, File::Spec->catdir($projectdir, 'index.html'), $ROOT);
+		$roottext .= "	<li>\n";
+		$roottext .= get_link($desc, File::Spec->catdir($projectdir, 'index.html'), $ROOT) . "\n";
+		$roottext .= "		<ul>\n";
 
-		my @links;
-		if (-d File::Spec->catdir($projectdir, 'releases')) {
-			push(@links, get_link('Releases', File::Spec->catdir($projectdir, 'releases', 'index.html'), $ROOT));
-		}
-		if (-d File::Spec->catdir($projectdir, 'branches')) {
-			push(@links, get_link('Development Branches', File::Spec->catdir($projectdir, 'branches', 'index.html'), $ROOT));
-		}
-		if (@links > 0) {
-			$roottext .= ' (' . join(', ', @links) . ')';
+		if ($project->{'releases'}) {
+			my @releases = get_releases_for_project($project);
+			my @branches = get_branches_for_project($project);
+
+			if (@releases > 0) {
+				my $release = $releases[0];
+				$roottext .= "			<li>Releases: [";
+				$roottext .= get_link($release->{'name'}, File::Spec->catdir($release->{'path'}, 'index.html'), $ROOT) . ", ";
+				$roottext .= get_link('Browse', File::Spec->catdir($project->{'path'}, 'releases', 'index.html'), $ROOT);
+				$roottext .= "]</li>\n";
+			}
+			if (@branches > 0) {
+				my @develop = grep { $_->{'name'} eq 'develop' } @branches;
+				$roottext .= "			<li>Development: [";
+				if (@develop > 0) {
+					$roottext .= get_link('Latest', File::Spec->catdir($develop[0]->{'path'}, 'index.html'), $ROOT) . ", ";
+				}
+				$roottext .= get_link('Browse', File::Spec->catdir($project->{'path'}, 'branches', 'index.html'), $ROOT);
+				$roottext .= "]</li>\n";
+			}
 		}
 
-		$roottext .= "</li>\n";
+		$roottext .= "		</ul>\n";
+		$roottext .= "	</li>\n";
+
+		update_project_indexes($project);
 	}
 	$roottext .= "</ul>\n";
 	write_html('OpenNMS Projects', $roottext, File::Spec->catfile($ROOT, 'index.html'));
+}
+
+sub update_project_indexes {
+	my $project  = shift;
+
+	my @releases = get_releases_for_project($project);
+	my @branches = get_branches_for_project($project);
 
 	my $projecttext = "";
-	if (-d File::Spec->catdir($PROJECTROOT, 'releases')) {
-		$projecttext .= process_tree(File::Spec->catdir($PROJECTROOT, 'releases'));
+
+	if (@releases > 0) {
+		my $title = $project->{'description'} . ' Releases';
+		my $releasedir = File::Spec->catdir($project->{'path'}, 'releases');
+
+		$projecttext .= "<h3>$title</h3>\n<ul>\n";
+		my $releasetext = "<h3>$title</h3>\n<ul>\n";
+
+		for my $release (@releases) {
+			$projecttext .= "<li>" . get_release_link($release, $project->{'path'}) . "</li>\n";
+			$releasetext .= "<li>" . get_release_link($release, $releasedir) . "</li>\n";
+			update_release_indexes($release);
+		}
+
+		$projecttext .= "</ul>\n";
+		$releasetext .= "</ul>\n";
+
+		write_html($title, $releasetext, File::Spec->catfile($project->{'path'}, 'releases', 'index.html'));
 	}
 
-	if (-d File::Spec->catdir($PROJECTROOT, 'branches')) {
-		$projecttext .= process_tree(File::Spec->catdir($PROJECTROOT, 'branches'));
+	if (@branches > 0) {
+		my $title = $project->{'description'} . ' Development';
+		my $branchdir = File::Spec->catdir($project->{'path'}, 'branches');
+
+		$projecttext .= "<h3>$title</h3>\n<ul>\n";
+		my $branchtext = "<h3>$title</h3>\n<ul>\n";
+
+		for my $branch (@branches) {
+			$projecttext .= "<li>" . get_release_link($branch, $project->{'path'}) . "</li>\n";
+			$branchtext .= "<li>" . get_release_link($branch, $branchdir) . "</li>\n";
+			update_release_indexes($branch);
+		}
+
+		$projecttext .= "</ul>\n";
+		$branchtext .= "</ul>\n";
+
+		write_html($title, $branchtext, File::Spec->catfile($project->{'path'}, 'branches', 'index.html'));
 	}
 
-	write_html($PROJECTNAME . ' Documentation', $projecttext, File::Spec->catfile($PROJECTROOT, 'index.html'));
+	write_html($project->{'description'} . ' Documentation', $projecttext, File::Spec->catfile($project->{'path'}, 'index.html'));
 }
+
+sub update_release_indexes {
+	my $release  = shift;
+
+	my $title = $release->{'project'}->{'description'} . ' ' . $DESCRIPTIONS->{$release->{'type'}} . ": " . $release->{'name'};
+	my $releasetext = "<h3>$title</h3>\n";
+	$releasetext .= "<ul>\n";
+	for my $doc (get_docobjs($release)) {
+		$releasetext .= "<li>" . $doc->{'description'} . " (";
+		for my $type ('html', 'pdf') {
+			if ($doc->{'types'}->{$type}) {
+				$releasetext .= get_link($type, $doc->{'types'}->{$type}, $release->{'path'}) . ", ";
+			}
+		}
+		$releasetext =~ s/, $//;
+		$releasetext .= ")</li>\n";
+	}
+	$releasetext .= "</ul>\n";
+
+	write_html($title, $releasetext, File::Spec->catfile($release->{'path'}, 'index.html'));
+}
+
+sub get_docobjs {
+	my $release = shift;
+
+	my @docs;
+	for my $key (sort {
+		if ($a eq 'releasenotes') { return -1; }
+		if ($b eq 'releasenotes') { return 1; }
+		if ($a eq 'javadoc') { return 1; }
+		if ($b eq 'javadoc') { return -1; }
+		return $a cmp $b;
+	} keys %{$release->{'docs'}}) {
+		push(@docs, $release->{'docs'}->{$key});
+	}
+
+	return @docs;
+}
+
+sub get_release_link {
+	my $release     = shift;
+	my $relative_to = shift;
+
+	my $linktext = get_link($release->{'name'}, File::Spec->catfile($release->{'path'}, 'index.html'), $relative_to) . ': ';
+
+	for my $doc (get_docobjs($release)) {
+		$linktext .= get_link($doc->{'description'}, $doc->{'types'}->{'html'}, $relative_to);
+		if ($doc->{'types'}->{'pdf'}) {
+			$linktext .= ' (' . get_link('pdf', $doc->{'types'}->{'pdf'}, $relative_to) . ')';
+		}
+		$linktext .= ', ';
+	}
+
+	$linktext =~ s/, $//;
+	return $linktext;
+}
+
 
 sub get_link {
 	my $description = shift;
@@ -202,129 +448,18 @@ sub get_link {
 	return "<a href=\"" . File::Spec->abs2rel($file, $relative_to) . "\">$description</a>";
 }
 
-# $ROOT / $PROJECTROOT / tree / release / doc
-sub process_tree {
-	my $treedir = shift;
-	my $treebase = basename($treedir);
-
-	return "" if (not -d $treedir);
-
-	my $headertype = $PROJECTNAME . ' ' . ($treebase eq 'branches'? 'Development Branches':ucfirst($treebase));
-
-	# relative to the $treedir directory (ie: branches, releases)
-	my $treetext = "<h3>$headertype</h3>\n";
-	$treetext   .= "<ul>\n";
-
-	# relative to the $PROJECTROOT directory
-	my $toptext = "<h3>" . get_link($headertype, File::Spec->catfile($treedir, 'index.html'), $PROJECTROOT) . "</h3>\n";
-	$toptext   .= "<ul>\n";
-
-	opendir(DIR, $treedir) or die "Failed to open $treedir for reading: $!\n";
-	my @names = sort { versioncmp($a, $b) } grep { !/^(\..*|index\.html|latest)$/ && -d File::Spec->catdir($treedir, $_) } readdir(DIR);
-	if ($treebase eq 'releases') {
-		@names = reverse @names;
-	} elsif ($treebase eq 'branches') {
-		@names = sort {
-			if ($a eq 'develop') {
-				return -1;
-			} elsif ($b eq 'develop') {
-				return 1;
-			}
-			return 0;
-		} @names;
-	}
-
-	for my $name (@names) {
-		my $releasedir = File::Spec->catdir($treedir, $name);
-		next unless (-d $releasedir);
-
-		$treetext .= "<li>" . get_link($name, File::Spec->catfile($releasedir, 'index.html'), $treedir) . "<br>\n";
-
-		$toptext .= "	<li>" . get_link($name, File::Spec->catfile($releasedir, 'index.html'), $PROJECTROOT) . "</li>\n";
-
-		opendir(SUBDIR, $releasedir) or die "Failed to open $releasedir for reading: $!\n";
-		my @docdirs = sort {
-			if ($a eq 'javadoc') {
-				return 1;
-			} elsif ($b eq 'javadoc') {
-				return -1;
-			} else {
-				return $a cmp $b;
-			}
-		} grep { !/^index\.(html|pdf)$/ } grep { !/^\./ } readdir(SUBDIR);
-		closedir(SUBDIR) or die "Failed to close $releasedir: $!\n";
-
-		my $header = $headertype . ': ' . $name;
-
-		my $releasetext = "\n<h4>$header</h4>\n";
-		$releasetext   .= "<ul>\n";
-
-		for my $docname (@docdirs) {
-			my $docdir = File::Spec->catdir($releasedir, $docname);
-
-			my $description = $DESCRIPTIONS->{$docname};
-			if (not defined $description) {
-				$description = $docname;
-			}
-
-			#$treetext    .= "$description (";
-			$releasetext .= "	<li>$description (";
-
-			if ($docname eq 'javadoc') {
-				#$treetext    .= get_link('html', File::Spec->catfile($docdir, 'index.html'), $treedir);
-				$treetext    .= get_link($description, File::Spec->catfile($docdir, 'index.html'), $treedir);
-				$releasetext .= get_link('html', File::Spec->catfile($docdir, 'index.html'), $releasedir);
-			} else {
-				my $pdf = File::Spec->catfile($docdir, $docname . '.pdf');
-
-				$treetext .= get_link($description, File::Spec->catfile($docdir, $docname . '.html'), $treedir);
-
-				if (-f $pdf) {
-					#$treetext    .= get_link('pdf', File::Spec->catfile($docdir, $docname . '.pdf'), $treedir) . ', ';
-					$treetext    .= ' (' . get_link('pdf', File::Spec->catfile($docdir, $docname . '.pdf'), $treedir) . ')';
-					$releasetext .= get_link('pdf', File::Spec->catfile($docdir, $docname . '.pdf'), $releasedir) . ', ';
-				}
-				$releasetext .= get_link('html', File::Spec->catfile($docdir, $docname . '.html'), $releasedir);
-			}
-			#$treetext  .= '), ';
-			$treetext    .= ', ';
-			$releasetext .= ")</li>\n";
-		}
-		$treetext =~ s/, $/\n/;
-		$treetext .= "</li>\n";
-
-		$releasetext .= "</ul>\n";
-
-		write_html($header, $releasetext, File::Spec->catfile($releasedir, 'index.html'));
-	}
-
-	$treetext .= "\n</ul>\n";
-	$toptext .= "</ul>\n";
-
-	write_html($headertype, $treetext, File::Spec->catfile($treedir, 'index.html'));
-
-	closedir(DIR) or die "Failed to close $treedir: $!\n";
-
-	if ($treebase eq 'releases') {
-		my $latestdir = File::Spec->catdir($treedir, 'latest');
-		if (-e $latestdir) {
-			unlink($latestdir) or die "Unable to unlink $latestdir: $!\n";
-		}
-		if (@names > 0) {
-			symlink($names[0], $latestdir);
-		}
-	}
-
-	return $toptext;
-}
-
 sub write_html {
-	my $title = shift;
-	my $text  = shift;
-	my $file  = shift;
+	my $title    = shift;
+	my $text     = shift;
+	my $file     = shift;
 
 	my $dirname = dirname($file);
-	my $relative_top = File::Spec->abs2rel(File::Spec->catfile($ROOT, 'index.html'), $dirname);
+	my $relative_topdir = File::Spec->abs2rel($ROOT, $dirname);
+	my $relative_top    = File::Spec->catdir($relative_topdir, 'index.html');
+
+	my $top_relative = File::Spec->abs2rel($dirname, $ROOT);
+	my @dirs = File::Spec->splitdir($top_relative);
+	my $current_project = shift @dirs;
 
 	open(FILEOUT, '+>', $file .'.new') or die "Failed to open $file for writing: $!\n";
 	print FILEOUT <<END;
@@ -347,17 +482,88 @@ sub write_html {
 		<nav class="navbar navbar-inverse navbar-fixed-top">
 			<div class="container">
 				<div class="navbar-header">
-					<a class="navbar-brand" href="$relative_top">OpenNMS Documentation</a>
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="$relative_top">Documentation</a>
 				</div>
-				<!--
 				<div id="navbar" class="collapse navbar-collapse">
 					<ul class="nav navbar-nav">
-						<li class="active"><a href="#">Home</a></li>
-						<li><a href="#about">About</a></li>
-						<li><a href="#contact">Contact</a></li>
+END
+
+	for my $project (sort keys %$PROJECTS) {
+		if ($project eq $current_project) {
+			print FILEOUT "<li class=\"dropdown active\">";
+		} else {
+			print FILEOUT "<li class=\"dropdown\">";
+		}
+		print FILEOUT "<a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">" . $PROJECTS->{$project}->{'description'} . " <span class=\"caret\"></span></a>\n";
+		print FILEOUT "<ul class=\"dropdown-menu\" role=\"menu\">\n";
+
+		my @releases = get_releases_for_project($PROJECTS->{$project});
+		my @branches = get_branches_for_project($PROJECTS->{$project});
+
+		my $count = 0;
+		if (@releases > 0) {
+			my $active = "";
+			my $releaseslink = File::Spec->catfile($PROJECTS->{$project}->{'path'}, 'releases', 'index.html');
+			if ($releaseslink eq $file) {
+				$active = " class=\"active\"";
+			}
+
+			print FILEOUT "<li$active>" . get_link("<strong>Releases</strong>", $releaseslink, $dirname) . "</li>\n";
+			#print FILEOUT "<li class=\"divider\"></li>\n";
+			for my $release (@releases) {
+				my $releaselink = File::Spec->catfile($release->{'path'}, 'index.html');
+				$active = "";
+				if ($releaselink eq $file) {
+					$active = " class=\"active\"";
+				}
+				print FILEOUT "<li${active}>" . get_link($release->{'name'}, $releaselink, $dirname) . "</li>\n";
+				last if (++$count == 5);
+			}
+			if (@releases > 5) {
+				print FILEOUT "<li>" . get_link("more...", $releaseslink, $dirname) . "</li>\n";
+			}
+			if (@branches > 0) {
+				print FILEOUT "<li class=\"divider\"></li>\n";
+			}
+		}
+
+		if (@branches > 0) {
+			my $active = "";
+			my $brancheslink = File::Spec->catfile($PROJECTS->{$project}->{'path'}, 'branches', 'index.html');
+			if ($brancheslink eq $file) {
+				$active = " class=\"active\"";
+			}
+
+			print FILEOUT "<li$active>" . get_link("<strong>Branches</strong>", $brancheslink, $dirname) . "</li>\n";
+			#print FILEOUT "<li class=\"divider\"></li>\n";
+			for my $branch (@branches) {
+				if ($branch->{'name'} !~ /^(develop|foundation)$/) {
+					print FILEOUT "<li>" . get_link("more...", $brancheslink, $dirname) . "</li>\n";
+					last;
+				}
+
+				my $branchlink = File::Spec->catfile($branch->{'path'}, 'index.html');
+				$active = "";
+				if ($branchlink eq $file) {
+					$active = " class=\"active\"";
+				}
+				print FILEOUT "<li${active}>" . get_link($branch->{'name'}, $branchlink, $dirname) . "</li>\n";
+			}
+		}
+
+		print FILEOUT "</ul>\n";
+		print FILEOUT "</li>\n";
+	}
+
+	print FILEOUT <<END;
 					</ul>
 				</div>
-				-->
 			</div>
 		</nav>
 
@@ -367,6 +573,7 @@ END
 	print FILEOUT $text;
 	print FILEOUT <<END;
 		</div>
+		<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
 		<script src="//maxcdn.bootstrapcdn.com/bootstrap/${BOOTSTRAPVERSION}/js/bootstrap.min.js"></script>
 	</body>
 </html>
@@ -522,28 +729,6 @@ sub process_javadoc_docdir {
 	mkpath($to) unless (-d $to);
 
 	print "- Copying javadoc to '$to'... ";
-#	find({
-#		wanted => sub {
-#			my $rel = File::Spec->abs2rel($File::Find::name, $from);
-#			return unless (-f $File::Find::name);
-#
-#			my $fromfile = File::Spec->catfile($from, $rel);
-#			my $tofile = File::Spec->catfile($to, $rel);
-#
-#			my $dirname = dirname($tofile);
-#			if (not -d $dirname) {
-#				mkpath($dirname);
-#				#system('chmod', '755', $dirname) or die "Failed to fix ownership on $dirname: $!\n";
-#			}
-#
-#			#print "- copy: $fromfile -> $tofile\n";
-#			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
-#			#system('chmod', '644', $tofile) == 0 or die "Failed to fix ownership on $tofile: $!\n";
-#		},
-#		bydepth => 1,
-#		follow => 1,
-#		no_chdir => 1,
-#	}, $from);
 	system('rsync', '-r', '--delete', $from.'/', $to.'/') == 0 or die "Failed to sync from $from to $to: $!\n";
 	print "done\n";
 }
