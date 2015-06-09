@@ -29,6 +29,7 @@ use vars qw(
 
 	$DOCS
 	$PROJECT
+	$PROJECTNAME
 	$VERSION
 
 	$BRANCHDIR
@@ -89,6 +90,7 @@ if ($VERSION =~ /-SNAPSHOT$/ and not defined $BRANCH) {
 
 $PROJECT = lc($PROJECT);
 $PROJECTROOT = File::Spec->catdir($ROOT, $PROJECT);
+$PROJECTNAME = (exists $DESCRIPTIONS->{$PROJECT}? $DESCRIPTIONS->{$PROJECT}:ucfirst($PROJECT));
 
 if (! -d $PROJECTROOT) {
 	print STDERR "WARNING: Creating project root: $PROJECTROOT\n";
@@ -158,8 +160,23 @@ sub update_indexes {
 		}
 	} grep { !/^\./ && -d File::Spec->catdir($ROOT, $_) } readdir(DIR);
 	for my $project (@projects) {
-		my $desc = (exists $DESCRIPTIONS->{$project}? $DESCRIPTIONS->{$project} : ucfirst($project));
-		$roottext .= '	<li>' . get_link($desc, File::Spec->catfile($ROOT, $project, 'index.html'), $ROOT) . "</li>\n";
+		my $desc = $PROJECTNAME;
+		my $projectdir = File::Spec->catdir($ROOT, $project);
+
+		$roottext .= "	<li>$desc";
+
+		my @links;
+		if (-d File::Spec->catdir($projectdir, 'releases')) {
+			push(@links, get_link('Releases', File::Spec->catdir($projectdir, 'releases', 'index.html'), $ROOT));
+		}
+		if (-d File::Spec->catdir($projectdir, 'branches')) {
+			push(@links, get_link('Development Branches', File::Spec->catdir($projectdir, 'branches', 'index.html'), $ROOT));
+		}
+		if (@links > 0) {
+			$roottext .= ' (' . join(', ', @links) . ')';
+		}
+
+		$roottext .= "</li>\n";
 	}
 	$roottext .= "</ul>\n";
 	write_html('OpenNMS Projects', $roottext, File::Spec->catfile($ROOT, 'index.html'));
@@ -173,8 +190,7 @@ sub update_indexes {
 		$projecttext .= process_tree(File::Spec->catdir($PROJECTROOT, 'branches'));
 	}
 
-	my $project = (exists $DESCRIPTIONS->{$PROJECT}? $DESCRIPTIONS->{$PROJECT} : ucfirst($PROJECT));
-	write_html($project . ' Documentation', $projecttext, File::Spec->catfile($PROJECTROOT, 'index.html'));
+	write_html($PROJECTNAME . ' Documentation', $projecttext, File::Spec->catfile($PROJECTROOT, 'index.html'));
 }
 
 sub get_link {
@@ -190,7 +206,9 @@ sub process_tree {
 	my $treedir = shift;
 	my $treebase = basename($treedir);
 
-	my $headertype = 'OpenNMS ' . ucfirst(lc($treebase));
+	return "" if (not -d $treedir);
+
+	my $headertype = $PROJECTNAME . ' ' . ($treebase eq 'branches'? 'Development Branches':ucfirst($treebase));
 
 	# relative to the $treedir directory (ie: branches, releases)
 	my $treetext = "<h3>$headertype</h3>\n";
@@ -235,7 +253,7 @@ sub process_tree {
 		} grep { !/^index\.(html|pdf)$/ } grep { !/^\./ } readdir(SUBDIR);
 		closedir(SUBDIR) or die "Failed to close $releasedir: $!\n";
 
-		my $header = $headertype . ' - ' . $name;
+		my $header = $headertype . ': ' . $name;
 
 		my $releasetext = "\n<h4>$header</h4>\n";
 		$releasetext   .= "<ul>\n";
@@ -305,7 +323,7 @@ sub write_html {
 	my $file  = shift;
 
 	my $dirname = dirname($file);
-	my $relative_top = File::Spec->abs2rel(File::Spec->catfile($PROJECTROOT, 'index.html'), $dirname);
+	my $relative_top = File::Spec->abs2rel(File::Spec->catfile($ROOT, 'index.html'), $dirname);
 
 	open(FILEOUT, '+>', $file .'.new') or die "Failed to open $file for writing: $!\n";
 	print FILEOUT <<END;
