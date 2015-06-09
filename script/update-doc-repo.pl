@@ -163,7 +163,8 @@ sub update_indexes {
 		my $desc = $PROJECTNAME;
 		my $projectdir = File::Spec->catdir($ROOT, $project);
 
-		$roottext .= "	<li>$desc";
+		$roottext .= '	<li>';
+		$roottext .= get_link($desc, File::Spec->catdir($projectdir, 'index.html', $ROOT));
 
 		my @links;
 		if (-d File::Spec->catdir($projectdir, 'releases')) {
