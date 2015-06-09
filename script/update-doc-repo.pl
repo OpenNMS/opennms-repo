@@ -226,9 +226,9 @@ sub process_tree {
 		opendir(SUBDIR, $releasedir) or die "Failed to open $releasedir for reading: $!\n";
 		my @docdirs = sort {
 			if ($a eq 'javadoc') {
-				return -1;
-			} elsif ($b eq 'javadoc') {
 				return 1;
+			} elsif ($b eq 'javadoc') {
+				return -1;
 			} else {
 				return $a cmp $b;
 			}
