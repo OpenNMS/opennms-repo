@@ -130,6 +130,7 @@ if (-f $DOCS) {
 	} else {
 		die "Unhandled file: $DOCS\n";
 	}
+	chdir($INSTALLDIR);
 	print "done\n";
 } else {
 	$DOCDIR = $DOCS;
