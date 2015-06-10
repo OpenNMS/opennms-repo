@@ -7,6 +7,7 @@ use warnings;
 
 use Getopt::Long qw(:config gnu_getopt);
 
+use Cwd qw(abs_path);
 use Data::Dumper;
 use File::Basename;
 use File::Copy;
@@ -28,7 +29,7 @@ use vars qw(
 	$BRANCH
 
 	$DOCS
-	$PROJECTS
+	@PROJECTS
 	$PROJECT
 	$PROJECTNAME
 	$VERSION
@@ -95,6 +96,7 @@ if ($VERSION =~ /-SNAPSHOT$/ and not defined $BRANCH) {
 	usage();
 }
 
+$DOCS = abs_path($DOCS);
 $PROJECT = lc($PROJECT);
 $PROJECTROOT = File::Spec->catdir($ROOT, $PROJECT);
 $PROJECTNAME = (exists $DESCRIPTIONS->{$PROJECT}? $DESCRIPTIONS->{$PROJECT}:ucfirst($PROJECT));
@@ -155,7 +157,7 @@ open (FILEOUT, '>', $versionfile) or die "Failed to open $versionfile for writin
 print FILEOUT $VERSION;
 close(FILEOUT) or die "Failed to close $versionfile: $!\n";
 
-$PROJECTS = get_projects($ROOT);
+@PROJECTS = get_projects($ROOT);
 update_indexes();
 fix_permissions($INSTALLDIR);
 
@@ -190,7 +192,19 @@ sub get_projects {
 		$projects->{$project}->{'releases'} = $releases;
 	}
 
-	return $projects;
+	my @ret;
+	for my $project (sort {
+		if ($a eq 'opennms') {
+			return -1;
+		} elsif ($b eq 'opennms') {
+			return 1;
+		} else {
+			return $a cmp $b;
+		}
+	} keys %$projects) {
+		push(@ret, $projects->{$project});
+	}
+	return @ret;
 }
 
 sub get_releases {
@@ -306,16 +320,7 @@ sub update_indexes {
 	opendir(DIR, $ROOT) or die "Failed to open $ROOT for reading: $!\n";
 
 	my $roottext = "<h3>OpenNMS Projects</h3>\n<ul>\n";
-	for my $project (sort {
-		if ($a eq 'opennms') {
-			return -1;
-		} elsif ($b eq 'opennms') {
-			return 1;
-		} else {
-			return $a cmp $b;
-		}
-	} keys %$PROJECTS) {
-		my $project = $PROJECTS->{$project};
+	for my $project (@PROJECTS) {
 		my $desc = $project->{'description'};
 		my $projectdir = $project->{'path'};
 
@@ -554,22 +559,22 @@ sub write_html {
 					<ul class="nav navbar-nav">
 END
 
-	for my $project (sort keys %$PROJECTS) {
-		if ($project eq $current_project) {
+	for my $project (@PROJECTS) {
+		if ($project->{'name'} eq $current_project) {
 			print FILEOUT "<li class=\"dropdown active\">";
 		} else {
 			print FILEOUT "<li class=\"dropdown\">";
 		}
-		print FILEOUT "<a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">" . $PROJECTS->{$project}->{'description'} . " <span class=\"caret\"></span></a>\n";
+		print FILEOUT "<a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">" . $project->{'description'} . " <span class=\"caret\"></span></a>\n";
 		print FILEOUT "<ul class=\"dropdown-menu\" role=\"menu\">\n";
 
-		my @releases = get_releases_for_project($PROJECTS->{$project});
-		my @branches = get_branches_for_project($PROJECTS->{$project});
+		my @releases = get_releases_for_project($project);
+		my @branches = get_branches_for_project($project);
 
 		my $count = 0;
 		if (@releases > 0) {
 			my $active = "";
-			my $releaseslink = File::Spec->catfile($PROJECTS->{$project}->{'path'}, 'releases', 'index.html');
+			my $releaseslink = File::Spec->catfile($project->{'path'}, 'releases', 'index.html');
 			if ($releaseslink eq $file) {
 				$active = " class=\"active\"";
 			}
@@ -595,7 +600,7 @@ END
 
 		if (@branches > 0) {
 			my $active = "";
-			my $brancheslink = File::Spec->catfile($PROJECTS->{$project}->{'path'}, 'branches', 'index.html');
+			my $brancheslink = File::Spec->catfile($project->{'path'}, 'branches', 'index.html');
 			if ($brancheslink eq $file) {
 				$active = " class=\"active\"";
 			}
