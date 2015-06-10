@@ -281,8 +281,8 @@ sub get_releases_for_project {
 sub get_branches_for_project {
 	my $project = shift;
 
-	my @ret = sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} =~ /^(develop|foundation)$/ } @{$project->{'releases'}};
-	push(@ret, sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} !~ /^(develop|foundation)$/ } @{$project->{'releases'}});
+	my @ret = sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} =~ /^(develop|foundation|master)$/ } @{$project->{'releases'}};
+	push(@ret, sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} !~ /^(develop|foundation|master)$/ } @{$project->{'releases'}});
 	return @ret;
 }
 
@@ -569,7 +569,7 @@ END
 			print FILEOUT "<li$active>" . get_link("<strong>Branches</strong>", $brancheslink, $dirname) . "</li>\n";
 			#print FILEOUT "<li class=\"divider\"></li>\n";
 			for my $branch (@branches) {
-				if ($branch->{'name'} !~ /^(develop|foundation)$/) {
+				if ($branch->{'name'} !~ /^(develop|foundation|master)$/) {
 					print FILEOUT "<li>" . get_link("more...", $brancheslink, $dirname) . "</li>\n";
 					last;
 				}
