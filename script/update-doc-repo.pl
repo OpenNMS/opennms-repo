@@ -760,7 +760,7 @@ sub process_docbook_docdir {
 			my $fromfile = File::Spec->catfile($from, $name . '.' . $extension);
 			my $tofile   = File::Spec->catfile($to, 'index.' . $extension);
 
-			next unless (-f $fromfile);
+			next unless (-e $fromfile);
 
 			my $dirname  = dirname($tofile);
 			if (not -d $dirname) {
