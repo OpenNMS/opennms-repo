@@ -320,10 +320,10 @@ sub update_indexes {
 				$roottext .= "]</li>\n";
 			}
 			if (@branches > 0) {
-				my @develop = grep { $_->{'name'} eq 'develop' } @branches;
 				$roottext .= "			<li>Development: [";
-				if (@develop > 0) {
-					$roottext .= get_link('Latest', File::Spec->catdir($develop[0]->{'path'}, 'index.html'), $ROOT) . ", ";
+				my $latest_release = get_latest_development_release(@branches);
+				if ($latest_release) {
+					$roottext .= get_link('Latest (' . $latest_release->{'name'} . ')', File::Spec->catdir($latest_release->{'path'}, 'index.html'), $ROOT) . ", ";
 				}
 				$roottext .= get_link('Browse', File::Spec->catdir($project->{'path'}, 'branches', 'index.html'), $ROOT);
 				$roottext .= "]</li>\n";
@@ -337,6 +337,27 @@ sub update_indexes {
 	}
 	$roottext .= "</ul>\n";
 	write_html('OpenNMS Projects', $roottext, File::Spec->catfile($ROOT, 'index.html'));
+}
+
+sub get_latest_development_release {
+	my @releases = @_;
+
+	my $develop = get_release('develop', @releases);
+	if ($develop) {
+		return $develop;
+	}
+
+	my $master = get_release('master', @releases);
+	return $master;
+}
+
+sub get_release {
+	my $name = shift;
+	my @matching = grep { $_->{'name'} eq $name } @_;
+	if (@matching > 0) {
+		return $matching[0];
+	}
+	return undef;
 }
 
 sub update_project_indexes {
