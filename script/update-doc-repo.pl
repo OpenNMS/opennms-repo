@@ -124,7 +124,7 @@ if (-f $DOCS) {
 	print "- Unpacking '$DOCS' into temporary directory... ";
 	chdir($DOCDIR);
 	if ($DOCS =~ /\.(jar|zip)$/) {
-		system('unzip', $DOCS) == 0 or die "Failed to unpack $DOCS into $DOCDIR: $!\n";
+		system('unzip', '-q', $DOCS) == 0 or die "Failed to unpack $DOCS into $DOCDIR: $!\n";
 	} elsif ($DOCS =~ /\.tar\.gz$/) {
 		system('tar', '-xf', $DOCS) == 0 or die "Failed to unpack $DOCS into $DOCDIR: $!\n";
 	} else {
@@ -138,9 +138,9 @@ if (-f $DOCS) {
 
 if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DOCDIR, 'guide-admin')) {
 	process_asciidoc_docdir($DOCDIR);
-} elsif (-d File::Spec->catdir($DOCDIR, 'docs', 'common') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.html')) {
+} elsif (-f File::Spec->catdir($DOCDIR, 'docs', 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.html')) {
 	process_docbook_docdir(File::Spec->catdir($DOCDIR, 'docs'));
-} elsif (-d File::Spec->catdir($DOCDIR, 'common') and -f File::Spec->catfile($DOCDIR, 'adminref.html')) {
+} elsif (-f File::Spec->catdir($DOCDIR, 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'adminref.html')) {
 	process_docbook_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'apidocs', 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'apidocs', 'allclasses-frame.html')) {
 	process_javadoc_docdir(File::Spec->catdir($DOCDIR, 'apidocs'));
