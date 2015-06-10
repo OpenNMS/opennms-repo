@@ -123,7 +123,7 @@ if (-f $DOCS) {
 	mkpath($DOCDIR);
 	print "- Unpacking '$DOCS' into temporary directory... ";
 	chdir($DOCDIR);
-	if ($DOCS =~ /\.zip$/) {
+	if ($DOCS =~ /\.(jar|zip)$/) {
 		system('unzip', $DOCS) == 0 or die "Failed to unpack $DOCS into $DOCDIR: $!\n";
 	} elsif ($DOCS =~ /\.tar\.gz$/) {
 		system('tar', '-xf', $DOCS) == 0 or die "Failed to unpack $DOCS into $DOCDIR: $!\n";
@@ -319,7 +319,7 @@ sub update_indexes {
 		my $desc = $project->{'description'};
 		my $projectdir = $project->{'path'};
 
-		$roottext .= "	<li>\n";
+		$roottext .= "	<li class=\"project\">\n";
 		$roottext .= get_link($desc, File::Spec->catdir($projectdir, 'index.html'), $ROOT) . "\n";
 		$roottext .= "		<ul>\n";
 
@@ -432,6 +432,9 @@ sub update_release_indexes {
 	my $release  = shift;
 
 	my $title = $release->{'project'}->{'description'} . ' ' . $DESCRIPTIONS->{$release->{'type'}} . ": " . $release->{'name'};
+	if ($release->{'version'} and $release->{'version'} ne $release->{'name'}) {
+		$title .= ' (' . $release->{'version'} . ')';
+	}
 	my $releasetext = "<h3>$title</h3>\n";
 	$releasetext .= "<ul>\n";
 	for my $doc (get_docobjs($release)) {
@@ -471,6 +474,10 @@ sub get_release_link {
 	my $relative_to = shift;
 
 	my $linktext = get_link($release->{'name'}, File::Spec->catfile($release->{'path'}, 'index.html'), $relative_to) . ': ';
+	if ($release->{'version'} and $release->{'version'} ne $release->{'name'}) {
+		$linktext .= $release->{'version'} . ' ';
+	}
+	$linktext .= '<span class="release">';
 
 	for my $doc (get_docobjs($release)) {
 		$linktext .= get_link($doc->{'description'}, $doc->{'types'}->{'html'}, $relative_to);
@@ -481,6 +488,7 @@ sub get_release_link {
 	}
 
 	$linktext =~ s/, $//;
+	$linktext .= "</span>";
 	return $linktext;
 }
 
@@ -520,6 +528,13 @@ sub write_html {
 		<style type="text/css">
 			body {
 				padding-top: 50px;
+			}
+			li.project {
+				list-style: none;
+			}
+			.release::before {
+				content: "\\a        ";
+				white-space: pre;
 			}
 		</style>
 	</head>
