@@ -150,6 +150,11 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 	die "Unknown documentation type: $DOCS\n";
 }
 
+my $versionfile = File::Spec->catfile($INSTALLDIR, '.version.txt');
+open (FILEOUT, '>', $versionfile) or die "Failed to open $versionfile for writing: $!\n";
+print FILEOUT $VERSION;
+close(FILEOUT) or die "Failed to close $versionfile: $!\n";
+
 $PROJECTS = get_projects($ROOT);
 update_indexes();
 fix_permissions($INSTALLDIR);
@@ -217,6 +222,16 @@ sub get_releases {
 				path    => $releasedir,
 				project => $project,
 			};
+
+			my $versionfile = File::Spec->catfile($releasedir, '.version.txt');
+			if (-e $versionfile) {
+				open(VERSIONFILE, '<', $versionfile) or die "Failed to open $versionfile for reading: $!\n";
+				my $version = <VERSIONFILE>;
+				chomp($version);
+				if (defined $version and $version ne "") {
+					$release->{'version'} = $version;
+				}
+			}
 
 			push(@releases, $release);
 		}
@@ -323,7 +338,11 @@ sub update_indexes {
 				$roottext .= "			<li>Development: [";
 				my $latest_release = get_latest_development_release(@branches);
 				if ($latest_release) {
-					$roottext .= get_link('Latest (' . $latest_release->{'name'} . ')', File::Spec->catdir($latest_release->{'path'}, 'index.html'), $ROOT) . ", ";
+					my $linkname = 'Latest';
+					if ($latest_release->{'version'}) {
+						$linkname = $latest_release->{'version'};
+					}
+					$roottext .= get_link($linkname . ' (' . $latest_release->{'name'} . ')', File::Spec->catdir($latest_release->{'path'}, 'index.html'), $ROOT) . ", ";
 				}
 				$roottext .= get_link('Browse', File::Spec->catdir($project->{'path'}, 'branches', 'index.html'), $ROOT);
 				$roottext .= "]</li>\n";
