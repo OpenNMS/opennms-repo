@@ -54,11 +54,14 @@ $DESCRIPTIONS = {
 	'javadoc'           => 'Java API',
 	'jicmp'             => 'JICMP',
 	'jicmp6'            => 'JICMP6',
+	'jmx',              => 'JMX',
 	'jrrd'              => 'JRRD',
 	'jrrd2'             => 'JRRD2',
+	'minion'            => 'Minion',
 	'opennms'           => 'OpenNMS',
 	'branches'          => 'Development',
 	'releases'          => 'Releases',
+	'sampler'           => 'Sampler',
 };
 
 my $result = GetOptions(
@@ -141,7 +144,7 @@ if (-f $DOCS) {
 
 if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DOCDIR, 'guide-admin')) {
 	process_opennms_asciidoc_docdir($DOCDIR);
-} elsif (-f File::Spec->catfile($DOCDIR, 'MINION.html') {
+} elsif (-f File::Spec->catfile($DOCDIR, 'MINION.html')) {
 	process_minion_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catdir($DOCDIR, 'docs', 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.html')) {
 	process_docbook_docdir(File::Spec->catdir($DOCDIR, 'docs'));
@@ -693,13 +696,14 @@ sub process_minion_asciidoc_docdir {
 		my $target = File::Spec->catdir($INSTALLDIR, $name);
 		mkpath($target);
 
-		symlink('../.images', File::Spec->catdir($target, 'images') if (-d $images);
-		symlink('../.files', File::Spec->catdir($target, 'files') if (-d $files);
+		symlink('../.images', File::Spec->catdir($target, 'images')) if (-d $images);
+		symlink('../.files', File::Spec->catdir($target, 'files')) if (-d $files);
 
 		my $fromfile = File::Spec->catfile($docdir, $entry);
 		my $tofile   = File::Spec->catfile($target, 'index.html');
+		copy($fromfile, $tofile) or die "Failed to copy $fromfile to $tofile: $!\n";
 
-		symlink('index.html', File::Spec->catfile($target, $name.'.html');
+		symlink('index.html', File::Spec->catfile($target, $name.'.html'));
 	}
 	closedir(DIR);
 }
