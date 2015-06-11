@@ -46,6 +46,7 @@ $BOOTSTRAPVERSION = '3.3.4';
 $DESCRIPTIONS = {
 	'guide-admin'       => 'Admin',
 	'guide-development' => 'Developers',
+	'guide-concepts'    => 'Concepts',
 	'guide-doc'         => 'Documentation',
 	'guide-install'     => 'Installation',
 	'guide-user'        => 'Users',
