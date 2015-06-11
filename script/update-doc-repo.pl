@@ -140,7 +140,9 @@ if (-f $DOCS) {
 }
 
 if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DOCDIR, 'guide-admin')) {
-	process_asciidoc_docdir($DOCDIR);
+	process_opennms_asciidoc_docdir($DOCDIR);
+} elsif (-f File::Spec->catfile($DOCDIR, 'MINION.html') {
+	process_minion_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catdir($DOCDIR, 'docs', 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.html')) {
 	process_docbook_docdir(File::Spec->catdir($DOCDIR, 'docs'));
 } elsif (-f File::Spec->catdir($DOCDIR, 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'adminref.html')) {
@@ -653,7 +655,7 @@ END
 	unlink($file . '.new') or die "Failed to remove $file.new: $!\n";
 }
 
-sub process_asciidoc_docdir {
+sub process_opennms_asciidoc_docdir {
 	my $docdir = shift;
 
 	opendir(DIR, $docdir) or die "Failed to open $docdir for reading: $!\n";
@@ -663,6 +665,43 @@ sub process_asciidoc_docdir {
 	for my $dir (@guides) {
 		copy_asciidoc_guide($docdir, $dir);
 	}
+}
+
+sub process_minion_asciidoc_docdir {
+	my $docdir = shift;
+
+	my $images = File::Spec->catdir($docdir, 'images');
+	my $files  = File::Spec->catdir($docdir, 'files');
+
+	if (-d $images) {
+		my $imagedir = File::Spec->catdir($INSTALLDIR, '.images');
+		mkpath($imagedir);
+		system('rsync', '-ar', '--delete', $images.'/', $imagedir.'/') == 0 or die "Failed to sync $images to $imagedir: $!\n";
+	}
+
+	if (-d $files) {
+		my $filedir = File::Spec->catdir($INSTALLDIR, '.files');
+		mkpath($filedir);
+		system('rsync', '-ar', '--delete', $files.'/', $filedir.'/') == 0 or die "Failed to sync $files to $filedir: $!\n";
+	}
+
+	opendir(DIR, $docdir) or die "Failed to open $docdir for reading: $!\n";
+	for my $entry (sort { lc($a) cmp lc($b) } grep { /\.html$/ } readdir(DIR)) {
+		my ($name) = $entry =~ /^(.*?)\.html$/;
+		$name = lc($name);
+
+		my $target = File::Spec->catdir($INSTALLDIR, $name);
+		mkpath($target);
+
+		symlink('../.images', File::Spec->catdir($target, 'images') if (-d $images);
+		symlink('../.files', File::Spec->catdir($target, 'files') if (-d $files);
+
+		my $fromfile = File::Spec->catfile($docdir, $entry);
+		my $tofile   = File::Spec->catfile($target, 'index.html');
+
+		symlink('index.html', File::Spec->catfile($target, $name.'.html');
+	}
+	closedir(DIR);
 }
 
 sub copy_asciidoc_guide {
