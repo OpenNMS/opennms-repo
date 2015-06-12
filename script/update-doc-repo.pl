@@ -60,6 +60,7 @@ $DESCRIPTIONS = {
 	'minion'            => 'Minion',
 	'opennms'           => 'OpenNMS',
 	'pris'              => 'PRIS',
+	'rancid-api'        => 'RANCID',
 	'releasenotes'      => 'Release Notes',
 	'releases'          => 'Releases',
 	'sampler'           => 'Sampler',
