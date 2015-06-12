@@ -44,13 +44,13 @@ $ROOT = '/var/www/sites/opennms.org/site/doc';
 
 $BOOTSTRAPVERSION = '3.3.4';
 $DESCRIPTIONS = {
+	'branches'          => 'Development',
 	'guide-admin'       => 'Admin',
 	'guide-development' => 'Developers',
 	'guide-concepts'    => 'Concepts',
 	'guide-doc'         => 'Documentation',
 	'guide-install'     => 'Installation',
 	'guide-user'        => 'Users',
-	'releasenotes'      => 'Release Notes',
 	'javadoc'           => 'Java API',
 	'jicmp'             => 'JICMP',
 	'jicmp6'            => 'JICMP6',
@@ -59,7 +59,8 @@ $DESCRIPTIONS = {
 	'jrrd2'             => 'JRRD2',
 	'minion'            => 'Minion',
 	'opennms'           => 'OpenNMS',
-	'branches'          => 'Development',
+	'pris'              => 'PRIS',
+	'releasenotes'      => 'Release Notes',
 	'releases'          => 'Releases',
 	'sampler'           => 'Sampler',
 };
@@ -146,6 +147,8 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 	process_opennms_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'MINION.html')) {
 	process_minion_asciidoc_docdir($DOCDIR);
+} elsif (-f File::Spec->catfile($DOCDIR, 'introduction.html') and -f File::Spec->catfile($DOCDIR, 'mapper.ocs.html')) {
+	process_pris_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catdir($DOCDIR, 'docs', 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.html')) {
 	process_docbook_docdir(File::Spec->catdir($DOCDIR, 'docs'));
 } elsif (-f File::Spec->catdir($DOCDIR, 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'adminref.html')) {
@@ -658,6 +661,12 @@ END
 	unlink($file . '.new') or die "Failed to remove $file.new: $!\n";
 }
 
+sub process_pris_asciidoc_docdir {
+	my $docdir = shift;
+
+	copy_asciidoc_directory($docdir, 'pris');
+}
+
 sub process_opennms_asciidoc_docdir {
 	my $docdir = shift;
 
@@ -666,7 +675,7 @@ sub process_opennms_asciidoc_docdir {
 	closedir(DIR) or die "Failed to close $docdir: $!\n";
 
 	for my $dir (@guides) {
-		copy_asciidoc_guide($docdir, $dir);
+		copy_asciidoc_directory(File::Spec->catdir($docdir, $dir), $dir);
 	}
 }
 
@@ -708,11 +717,10 @@ sub process_minion_asciidoc_docdir {
 	closedir(DIR);
 }
 
-sub copy_asciidoc_guide {
-	my $sourcedir = shift;
-	my $guide     = shift;
+sub copy_asciidoc_directory {
+	my $from  = shift;
+	my $guide = shift;
 
-	my $from = File::Spec->catdir($sourcedir, $guide);
 	my $to = File::Spec->catdir($INSTALLDIR, $guide);
 
 	print "- Copying $guide to '$to'... ";
@@ -720,8 +728,8 @@ sub copy_asciidoc_guide {
 		wanted => sub {
 			return unless (-f $File::Find::name);
 			my $rel = File::Spec->abs2rel($_, $from);
-			return unless ($rel =~ /^(index\.(html|pdf)$|images\/)/);
-			return if ($rel =~ /\.adoc$/);
+			return if ($rel =~ /\.(adoc|graphml)$/);
+			return if ($rel =~ /^images_src\//);
 
 			my $fromfile = File::Spec->catfile($from, $rel);
 			my $tofile = File::Spec->catfile($to, $rel);
