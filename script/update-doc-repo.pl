@@ -169,6 +169,7 @@ close(FILEOUT) or die "Failed to close $versionfile: $!\n";
 
 @PROJECTS = get_projects($ROOT);
 update_indexes();
+create_release_symlinks();
 fix_permissions($INSTALLDIR);
 
 exit 0;
@@ -371,6 +372,22 @@ sub update_indexes {
 	}
 	$roottext .= "</ul>\n";
 	write_html('OpenNMS Projects', $roottext, File::Spec->catfile($ROOT, 'index.html'));
+}
+
+sub create_release_symlinks {
+	for my $project (@PROJECTS) {
+		my @releases = get_releases_for_project($project);
+		my $release = shift @releases;
+		if (defined $release) {
+			my $releasedir = File::Spec->catdir($project->{'path'}, 'releases');
+			my $latestfile = File::Spec->catfile($releasedir, 'latest');
+			if (-e $latestfile) {
+				unlink $latestfile;
+			}
+			print STDERR '! ln -sf ' . $release->{'name'} . ' ' . $latestfile . "\n" if ($DEBUG);
+			symlink($release->{'name'}, $latestfile);
+		}
+	}
 }
 
 sub get_latest_development_release {
