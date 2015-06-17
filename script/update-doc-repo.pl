@@ -184,6 +184,7 @@ sub get_projects {
 		my $path = File::Spec->catdir($projectsroot, $entry);
 		next if ($entry =~ /^\./);
 		next if ($entry =~ /^index\.html$/);
+		next if ($entry =~ /^(api|documentation|Minion-Events|OpenNMS|PRIS|SMNnepO)$/);
 		next if (-l $path);
 		next unless (-d $path);
 
