@@ -46,7 +46,7 @@ be preserved when sharing RPMs between repositories.
 our $VERSION = 2.7.2;
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
-our $CREATEREPO_USE_DELTA = 0;
+our $CREATEREPO_USE_DELTAS = 0;
 
 =head1 CONSTRUCTOR
 
