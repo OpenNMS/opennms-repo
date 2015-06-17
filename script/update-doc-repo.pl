@@ -40,7 +40,7 @@ use vars qw(
 );
 
 $DEBUG = 0;
-$ROOT = '/var/www/sites/opennms.org/site/doc';
+$ROOT = '/var/www/sites/opennms.org/site/docs';
 
 $BOOTSTRAPVERSION = '3.3.4';
 $DESCRIPTIONS = {
