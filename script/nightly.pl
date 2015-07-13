@@ -233,7 +233,7 @@ sub clean_for_build {
 		$git->command('reset', '--hard', 'HEAD');
 	}
 
-	for my $dir ('repository', 'repository-' . $ENV{'bamboo.buildKey'}) {
+	for my $dir ('repository', 'repository-' . $ENV{'bamboo_buildKey'}) {
 		my $maven_dir = File::Spec->catdir($ENV{'HOME'}, '.m2', $dir);
 		find(\&clean_up_jars, $maven_dir);
 
