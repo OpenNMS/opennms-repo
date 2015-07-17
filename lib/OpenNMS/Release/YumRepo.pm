@@ -46,6 +46,8 @@ be preserved when sharing RPMs between repositories.
 our $VERSION = 2.7.2;
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
+our $CREATEREPO_USE_DELTAS = 0;
+our $CREATEREPO_USE_UPDATE = 0;
 
 =head1 CONSTRUCTOR
 
@@ -95,7 +97,12 @@ sub new {
 		while (<$handle>) {
 			if (/--checksum=SUMTYPE/) {
 				$CREATEREPO_USE_CHECKSUM = 1;
-				last;
+			}
+			if (/--deltas/) {
+				$CREATEREPO_USE_DELTAS = 1;
+			}
+			if (/--update/) {
+				$CREATEREPO_USE_UPDATE = 1;
 			}
 		}
 		close($handle);
@@ -294,9 +301,17 @@ sub index($) {
 		'--cachedir', $self->cachedir,
 		$self->path);
 
+	if ($CREATEREPO_USE_UPDATE) {
+		unshift(@args, '--update');
+	}
+
 	if ($CREATEREPO_USE_CHECKSUM) {
 		unshift(@args, '--checksum', 'sha');
 	}
+
+#	if ($CREATEREPO_USE_DELTAS) {
+#		unshift(@args, '--deltas', '--num-deltas', '1', '--max-delta-rpm-size', '400000000', '--oldpackagedirs', '/var/www/sites/opennms.org/site/yum/obsolete/common/opennms', '--oldpackagedirs', '/var/www/sites/opennms.org/site/yum/stable/common/opennms');
+#	}
 
 	system($CREATEREPO, @args) == 0 or croak "createrepo failed! $!";
 

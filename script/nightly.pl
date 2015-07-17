@@ -31,6 +31,7 @@ use vars qw(
 	$DESCRIPTION
 	$ASSEMBLY_ONLY
 	$BRANCH
+	$BUILDNAME
 	$TIMESTAMP
 	$REVISION
 	$REPOSITORY
@@ -49,6 +50,7 @@ $CMD_BUILDTOOL = File::Spec->catfile($SCRIPTDIR, 'buildtool.pl');
 
 $ASSEMBLY_ONLY = 0;
 $BRANCH        = undef;
+$BUILDNAME     = undef;
 $HELP          = 0;
 $NAME          = undef;
 $DESCRIPTION   = undef;
@@ -67,8 +69,31 @@ GetOptions(
 
 usage() if ($HELP);
 
+sub not_empty {
+	my $env_var = shift;
+
+	if (exists $ENV{$env_var} and $ENV{$env_var} ne '') {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
 if (not defined $BRANCH) {
-	$BRANCH = get_branch();
+	if (not_empty('bamboo_planRepository_branchName')) {
+		$BRANCH = $ENV{'bamboo_planRepository_branchName'};
+	} else {
+		$BRANCH = get_branch();
+	}
+}
+
+if (not defined $BUILDNAME) {
+	if (not_empty('bamboo_shortPlanKey')) {
+		my $key = $ENV{'bamboo_shortPlanKey'};
+		$BUILDNAME = $key . '.' . $BRANCH;
+	} else {
+		$BUILDNAME = $BRANCH;
+	}
 }
 
 $TIMESTAMP  = buildtool('get_stamp');
@@ -76,21 +101,23 @@ $REVISION   = buildtool('get_revision');
 $REPOSITORY = get_repository();
 $PASSWORD   = get_password();
 
-if (exists $ENV{'BAMBOO_BUILD_NUMBER'} and $ENV{'BAMBOO_BUILD_NUMBER'} ne '' and $ENV{'BAMBOO_BUILD_NUMBER'} =~ /^\d+$/) {
-	$REVISION = $ENV{'BAMBOO_BUILD_NUMBER'};
+if (not_empty('bamboo_buildNumber') and $ENV{'bamboo_buildNumber'} =~ /^\d+$/) {
+	$REVISION = $ENV{'bamboo_buildNumber'};
 }
 
-my $scrubbed_branch = $BRANCH;
-$scrubbed_branch =~ s/[^[:alnum:]]+/\./gs;
-$scrubbed_branch =~ s/^\.+//;
-$scrubbed_branch =~ s/\.+$//;
 
-$MICRO_REVISION = $scrubbed_branch . '.' . $REVISION;
+my $scrubbed_buildname = lc($BUILDNAME);
+$scrubbed_buildname =~ s/[^[:alnum:]]+/\./gs;
+$scrubbed_buildname =~ s/^\.+//;
+$scrubbed_buildname =~ s/\.+$//;
+
+$MICRO_REVISION = $scrubbed_buildname . '.' . $REVISION;
 print <<END;
 Build Root:    $ROOTDIR
 Source Root:   $SOURCEDIR
 
 Type:          $TYPE
+Build Name:    $BUILDNAME
 Source Branch: $BRANCH
 Timestamp:     $TIMESTAMP
 Revision:      $MICRO_REVISION
@@ -206,11 +233,13 @@ sub clean_for_build {
 		$git->command('reset', '--hard', 'HEAD');
 	}
 
-	my $maven_dir = File::Spec->catdir($ENV{'HOME'}, '.m2', 'repository');
-	find(\&clean_up_jars, $maven_dir);
+	for my $dir ('repository', 'repository-' . $ENV{'bamboo_buildKey'}) {
+		my $maven_dir = File::Spec->catdir($ENV{'HOME'}, '.m2', $dir);
+		find(\&clean_up_jars, $maven_dir);
 
-	my $opennms_dir = File::Spec->catdir($maven_dir, 'org', 'opennms');
-	rmtree($opennms_dir) unless (not -d $opennms_dir);
+		my $opennms_dir = File::Spec->catdir($maven_dir, 'org', 'opennms');
+		rmtree($opennms_dir) unless (not -d $opennms_dir);
+	}
 }
 
 sub get_branch {
