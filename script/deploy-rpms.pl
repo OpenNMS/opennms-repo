@@ -110,8 +110,8 @@ for my $file (@FILES_RPMS) {
 	print "done\n";
 }
 
-print STDOUT "- uploading $FILE_SOURCE_TARBALL to the $BRANCH_NAME directory on SourceForge:\n";
-system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
+#print STDOUT "- uploading $FILE_SOURCE_TARBALL to the $BRANCH_NAME directory on SourceForge:\n";
+#system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
 
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
 system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", "opennms", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
