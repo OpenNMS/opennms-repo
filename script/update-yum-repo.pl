@@ -97,6 +97,17 @@ sub display {
 	print "- " . $package->to_string . " ($count/$total, " . ($sign? 'resigned':'skipped') . ")\n";
 }
 
+# merge releases forward first
+for my $release (@sync_order) {
+	next unless (exists $releases->{$release});
+
+	for my $platform (sort keys %{$releases->{$release}}) {
+		my $repo = $releases->{$release}->{$platform};
+		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+	}
+}
+
+# then if this branch needs updating, do it
 if (defined $BRANCH) {
 	my $branch_base = File::Spec->catdir($BASE, 'branches');
 
@@ -114,6 +125,7 @@ if (defined $BRANCH) {
 	exit 0;
 }
 
+# finally, update any platforms that need it
 for my $release (@sync_order) {
 	next unless (exists $releases->{$release});
 
