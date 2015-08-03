@@ -101,7 +101,7 @@ sub display {
 for my $release (@sync_order) {
 	next unless (exists $releases->{$release});
 
-	for my $platform (sort keys %{$releases->{$release}}) {
+	for my $platform ("common", sort keys %{$releases->{$release}}) {
 		my $repo = $releases->{$release}->{$platform};
 		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
 	}
@@ -112,7 +112,7 @@ if (defined $BRANCH) {
 	my $branch_base = File::Spec->catdir($BASE, 'branches');
 
 	# first, make sure we have all the platform repos for the branch
-	for my $platform (@platform_order) {
+	for my $platform ("common", @platform_order) {
 		my $from_repo = OpenNMS::Release::YumRepo->new($BASE, $RELEASE, $platform);
 		my $to_repo   = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH,  $platform);
 		sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
