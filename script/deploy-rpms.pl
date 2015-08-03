@@ -40,7 +40,7 @@ $SCRIPTDIR = abs_path(dirname($0));
 $YUMDIR    = "/var/www/sites/opennms.org/site/yum";
 
 my $result = GetOptions(
-	"y|yumdir" => \$YUMDIR,
+	"y|yumdir=s" => \$YUMDIR,
 );
 
 die "$YUMDIR does not exist!" unless (-d $YUMDIR);
