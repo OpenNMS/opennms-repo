@@ -309,9 +309,13 @@ sub index($) {
 		unshift(@args, '--checksum', 'sha');
 	}
 
-#	if ($CREATEREPO_USE_DELTAS) {
-#		unshift(@args, '--deltas', '--num-deltas', '1', '--max-delta-rpm-size', '400000000', '--oldpackagedirs', '/var/www/sites/opennms.org/site/yum/obsolete/common/opennms', '--oldpackagedirs', '/var/www/sites/opennms.org/site/yum/stable/common/opennms');
-#	}
+	if ($CREATEREPO_USE_DELTAS) {
+		my $basedir = $self->base;
+		if ($basedir =~ /^(.*)\/branches$/) {
+			$basedir = $1;
+		}
+		unshift(@args, '--deltas', '--num-deltas', '5', '--max-delta-rpm-size', '400000000', '--oldpackagedirs', File::Spec->catdir($basedir, 'obsolete', 'common', 'opennms'), '--oldpackagedirs', File::Spec->catdir($basedir, 'stable', 'common', 'opennms'));
+	}
 
 	system($CREATEREPO, @args) == 0 or croak "createrepo failed! $!";
 
