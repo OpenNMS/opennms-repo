@@ -166,16 +166,6 @@ sub releasedir() {
 	return File::Spec->catdir($self->base, 'dists', $self->release);
 }
 
-=head2 * to_string
-
-A convenient way of displaying the repository.
-
-=cut
-
-sub to_string() {
-	my $self = shift;
-	return $self->path;
-}
 
 =head2 * delete
 
