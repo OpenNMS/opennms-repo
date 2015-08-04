@@ -84,6 +84,8 @@ if ($ALL) {
 	$scan_repositories = [ OpenNMS::Release::AptRepo->new($BASE, $RELEASE) ];
 }
 
+my @sync_order = map { $_->release } @all_repositories;
+
 for my $orig_repo (@$scan_repositories) {
 	print "* syncing ", $orig_repo->to_string, "... ";
 	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
@@ -102,8 +104,6 @@ if (defined $BRANCH) {
 
 	exit 0;
 }
-
-my @sync_order = map { $_->release } @all_repositories;
 
 for my $orig_repo (@$scan_repositories) {
 	print "* syncing and updating ", $orig_repo->to_string, "... ";
