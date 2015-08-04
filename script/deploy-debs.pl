@@ -9,6 +9,7 @@ use Cwd qw(abs_path);
 use File::Basename;
 use File::Slurp;
 use File::Spec;
+use Getopt::Long qw(:config gnu_getopt);
 use version;
 
 use OpenNMS::Release;
@@ -33,6 +34,10 @@ print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $SCRIPTDIR = abs_path(dirname($0));
 $APTDIR    = "/var/ftp/pub/releases/opennms/debian";
+
+my $result = GetOptions(
+	"a|aptdir=s" => \$APTDIR,
+);
 
 die "$APTDIR does not exist!" unless (-d $APTDIR);
 

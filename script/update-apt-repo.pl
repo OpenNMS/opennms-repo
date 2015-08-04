@@ -84,13 +84,17 @@ if ($ALL) {
 	$scan_repositories = [ OpenNMS::Release::AptRepo->new($BASE, $RELEASE) ];
 }
 
+for my $orig_repo (@$scan_repositories) {
+	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+}
+
 if (defined $BRANCH) {
 	# first, copy from the release branch to the temporary one
 	my $from_repo = OpenNMS::Release::AptRepo->new($BASE, $RELEASE);
 	my $to_repo   = OpenNMS::Release::AptRepo->new($BASE, 'branches/' . $BRANCH);
 	sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
 
-	# then, update with the new RPMs
+	# then, update with the new Debs
 	update_repo($to_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
 
 	exit 0;
