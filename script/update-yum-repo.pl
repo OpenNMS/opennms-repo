@@ -245,7 +245,7 @@ sub sync_repo {
 sub get_release_index {
 	my $release_name = shift;
 	my $index = 0;
-	++$index until ($index > $#sync_order or $sync_order[$index] eq $release_name);
+	++$index until (($index > $#sync_order) or ($sync_order[$index] eq $release_name));
 	return $index;
 }
 
