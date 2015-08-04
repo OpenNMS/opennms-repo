@@ -85,10 +85,13 @@ if ($ALL) {
 }
 
 for my $orig_repo (@$scan_repositories) {
+	print "* syncing $orig_repo... ";
 	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+	print "done\n";
 }
 
 if (defined $BRANCH) {
+	print "* syncing base to $BRANCH branch repo... ";
 	# first, copy from the release branch to the temporary one
 	my $from_repo = OpenNMS::Release::AptRepo->new($BASE, $RELEASE);
 	my $to_repo   = OpenNMS::Release::AptRepo->new($BASE, 'branches/' . $BRANCH);
@@ -96,6 +99,7 @@ if (defined $BRANCH) {
 
 	# then, update with the new Debs
 	update_repo($to_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
+	print "done\n";
 
 	exit 0;
 }
@@ -103,8 +107,10 @@ if (defined $BRANCH) {
 my @sync_order = map { $_->release } @all_repositories;
 
 for my $orig_repo (@$scan_repositories) {
+	print "* syncing and updating $orig_repo... ";
 	update_repo($orig_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
 	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+	print "done\n";
 }
 
 sub update_repo {
