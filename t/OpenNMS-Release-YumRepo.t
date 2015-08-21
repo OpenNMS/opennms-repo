@@ -149,9 +149,6 @@ symlink('rhel5', "$t/testpackages/rpm/stable/centos5");
 $stable_common->index();
 $stable_rhel5->index();
 my $repos = OpenNMS::Release::YumRepo->find_repos("$t/testpackages/rpm");
-for my $repo (@$repos) {
-	print STDERR "repo: ", $repo->to_string, "\n";
-}
 is(scalar(@$repos), 2);
 
 $stable_common->delete;
