@@ -14,7 +14,6 @@ use File::Path;
 use File::Spec;
 use File::Temp qw(tempdir);
 use IO::Handle;
-use Path::Class;
 
 use OpenNMS::Util 2.5.0;
 use OpenNMS::Release::RPMPackage;
@@ -145,9 +144,8 @@ sub find_repos($) {
 	}, no_chdir => 1, follow_fast => 1, follow_skip => 2 }, $base);
 
 	for my $repodir (@repodirs) {
-		my $parent = scalar(Path::Class::Dir->new($repodir)->parent());
-		if (-l $parent) {
-			carp "$parent is a symlink... skipping.";
+		if (-l $repodir) {
+			carp "$repodir is a symlink... skipping.";
 			next;
 		}
 		$repodir = File::Spec->abs2rel($repodir, $base);

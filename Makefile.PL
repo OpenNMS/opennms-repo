@@ -11,7 +11,6 @@ requires       'File::ShareDir'            => undef;
 requires       'File::Slurp'               => undef;
 requires       'Module::Load::Conditional' => undef;
 requires       'Net::SFTP::Foreign'        => undef;
-requires       'Path::Class'               => undef;
 requires       'version'                   => undef;
 test_requires  'Test::More'                => undef;
 
