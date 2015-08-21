@@ -14,6 +14,7 @@ use File::Path;
 use File::Spec;
 use File::Temp qw(tempdir);
 use IO::Handle;
+use Path::Class;
 
 use OpenNMS::Util 2.5.0;
 use OpenNMS::Release::RPMPackage;
@@ -43,7 +44,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = 2.7.2;
+our $VERSION = 2.9.13;
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 our $CREATEREPO_USE_DELTAS = 0;
@@ -144,6 +145,11 @@ sub find_repos($) {
 	}, no_chdir => 1, follow_fast => 1, follow_skip => 2 }, $base);
 
 	for my $repodir (@repodirs) {
+		my $parent = scalar(Path::Class::Dir->new($repodir)->parent());
+		if (-l $parent) {
+			carp "$parent is a symlink... skipping.";
+			next;
+		}
 		$repodir = File::Spec->abs2rel($repodir, $base);
 		my @parts = File::Spec->splitdir($repodir);
 		if ($parts[0] eq 'branches' and scalar(@parts) == 3) {
