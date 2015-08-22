@@ -101,9 +101,9 @@ sub new {
 			if (/--deltas/) {
 				$CREATEREPO_USE_DELTAS = 1;
 			}
-			if (/--update/) {
-				$CREATEREPO_USE_UPDATE = 1;
-			}
+			#if (/--update/) {
+			#	$CREATEREPO_USE_UPDATE = 1;
+			#}
 		}
 		close($handle);
 	}

@@ -210,7 +210,11 @@ sub sync_repos {
 	my $signing_password = shift;
 
 	my $last_repo = $release_repo;
-	
+	if (not defined $release_repo) {
+		print "! WARNING: release repo not defined!\n";
+		return;
+	}
+
 	for my $i ((get_release_index($release_repo->release) + 1) .. $#sync_order) {
 		my $rel = $sync_order[$i];
 
