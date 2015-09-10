@@ -12,6 +12,7 @@ requires       'File::Slurp'               => undef;
 requires       'Moose'                     => undef;
 requires       'Module::Load::Conditional' => undef;
 requires       'Net::SFTP::Foreign'        => undef;
+requires       'Throwable'                 => undef;
 requires       'version'                   => undef;
 test_requires  'Test::More'                => undef;
 

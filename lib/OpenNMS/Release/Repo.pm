@@ -4,6 +4,8 @@ use 5.008008;
 use strict;
 use warnings;
 
+use Moose;
+
 use Carp;
 use Cwd qw();
 use Data::Dumper;
@@ -11,6 +13,7 @@ use File::Path;
 use File::Basename;
 use File::Temp qw(tempdir);
 
+use OpenNMS::Error;
 use OpenNMS::Util 2.6.0;
 
 =head1 NAME
@@ -34,12 +37,34 @@ our $RSYNC   = undef;
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::Repo-E<gt>new($base);
+OpenNMS::Release::Repo-E<gt>new(
+	'base' => $base
+);
 
 Create a new Repo object, based in path $base.  You can add and remove packages to/from it, re-index it, and so on.
 The base will always be initialized as the absolute path.
 
 =cut
+
+has 'base' => (
+	is      => 'ro',
+	isa     => 'Str',
+	builder => '_build_base',
+);
+
+has 'dirty' => (
+	is  => 'rw',
+	isa => 'Bool',
+);
+
+sub _build_base {
+	if (not defined $_ or not File::Spec->file_name_is_absolute( $_ )) {
+		OpenNMS::Error->throw({
+			message => 'base must be an absolute path!'
+		});
+	}
+	return $_;
+}
 
 sub new {
 	my $proto = shift;
