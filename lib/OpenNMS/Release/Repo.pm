@@ -5,6 +5,8 @@ use strict;
 use warnings;
 
 use Moose;
+use MooseX::ABC;
+use MooseX::Privacy;
 
 use Carp;
 use Cwd qw();
@@ -38,7 +40,7 @@ our $RSYNC   = undef;
 =head1 CONSTRUCTOR
 
 OpenNMS::Release::Repo-E<gt>new(
-	'base' => $base
+	'base' => $base,
 );
 
 Create a new Repo object, based in path $base.  You can add and remove packages to/from it, re-index it, and so on.
@@ -47,95 +49,31 @@ The base will always be initialized as the absolute path.
 =cut
 
 has 'base' => (
-	is      => 'ro',
-	isa     => 'Str',
-	builder => '_build_base',
-);
-
-has 'dirty' => (
-	is  => 'rw',
-	isa => 'Bool',
+	is       => 'ro',
+	isa      => 'Str',
+	builder  => '_build_base',
+	required => 1,
 );
 
 sub _build_base {
 	if (not defined $_ or not File::Spec->file_name_is_absolute( $_ )) {
-		OpenNMS::Error->throw({
-			message => 'base must be an absolute path!'
-		});
+		OpenNMS::Error->throw({ message => '"base" must be an absolute path!' });
 	}
 	return $_;
 }
 
-sub new {
-	my $proto = shift;
-	my $class = ref($proto) || $proto;
-	my $self  = {};
+has 'dirty' => (
+	is       => 'rw',
+	isa      => 'Bool',
+	traits   => [qw/Protected/],
+	default  => 0,
+);
 
-	my $base = shift;
-	if (not defined $base or not File::Spec->file_name_is_absolute( $base )) {
-		croak "base must be an absolute path!";
-	}
-
-	$base =~ s,/$,,;
-	$self->{BASE} = $base;
-	$self->{DIRTY} = 0;
-
-	bless($self);
-	return $self;
-}
-
+requires 'path'; # path must be implemented in subclasses
 
 =head1 METHODS
 
 =over 4
-
-=item * new_with_base($newbase)
-
-Given a new base path, construct a Repo object matching the current,
-but with the new base path.
-
-=cut
-
-sub new_with_base($) {
-	croak "You must implement 'new_with_base' in your subclass!";
-}
-
-=item * base
-
-The base (root) path of this repository.
-
-=cut
-
-sub base {
-	my $self = shift;
-	return $self->{BASE};
-}
-
-# obsolete
-sub abs_base {
-	return shift->base;
-}
-
-=item * path
-
-The full path to the top-level directory of this repository.  (Must be implemented in subclasses.)
-
-=cut
-
-sub path {
-	croak "You must implement 'path' in your subclass!";
-}
-
-# obsolete
-sub abs_path {
-	return shift->path;
-}
-
-sub _dirty {
-	my $self = shift;
-	if (@_) { $self->{DIRTY} = shift }
-	return $self->{DIRTY};
-}
 
 =item * copy($new_base_path)
 
@@ -149,19 +87,18 @@ If possible, it will create the new repository using hard links.
 sub copy {
 	my $self    = shift;
 	my $newbase = shift;
-	if (not defined $newbase) {
-		return undef;
+	if ( not defined $newbase or not File::Spec->file_name_is_absolute( $newbase ) ) {
+		OpenNMS::Error->throw({ message => '"' . $newbase . '" is not an absolute path!' });
 	}
 
 	if (not defined $RSYNC) {
 		$RSYNC = find_executable('rsync');
 		if (not defined $RSYNC) {
-			carp "Unable to locate \`rsync\`: $!";
-			return undef;
+			OpenNMS::Error->throw({ message => 'Unable to locate `rsync`!' });
 		}
 	}
 
-	my $repo = $self->new_with_base($newbase);
+	my $repo = $self->new( 'base' => $newbase );
 	mkpath($repo->path);
 
 	my $selfpath = $self->path;
@@ -171,9 +108,9 @@ sub copy {
 	my $dest_fs   = $self->_get_fs_for_path($repopath);
 
 	if (defined $source_fs and defined $dest_fs and $source_fs eq $dest_fs) {
-		system($RSYNC, "-aqrH", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+		system($RSYNC, "-aqrH", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or OpenNMS::Error->throw({ message => "failure while rsyncing: $!" });
 	} else {
-		system($RSYNC, "-aqrH", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+		system($RSYNC, "-aqrH", $selfpath . "/", $repopath . "/") == 0 or OpenNMS::Error->throw({ message => "failure while rsyncing: $!" });
 	}
 
 	return $repo;
@@ -193,22 +130,24 @@ sub replace {
 	my $self_path   = $self->path;
 	my $target_path = $target_repo->path;
 
-	croak "paths match -- this should not be" if ($self_path eq $target_path);
+	if ($self_path eq $target_path) {
+		OpenNMS::Error->throw({ message => "Can't replace $self_path with itself!" });
+	}
 
 	if (-e $target_path) {
-		File::Copy::move($target_path, $target_path . '.bak') or croak "failed to rename $target_path to $target_path.bak: $!";
+		File::Copy::move($target_path, $target_path . '.bak') or OpenNMS::Error->throw({ message => "failed to rename $target_path to $target_path.bak: $!" });
 	}
 
 	mkpath($target_path);
-	File::Copy::move($self_path, $target_path) or croak "failed to rename $self_path to $target_path: $!";
+	File::Copy::move($self_path, $target_path) or OpenNMS::Error->throw({ message => "failed to rename $self_path to $target_path: $!" });
 
 	if (-e $target_path . '.bak') {
-		rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
+		rmtree($target_path . '.bak') or OpenNMS::Error->({ message => "failed to remove old $target_path.bak directory: $!" });
 	}
 
 	$self->delete;
 
-	return $self->new_with_base($target_repo->base);
+	return $self->new( base => $target_repo->base );
 }
 
 =item * create_temporary
@@ -224,8 +163,8 @@ sub create_temporary {
 
 	my $CLEANUP = exists $ENV{OPENNMS_CLEANUP}? $ENV{OPENNMS_CLEANUP} : 1;
 	# create a temporary directory at the same level as the current base
-	mkpath($self->abs_base);
-	my $newbase = tempdir('.temporary-repository-XXXXXX', DIR => $self->abs_base, CLEANUP => $CLEANUP);
+	mkpath($self->base);
+	my $newbase = tempdir('.temporary-repository-XXXXXX', DIR => $self->base, CLEANUP => $CLEANUP);
 	return $self->copy($newbase);
 }
 
@@ -238,13 +177,13 @@ sub _get_fs_for_path($) {
 	if (not defined $DF) {
 		$DF = find_executable('df');
 		if (not defined $DF) {
-			carp "unable to locate \`df\`: $!";
+			OpenNMS::Error->throw({ message => "unable to locate \`df\`: $!" });
 			return undef;
 		}
 	}
 
 	if ($? == 0) {
-		open(OUTPUT, "$DF -h '$path' |") or croak "unable to run 'df -h $path': $!";
+		open(OUTPUT, "$DF -h '$path' |") or OpenNMS::Error->throw({ message => "unable to run 'df -h $path': $!" });
 		<OUTPUT>;
 		my $output = <OUTPUT>;
 		close(OUTPUT);
@@ -264,9 +203,12 @@ must be uncached, and implemented by subclasses.
 
 =cut
 
-sub _packageset {
-	croak "You must implement this in your subclass!";
-}
+requires '_packageset';
+
+has 'packageset' => (
+	is  => 'ro',
+	isa => 'OpenNMS::Release::PackageSet',
+);
 
 sub packageset {
 	my $self = shift;
@@ -301,11 +243,11 @@ sub delete {
 	my $self = shift;
 
 	$self->clear_cache;
-	$self->_dirty(1);
+	$self->dirty(1);
 
 	return 1 if (not -e $self->path);
 
-	rmtree($self->path) or croak "Unable to remove " . $self->path;
+	rmtree($self->path) or OpenNMS::Error->throw({ message => "Unable to remove " . $self->path });
 
 	# clean up any loose directories which have no files in them
 	my @parts;
@@ -727,7 +669,7 @@ sub commit($) {
 	my $new = $self->copy($original->base);
 
 	my $delete = $self->delete;
-	carp "error while deleting " . $self->to_string unless ($delete);
+	OpenNMS::Error->throw({ message => "error while deleting " . $self->to_string }) unless ($delete);
 
 	return $new;
 }
