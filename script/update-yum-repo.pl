@@ -85,7 +85,7 @@ if ($ALL) {
 		$releases->{$repo->release}->{$repo->platform} = $repo;
 	}
 } else {
-	$releases->{$RELEASE}->{$PLATFORM} = OpenNMS::Release::YumRepo->new($BASE, $RELEASE, $PLATFORM);
+	$releases->{$RELEASE}->{$PLATFORM} = OpenNMS::Release::YumRepo->new({ base => $BASE, release => $RELEASE, platform => $PLATFORM });
 }
 
 sub display {
@@ -113,13 +113,13 @@ if (defined $BRANCH) {
 
 	# first, make sure we have all the platform repos for the branch
 	for my $platform ("common", @platform_order) {
-		my $from_repo = OpenNMS::Release::YumRepo->new($BASE, $RELEASE, $platform);
-		my $to_repo   = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH,  $platform);
+		my $from_repo = OpenNMS::Release::YumRepo->new({ base => $BASE, release => $RELEASE, platform => $platform });
+		my $to_repo   = OpenNMS::Release::YumRepo->new({ base => $branch_base, release => $BRANCH, platform => $platform });
 		sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
 	}
 
 	# then, update with the new RPMs
-	my $repo = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH, $PLATFORM);
+	my $repo = OpenNMS::Release::YumRepo->new({ base => $branch_base, release => $BRANCH, platform => $PLATFORM });
 	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
 
 	exit 0;
@@ -218,7 +218,7 @@ sub sync_repos {
 	for my $i ((get_release_index($release_repo->release) + 1) .. $#sync_order) {
 		my $rel = $sync_order[$i];
 
-		my $to_repo = OpenNMS::Release::YumRepo->new($base, $rel, $release_repo->platform);
+		my $to_repo = OpenNMS::Release::YumRepo->new({ base => $base, release => $rel, platform => $release_repo->platform });
 		$last_repo = sync_repo($last_repo, $to_repo, $signing_id, $signing_password);
 	}
 }

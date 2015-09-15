@@ -107,6 +107,6 @@ $packages = $a->find_all_packages();
 is(scalar(@$packages), 36);
 
 sub reset_repos {
-	$a = $class->new('frs.sourceforge.net', '/home/frs/project/o/op/opennms/OpenNMS-Snapshots');
-	$b = OpenNMS::Release::FileRepo->new("$t/packages/source");
+	$a = $class->new({ host => 'frs.sourceforge.net', base => '/home/frs/project/o/op/opennms/OpenNMS-Snapshots' });
+	$b = OpenNMS::Release::FileRepo->new({ base => "$t/packages/source" });
 }

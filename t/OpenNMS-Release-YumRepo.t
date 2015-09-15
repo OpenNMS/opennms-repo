@@ -25,7 +25,7 @@ my $t = Cwd::abs_path("t");
 
 rmtree("$t/testpackages/rpm");
 
-my $stable_ro = OpenNMS::Release::YumRepo->new("$t/packages/rpm", "stable", "common");
+my $stable_ro = OpenNMS::Release::YumRepo->new({ base => "$t/packages/rpm", release => "stable", platform => "common" });
 isa_ok($stable_ro, 'OpenNMS::Release::YumRepo');
 
 is($stable_ro->base, "$t/packages/rpm");
@@ -134,7 +134,7 @@ is($package->version->version, "1.8.16");
 
 reset_repos();
 spit("$t/testpackages/rpm/bleeding/rhel5/.exclude-share", "iplike\nopennms\n");
-$bleeding_rhel5 = OpenNMS::Release::YumRepo->new("$t/testpackages/rpm", "bleeding", "rhel5");
+$bleeding_rhel5 = OpenNMS::Release::YumRepo->new({ base => "$t/testpackages/rpm", release => "bleeding", platform => "rhel5" });
 is(scalar(@{$bleeding_rhel5->exclude_share}), 2);
 $bleeding_rhel5->share_all_packages($stable_rhel5);
 $package = $bleeding_rhel5->find_newest_package_by_name('iplike', 'i386');
@@ -158,9 +158,9 @@ $bleeding_rhel5->delete;
 
 sub reset_repos {
 	rmtree("$t/testpackages/rpm");
-	$stable_common   = OpenNMS::Release::YumRepo->new("$t/packages/rpm", "stable", "common")->copy("$t/testpackages/rpm");
-	$stable_rhel5    = OpenNMS::Release::YumRepo->new("$t/packages/rpm", "stable", "rhel5")->copy("$t/testpackages/rpm");
-	$bleeding_common = OpenNMS::Release::YumRepo->new("$t/packages/rpm", "bleeding", "common")->copy("$t/testpackages/rpm");
-	$bleeding_rhel5  = OpenNMS::Release::YumRepo->new("$t/packages/rpm", "bleeding", "rhel5")->copy("$t/testpackages/rpm");
+	$stable_common   = OpenNMS::Release::YumRepo->new({ base => "$t/packages/rpm", release => "stable", platform => "common"   })->copy("$t/testpackages/rpm");
+	$stable_rhel5    = OpenNMS::Release::YumRepo->new({ base => "$t/packages/rpm", release => "stable", platform => "rhel5"    })->copy("$t/testpackages/rpm");
+	$bleeding_common = OpenNMS::Release::YumRepo->new({ base => "$t/packages/rpm", release => "bleeding", platform => "common" })->copy("$t/testpackages/rpm");
+	$bleeding_rhel5  = OpenNMS::Release::YumRepo->new({ base => "$t/packages/rpm", release => "bleeding", platform => "rhel5"  })->copy("$t/testpackages/rpm");
 }
 

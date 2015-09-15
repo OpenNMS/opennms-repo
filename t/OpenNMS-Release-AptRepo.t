@@ -24,7 +24,7 @@ my $t = Cwd::abs_path("t");
 
 reset_repos();
 
-my $opennms_18_ro = OpenNMS::Release::AptRepo->new("$t/packages/deb", "opennms-1.8");
+my $opennms_18_ro = OpenNMS::Release::AptRepo->new({ base => "$t/packages/deb", release => "opennms-1.8" });
 isa_ok($opennms_18_ro, 'OpenNMS::Release::AptRepo');
 
 is($opennms_18_ro->base, "$t/packages/deb");
@@ -147,7 +147,7 @@ $nightly_111->delete;
 
 reset_repos();
 spit("$t/testpackages-debrepo/deb/dists/nightly-1.11/.exclude-share", "iplike-pgsql84\nopennms\n");
-$nightly_111 = OpenNMS::Release::AptRepo->new("$t/testpackages-debrepo/deb", "nightly-1.11");
+$nightly_111 = OpenNMS::Release::AptRepo->new({ base => "$t/testpackages-debrepo/deb", release => "nightly-1.11" });
 is(scalar(@{$nightly_111->exclude_share}), 2);
 $nightly_111->share_all_packages($opennms_18);
 $package = $nightly_111->find_newest_package_by_name('iplike-pgsql84', 'i386');
@@ -190,7 +190,7 @@ $nightly_111->delete;
 
 sub reset_repos {
 	rmtree("$t/testpackages-debrepo");
-	$opennms_18 = OpenNMS::Release::AptRepo->new("$t/packages/deb", "opennms-1.8")->copy("$t/testpackages-debrepo/deb");
-	$nightly_111 = OpenNMS::Release::AptRepo->new("$t/packages/deb", "nightly-1.11")->copy("$t/testpackages-debrepo/deb");
+	$opennms_18 = OpenNMS::Release::AptRepo->new({ base => "$t/packages/deb", release => "opennms-1.8" })->copy("$t/testpackages-debrepo/deb");
+	$nightly_111 = OpenNMS::Release::AptRepo->new({ base => "$t/packages/deb", release => "nightly-1.11" })->copy("$t/testpackages-debrepo/deb");
 }
 

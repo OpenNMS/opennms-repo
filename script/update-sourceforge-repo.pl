@@ -27,7 +27,7 @@ if ($help or not @files) {
 	usage();
 }
 
-my $repo = OpenNMS::Release::SFTPRepo->new('frs.sourceforge.net', File::Spec->catdir('/home/frs/project/o/op/opennms/OpenNMS-Snapshots', $release))->begin();
+my $repo = OpenNMS::Release::SFTPRepo->new({ host => 'frs.sourceforge.net', base => File::Spec->catdir('/home/frs/project/o/op/opennms/OpenNMS-Snapshots', release => $release }))->begin();
 for my $file (@files) {
 	my $package = OpenNMS::Release::FilePackage->new(Cwd::abs_path($file));
 	print "- installing ", $package->to_string, "\n";
@@ -35,7 +35,7 @@ for my $file (@files) {
 }
 $repo->commit();
 
-$repo = OpenNMS::Release::SFTPRepo->new('frs.sourceforge.net', File::Spec->catdir('/home/frs/project/o/op/opennms/OpenNMS-Snapshots', $release));
+$repo = OpenNMS::Release::SFTPRepo->new({ host => 'frs.sourceforge.net', base => File::Spec->catdir('/home/frs/project/o/op/opennms/OpenNMS-Snapshots', release => $release }));
 $repo->delete_obsolete_packages();
 
 sub usage {

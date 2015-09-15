@@ -51,7 +51,7 @@ if (not defined $signing_password or not defined $signing_id) {
 
 $base = Cwd::abs_path($base);
 
-my $repo    = OpenNMS::Release::YumRepo->new($base, $release, $platform);
+my $repo    = OpenNMS::Release::YumRepo->new({ base => $base, release => $release, platform => $platform });
 my $rpmname = "opennms-repo-$release";
 
 my $newest_rpm  = $repo->find_newest_package_by_name($rpmname, 'noarch');

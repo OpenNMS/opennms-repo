@@ -81,7 +81,7 @@ if ($ALL) {
 	if (-l $releasedir) {
 		$RELEASE = basename(readlink($releasedir));
 	}
-	$scan_repositories = [ OpenNMS::Release::AptRepo->new($BASE, $RELEASE) ];
+	$scan_repositories = [ OpenNMS::Release::AptRepo->new({ base => $BASE, release => $RELEASE }) ];
 }
 
 my @sync_order = map { $_->release } @all_repositories;
@@ -95,8 +95,8 @@ for my $orig_repo (@$scan_repositories) {
 if (defined $BRANCH) {
 	print "* syncing base to $BRANCH branch repo:\n";
 	# first, copy from the release branch to the temporary one
-	my $from_repo = OpenNMS::Release::AptRepo->new($BASE, $RELEASE);
-	my $to_repo   = OpenNMS::Release::AptRepo->new($BASE, 'branches/' . $BRANCH);
+	my $from_repo = OpenNMS::Release::AptRepo->new({ base => $BASE, release => $RELEASE });
+	my $to_repo   = OpenNMS::Release::AptRepo->new({ base => $BASE, release => 'branches/' . $BRANCH });
 	sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
 
 	# then, update with the new Debs
@@ -200,7 +200,7 @@ sub sync_repos {
 	for my $i ((get_release_index($release_repo->release) + 1) .. $#sync_order) {
 		my $rel = $sync_order[$i];
 
-		my $to_repo = OpenNMS::Release::AptRepo->new($base, $rel);
+		my $to_repo = OpenNMS::Release::AptRepo->new({ base => $base, release => $rel });
 		$last_repo = sync_repo($last_repo, $to_repo, $signing_id, $signing_password);
 	}
 }

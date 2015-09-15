@@ -39,7 +39,7 @@ our $VERSION = 2.1.0;
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::FileRepo-E<gt>new($base);
+OpenNMS::Release::FileRepo-E<gt>new(base => $base);
 
 Create a new Repo object.  You can add and remove tarballs to/from it, re-index it, and so on.
 
@@ -55,9 +55,7 @@ sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
 
-	my $base      = shift;
-
-	my $self = bless($proto->SUPER::new($base), $class);
+	my $self = bless($proto->SUPER::new(@_), $class);
 
 	return $self;
 }
@@ -66,7 +64,7 @@ sub new_with_base($) {
 	my $self = shift;
 	my $base = shift;
 
-	return OpenNMS::Release::FileRepo->new($base);
+	return OpenNMS::Release::FileRepo->new({ base => $base });
 }
 
 =head1 METHODS

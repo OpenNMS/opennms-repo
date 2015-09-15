@@ -46,7 +46,7 @@ our @ARCHITECTURES = qw(amd64 i386 powerpc armhf armel);
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::AptRepo-E<gt>new($base, $release);
+OpenNMS::Release::AptRepo-E<gt>new({ base => $base, release => $release});
 
 Create a new Repo object.  You can add and remove packages to/from it, re-index it, and so on.
 
@@ -64,12 +64,9 @@ sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
 
-	my $base      = shift;
-	my $release   = shift;
+	my $self = bless($proto->SUPER::new(@_), $class);
 
-	my $self = bless($proto->SUPER::new($base), $class);
-
-	if (not defined $release) {
+	if (not defined $self->{RELEASE}) {
 		carp "You did not specify a release!";
 		return undef;
 	}
@@ -81,8 +78,6 @@ sub new {
 		}
 	}
 
-	$self->{RELEASE}  = $release;
-
 	return $self;
 }
 
@@ -90,7 +85,7 @@ sub new_with_base($) {
 	my $self = shift;
 	my $base = shift;
 
-	return OpenNMS::Release::AptRepo->new($base, $self->release);
+	return OpenNMS::Release::AptRepo->new({ base => $base, release => $self->release });
 }
 
 =head1 METHODS
@@ -130,7 +125,7 @@ sub find_repos($) {
 			carp "not sure how to determine release and platform for $base/$repodir";
 			next;
 		}
-		push(@repos, OpenNMS::Release::AptRepo->new($base, $parts[1]));
+		push(@repos, OpenNMS::Release::AptRepo->new({ base => $base, release => $parts[1] }));
 	}
 	@repos = sort { $a->path cmp $b->path } @repos;
 	return \@repos;

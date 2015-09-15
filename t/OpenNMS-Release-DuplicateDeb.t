@@ -49,7 +49,7 @@ $nightly_111->delete;
 
 sub reset_repos {
 	rmtree("$t/testpackages-debrepo/deb");
-	$opennms_18 = OpenNMS::Release::AptRepo->new("$t/packages/deb", "opennms-1.8")->copy("$t/testpackages-debrepo/deb");
-	$nightly_111 = OpenNMS::Release::AptRepo->new("$t/packages/deb", "nightly-1.11")->copy("$t/testpackages-debrepo/deb");
+	$opennms_18 = OpenNMS::Release::AptRepo->new({ base => "$t/packages/deb", release => "opennms-1.8" })->copy("$t/testpackages-debrepo/deb");
+	$nightly_111 = OpenNMS::Release::AptRepo->new({ base => "$t/packages/deb", release => "nightly-1.11" })->copy("$t/testpackages-debrepo/deb");
 }
 

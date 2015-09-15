@@ -22,7 +22,7 @@ my $t = Cwd::abs_path("t");
 
 reset_repos();
 
-my $source_ro = OpenNMS::Release::FileRepo->new("$t/packages/source");
+my $source_ro = OpenNMS::Release::FileRepo->new({ base => "$t/packages/source" });
 isa_ok($source_ro, 'OpenNMS::Release::FileRepo');
 
 is($source_ro->base, "$t/packages/source");
@@ -171,8 +171,8 @@ ok(defined $@);
 
 sub reset_repos {
 	rmtree("$t/testpackages");
-	$a = OpenNMS::Release::FileRepo->new("$t/packages/source")->copy("$t/testpackages/source");
+	$a = OpenNMS::Release::FileRepo->new({ base => "$t/packages/source" })->copy("$t/testpackages/source");
 	mkpath("$t/testpackages/new");
-	$b = OpenNMS::Release::FileRepo->new("$t/testpackages/new");
+	$b = OpenNMS::Release::FileRepo->new({ base => "$t/testpackages/new" });
 }
 

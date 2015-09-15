@@ -34,7 +34,7 @@ our $RSYNC   = undef;
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Release::Repo-E<gt>new($base);
+OpenNMS::Release::Repo-E<gt>new({ base => $base });
 
 Create a new Repo object, based in path $base.  You can add and remove packages to/from it, re-index it, and so on.
 The base will always be initialized as the absolute path.
@@ -46,13 +46,16 @@ sub new {
 	my $class = ref($proto) || $proto;
 	my $self  = {};
 
-	my $base = shift;
-	if (not defined $base or not File::Spec->file_name_is_absolute( $base )) {
+	my $options = shift;
+	for my $key (keys %$options) {
+		$self->{uc($key)} = $options->{$key};
+	}
+
+	if (not exists $self->{BASE} or not defined $self->{BASE} or not File::Spec->file_name_is_absolute( $self->{BASE} )) {
 		croak "base must be an absolute path!";
 	}
 
-	$base =~ s,/$,,;
-	$self->{BASE} = $base;
+	$self->{BASE} =~ s,/$,,;
 	$self->{DIRTY} = 0;
 
 	bless($self);

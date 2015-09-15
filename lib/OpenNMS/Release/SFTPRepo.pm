@@ -61,15 +61,10 @@ sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
 
-	my $host  = shift;
-	my $base  = shift;
-	my $args  = shift;
+	my $self  = bless($proto->SUPER::new(@_), $class);
 
-	my $self  = bless($proto->SUPER::new($base), $class);
-
-	$self->{HOST} = $host;
 	$self->{IN_TRANSACTION} = 0;
-	$self->_init($args);
+	$self->_init($self->{ARGS});
 
 	return $self;
 }
@@ -78,7 +73,7 @@ sub new_with_base($) {
 	my $self = shift;
 	my $base = shift;
 
-	return $self->new($self->host, $base);
+	return $self->new({ host => $self->host, base => $base });
 }
 
 sub _init {

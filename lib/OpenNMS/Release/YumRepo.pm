@@ -51,7 +51,7 @@ our $CREATEREPO_USE_UPDATE = 0;
 
 =head1 CONSTRUCTOR
 
-OpenNMS::Yum::Repo-E<gt>new($base, $release, $platform);
+OpenNMS::Yum::Repo-E<gt>new({ base => $base, release => $release, platform => $platform });
 
 Create a new Repo object.  You can add and remove RPMs to/from it, re-index it, and so on.
 
@@ -71,17 +71,13 @@ sub new {
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
 
-	my $base     = shift;
-	my $release  = shift;
-	my $platform = shift;
+	my $self = bless($proto->SUPER::new(@_), $class);
 
-	my $self = bless($proto->SUPER::new($base), $class);
-
-	if (not defined $release) {
+	if (not defined $self->{RELEASE}) {
 		carp "You did not specify a release!";
 		return undef;
 	}
-	if (not defined $platform) {
+	if (not defined $self->{PLATFORM}) {
 		carp "You did not specify a platform!";
 		return undef;
 	}
@@ -108,9 +104,6 @@ sub new {
 		close($handle);
 	}
 
-	$self->{RELEASE}  = $release;
-	$self->{PLATFORM} = $platform;
-
 	return $self;
 }
 
@@ -118,7 +111,7 @@ sub new_with_base($) {
 	my $self = shift;
 	my $base = shift;
 
-	return OpenNMS::Release::YumRepo->new($base, $self->release, $self->platform);
+	return OpenNMS::Release::YumRepo->new({ base => $base, release => $self->release, platform => $self->platform });
 }
 
 =head1 METHODS
@@ -151,14 +144,14 @@ sub find_repos($) {
 		$repodir = File::Spec->abs2rel($repodir, $base);
 		my @parts = File::Spec->splitdir($repodir);
 		if ($parts[0] eq 'branches' and scalar(@parts) == 3) {
-			push(@repos, OpenNMS::Release::YumRepo->new(File::Spec->catdir($base, 'branches'), $parts[1], $parts[2]));
+			push(@repos, OpenNMS::Release::YumRepo->new({ base => File::Spec->catdir($base, 'branches'), release => $parts[1], platform => $parts[2] }));
 			next;
 		}
 		if (scalar(@parts) != 2) {
 			carp "not sure how to determine release and platform for base '$base', repo '$repodir'.";
 			next;
 		}
-		push(@repos, OpenNMS::Release::YumRepo->new($base, $parts[0], $parts[1]));
+		push(@repos, OpenNMS::Release::YumRepo->new({ base => $base, release => $parts[0], platform => $parts[1] }));
 	}
 	@repos = sort { $a->path cmp $b->path } @repos;
 	return \@repos;
