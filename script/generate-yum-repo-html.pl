@@ -18,6 +18,7 @@ use OpenNMS::Release::YumRepo 2.0.0;
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $base = shift @ARGV;
+my $PASSWORD = undef;
 
 if (not defined $base or not -d $base) {
 	print "usage: $0 <repository_base>\n\n";
@@ -39,6 +40,13 @@ my $repo_map = {};
 for my $repo (@$repos) {
 	next if ($repo->base =~ m,/branches/,);
 	$repo_map->{$repo->release}->{$repo->platform} = $repo;
+}
+
+my $passfile = File::Spec->catfile($ENV{'HOME'}, '.signingpass');
+if (-e $passfile) {
+	chomp($PASSWORD = read_file($passfile));
+} else {
+	print STDERR "WARNING: $passfile does not exist!  We will be unable to create new repository RPMs.";
 }
 
 for my $release (@display_order) {
@@ -67,6 +75,10 @@ for my $release (@display_order) {
 	for my $platform (@platform_order) {
 
 		my $rpmname = "opennms-repo-$release-$platform.noarch.rpm";
+
+		if ($platform ne "common" and not -e "$base/repofiles/$rpmname") {
+			system("create-repo-rpm.pl", "-s", $PASSWORD, $base, $release, $platform);
+		}
 
 		if (-e "$base/repofiles/$rpmname") {
 			$index_text .= "<li><a href=\"repofiles/$rpmname\">$platform_descriptions->{$platform}</a> (<a href=\"$release/$platform\">browse</a>)</li>\n";
