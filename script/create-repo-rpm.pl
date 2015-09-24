@@ -70,7 +70,7 @@ mkpath($repofiledir);
 my $existing_rpm = undef;
 opendir(DIR, $repofiledir) or die "Can't read from $repofiledir: $!\n";
 while (my $entry = readdir(DIR)) {
-	if ($entry =~ /^${rpmname}-/) {
+	if ($entry =~ /^${rpmname}-/ and $entry =~ /\.rpm$/) {
 		my $filename = File::Spec->catfile($repofiledir, $entry);
 		$existing_rpm = OpenNMS::Release::RPMPackage->new($filename);
 	}
