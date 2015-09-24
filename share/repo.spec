@@ -2,16 +2,15 @@
 %{!?_release:%define _release 1}
 
 Summary: Yum repository files for %{_tree}/%{_osname} OpenNMS
-Name: opennms-repo-%{_tree}
+Name: %{_rpmname}
 Version: %{_version}
 Release: %{_release}
 License: GPL
 Group: Development/Tools
 URL: http://yum.opennms.org/
 
-#Source0: opennms-%{_tree}-common.repo
-Source1: opennms-%{_tree}-%{_osname}.repo
-Source2: OPENNMS-GPG-KEY
+Source1: %{_rpmname}-%{_osname}.repo
+Source2: %{_rpmname}-%{_osname}.gpg
 
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -23,7 +22,6 @@ Yum repository files for installing OpenNMS %{_tree} on %{_osname}.
 
 %install
 install -d -m 755            $RPM_BUILD_ROOT%{_sysconfdir}/yum.repos.d
-#install -c -m 644 %{SOURCE0} $RPM_BUILD_ROOT%{_sysconfdir}/yum.repos.d/
 install -c -m 644 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/yum.repos.d/
 install -c -m 644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/yum.repos.d/
 
@@ -33,5 +31,4 @@ if [ "$RPM_BUILD_ROOT" != "/" ]; then
 fi
 
 %files
-%{_sysconfdir}/yum.repos.d/OPENNMS-GPG-KEY
-%{_sysconfdir}/yum.repos.d/*.repo
+%{_sysconfdir}/yum.repos.d/*
