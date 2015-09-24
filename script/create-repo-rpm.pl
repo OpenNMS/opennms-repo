@@ -279,7 +279,7 @@ sub usage {
 usage: $0 [-h] [-g <gpg_id>] <-s signing_password> <base> <release> <platform>
 
 	-h            : print this help
-	-b <branch>   : signify the 'release' is a branch name
+	-b            : signify the 'release' is a branch name
 	-s <password> : sign the rpm using this password for the gpg key
 	-g <gpg_id>   : sign using this gpg_id (default: opennms\@opennms.org)
 	-d <dir>      : the directory to use for reading/writing repo files and RPMs

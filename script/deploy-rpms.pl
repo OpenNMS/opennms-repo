@@ -7,6 +7,7 @@ $|++;
 
 use Cwd qw(abs_path);
 use File::Basename;
+use File::ShareDir qw(:ALL);
 use File::Slurp;
 use File::Spec;
 use Getopt::Long qw(:config gnu_getopt);
@@ -135,7 +136,9 @@ for my $platform (@platform_order) {
 		print "exists\n";
 	} else {
 		print "creating:\n";
-		system("create-repo-rpm.pl", "-s", $PASSWORD, "-b", $BRANCH_NAME, $RELEASE, $platform) == 0 or die "Failed to create repo RPM: $!\n";
+		my @command = ("create-repo-rpm.pl", "-s", $PASSWORD, "-b", $YUMDIR, $BRANCH_NAME, $platform);
+		print "@command\n";
+		system(@command) == 0 or die "Failed to create repo RPM: $!\n";
 	}
 }
 
