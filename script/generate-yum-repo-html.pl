@@ -8,6 +8,7 @@ use warnings;
 use Data::Dumper;
 use File::Basename;
 use File::ShareDir qw(:ALL);
+use File::Slurp;
 use File::Spec;
 use version;
 
@@ -77,6 +78,7 @@ for my $release (@display_order) {
 		my $rpmname = "opennms-repo-$release-$platform.noarch.rpm";
 
 		if ($platform ne "common" and not -e "$base/repofiles/$rpmname") {
+			print STDERR "WARNING: repo RPM does not exist for $release/$platform... creating.\n";
 			system("create-repo-rpm.pl", "-s", $PASSWORD, $base, $release, $platform);
 		}
 
@@ -95,6 +97,7 @@ for my $release (@display_order) {
 	$index_text .= "</ul>\n";
 }
 
+$index_text .= "<p>Index generated: " . localtime(time) . "</p>";
 $index_text .= slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.post'));
 
 open (FILEOUT, ">$base/index.html") or die "unable to write to $base/index.html: $!";
