@@ -12,6 +12,7 @@ use File::Spec;
 use Getopt::Long qw(:config gnu_getopt);
 use version;
 
+use OpenNMS::Util;
 use OpenNMS::Release;
 use OpenNMS::Release::RPMPackage 2.6.7;
 
@@ -120,6 +121,23 @@ for my $file (@FILES_RPMS) {
 
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
 system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", "opennms", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+
+print STDOUT "- updating repo RPMs for $BRANCH_NAME if necessary:\n";
+my $platforms = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
+my @platform_order = split(/\s*,\s*/, $platforms->{order_display});
+delete $platforms->{order_display};
+for my $platform (@platform_order) {
+	next if ($platform eq 'common');
+	my $reporpm = "opennms-repo-branches-${BRANCH_NAME_SCRUBBED}-${platform}.noarch.rpm";
+	my $repodir = File::Spec->catdir($YUMDIR, 'repofiles');
+	print "  * ${reporpm}... ";
+	if (-e File::Spec->catfile($repodir, $reporpm)) {
+		print "exists\n";
+	} else {
+		print "creating:\n";
+		system("create-repo-rpm.pl", "-s", $PASSWORD, "-b", $BRANCH_NAME, $RELEASE, $platform) == 0 or die "Failed to create repo RPM: $!\n";
+	}
+}
 
 print STDOUT "- generating YUM HTML index:\n";
 system($CMD_GENERATE, $YUMDIR) == 0 or die "Failed to generate YUM HTML: $!";

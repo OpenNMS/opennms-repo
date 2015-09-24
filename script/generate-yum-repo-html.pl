@@ -79,7 +79,7 @@ for my $release (@display_order) {
 
 		if ($platform ne "common" and not -e "$base/repofiles/$rpmname") {
 			print STDERR "WARNING: repo RPM does not exist for $release/$platform... creating.\n";
-			system("create-repo-rpm.pl", "-s", $PASSWORD, $base, $release, $platform);
+			system("create-repo-rpm.pl", "-s", $PASSWORD, $base, $release, $platform) == 0 or die "Failed to create repo RPM: $!\n";
 		}
 
 		if (-e "$base/repofiles/$rpmname") {
