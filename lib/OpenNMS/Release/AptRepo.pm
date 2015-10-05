@@ -40,7 +40,7 @@ Repositories are expected to be in the form:
 
 =cut
 
-our $VERSION = 2.9.11;
+our $VERSION = 2.9.13;
 our $APT_FTPARCHIVE = undef;
 our @ARCHITECTURES = qw(amd64 i386 powerpc armhf armel);
 
@@ -120,6 +120,10 @@ sub find_repos($) {
 	}, no_chdir => 1 }, $base);
 
 	for my $repodir (@repodirs) {
+		if (-l $repodir) {
+			carp "$repodir is a symlink... skipping.";
+			next;
+		}
 		$repodir = File::Spec->abs2rel($repodir, $base);
 		my @parts = File::Spec->splitdir($repodir);
 		if (scalar(@parts) != 2) {
@@ -166,16 +170,6 @@ sub releasedir() {
 	return File::Spec->catdir($self->base, 'dists', $self->release);
 }
 
-=head2 * to_string
-
-A convenient way of displaying the repository.
-
-=cut
-
-sub to_string() {
-	my $self = shift;
-	return $self->path;
-}
 
 =head2 * delete
 

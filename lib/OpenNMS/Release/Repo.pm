@@ -725,6 +725,18 @@ sub abort() {
 	return $original;
 }
 
+
+=head2 * to_string
+
+A convenient way of displaying the repository.
+
+=cut
+
+sub to_string() {
+	my $self = shift;
+	return $self->path;
+}
+
 1;
 
 __END__

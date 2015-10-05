@@ -97,11 +97,22 @@ sub display {
 	print "- " . $package->to_string . " ($count/$total, " . ($sign? 'resigned':'skipped') . ")\n";
 }
 
+# merge releases forward first
+for my $release (@sync_order) {
+	next unless (exists $releases->{$release});
+
+	for my $platform ("common", sort keys %{$releases->{$release}}) {
+		my $repo = $releases->{$release}->{$platform};
+		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+	}
+}
+
+# then if this branch needs updating, do it
 if (defined $BRANCH) {
 	my $branch_base = File::Spec->catdir($BASE, 'branches');
 
 	# first, make sure we have all the platform repos for the branch
-	for my $platform (@platform_order) {
+	for my $platform ("common", @platform_order) {
 		my $from_repo = OpenNMS::Release::YumRepo->new($BASE, $RELEASE, $platform);
 		my $to_repo   = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH,  $platform);
 		sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
@@ -114,6 +125,7 @@ if (defined $BRANCH) {
 	exit 0;
 }
 
+# finally, update any platforms that need it
 for my $release (@sync_order) {
 	next unless (exists $releases->{$release});
 
@@ -198,7 +210,11 @@ sub sync_repos {
 	my $signing_password = shift;
 
 	my $last_repo = $release_repo;
-	
+	if (not defined $release_repo) {
+		print "! WARNING: release repo not defined!\n";
+		return;
+	}
+
 	for my $i ((get_release_index($release_repo->release) + 1) .. $#sync_order) {
 		my $rel = $sync_order[$i];
 
@@ -233,7 +249,7 @@ sub sync_repo {
 sub get_release_index {
 	my $release_name = shift;
 	my $index = 0;
-	++$index until ($index > $#sync_order or $sync_order[$index] eq $release_name);
+	++$index until (($index > $#sync_order) or ($sync_order[$index] eq $release_name));
 	return $index;
 }
 

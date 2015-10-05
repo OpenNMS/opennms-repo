@@ -84,23 +84,32 @@ if ($ALL) {
 	$scan_repositories = [ OpenNMS::Release::AptRepo->new($BASE, $RELEASE) ];
 }
 
+my @sync_order = map { $_->release } @all_repositories;
+
+for my $orig_repo (@$scan_repositories) {
+	print "* syncing ", $orig_repo->to_string, "... ";
+	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+	print "done\n";
+}
+
 if (defined $BRANCH) {
+	print "* syncing base to $BRANCH branch repo:\n";
 	# first, copy from the release branch to the temporary one
 	my $from_repo = OpenNMS::Release::AptRepo->new($BASE, $RELEASE);
 	my $to_repo   = OpenNMS::Release::AptRepo->new($BASE, 'branches/' . $BRANCH);
 	sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
 
-	# then, update with the new RPMs
+	# then, update with the new Debs
 	update_repo($to_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
 
 	exit 0;
 }
 
-my @sync_order = map { $_->release } @all_repositories;
-
 for my $orig_repo (@$scan_repositories) {
+	print "* syncing and updating ", $orig_repo->to_string, "... ";
 	update_repo($orig_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
 	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+	print "done\n";
 }
 
 sub update_repo {
@@ -216,13 +225,14 @@ sub sync_repo {
 	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
 	print $indexed? "done.\n" : "skipped.\n";
 
-	return $temp_repo->replace($to_repo, 1) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
+	my $ret = $temp_repo->replace($to_repo, 1) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
+	return $ret;
 }
 
 sub get_release_index {
 	my $release_name = shift;
 	my $index = 0;
-	++$index until ($sync_order[$index] eq $release_name or $index > $#sync_order);
+	++$index until (($index > $#sync_order) or ($sync_order[$index] eq $release_name));
 	return $index;
 }
 

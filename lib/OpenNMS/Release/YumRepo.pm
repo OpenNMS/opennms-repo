@@ -43,7 +43,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = 2.7.2;
+our $VERSION = 2.9.13;
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 our $CREATEREPO_USE_DELTAS = 0;
@@ -101,9 +101,9 @@ sub new {
 			if (/--deltas/) {
 				$CREATEREPO_USE_DELTAS = 1;
 			}
-			if (/--update/) {
-				$CREATEREPO_USE_UPDATE = 1;
-			}
+			#if (/--update/) {
+			#	$CREATEREPO_USE_UPDATE = 1;
+			#}
 		}
 		close($handle);
 	}
@@ -144,6 +144,10 @@ sub find_repos($) {
 	}, no_chdir => 1, follow_fast => 1, follow_skip => 2 }, $base);
 
 	for my $repodir (@repodirs) {
+		if (-l $repodir) {
+			carp "$repodir is a symlink... skipping.";
+			next;
+		}
 		$repodir = File::Spec->abs2rel($repodir, $base);
 		my @parts = File::Spec->splitdir($repodir);
 		if ($parts[0] eq 'branches' and scalar(@parts) == 3) {
@@ -204,17 +208,6 @@ The path of the release directory (base + release).
 sub releasedir() {
 	my $self = shift;
 	return File::Spec->catdir($self->base, $self->release);
-}
-
-=head2 * to_string
-
-A convenient way of displaying the repository.
-
-=cut
-
-sub to_string() {
-	my $self = shift;
-	return $self->path;
 }
 
 =head2 * delete
@@ -309,9 +302,13 @@ sub index($) {
 		unshift(@args, '--checksum', 'sha');
 	}
 
-#	if ($CREATEREPO_USE_DELTAS) {
-#		unshift(@args, '--deltas', '--num-deltas', '1', '--max-delta-rpm-size', '400000000', '--oldpackagedirs', '/var/www/sites/opennms.org/site/yum/obsolete/common/opennms', '--oldpackagedirs', '/var/www/sites/opennms.org/site/yum/stable/common/opennms');
-#	}
+	if ($CREATEREPO_USE_DELTAS) {
+		my $basedir = $self->base;
+		if ($basedir =~ /^(.*)\/branches$/) {
+			$basedir = $1;
+		}
+		unshift(@args, '--deltas', '--num-deltas', '5', '--max-delta-rpm-size', '400000000', '--oldpackagedirs', File::Spec->catdir($basedir, 'obsolete', 'common', 'opennms'), '--oldpackagedirs', File::Spec->catdir($basedir, 'stable', 'common', 'opennms'));
+	}
 
 	system($CREATEREPO, @args) == 0 or croak "createrepo failed! $!";
 

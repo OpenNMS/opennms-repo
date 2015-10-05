@@ -5,6 +5,7 @@ use warnings;
 
 use Cwd;
 use File::Path;
+use File::Spec;
 use Data::Dumper;
 use Test::More;
 use OpenNMS::Util v2.6;
@@ -12,7 +13,7 @@ use OpenNMS::Util v2.6;
 BEGIN {
 	my $package = `which rpm 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 43;
+		plan tests => 44;
 		use_ok('OpenNMS::Release::RPMPackage');
 		use_ok('OpenNMS::Release::YumRepo');
 	} else {
@@ -140,6 +141,15 @@ $package = $bleeding_rhel5->find_newest_package_by_name('iplike', 'i386');
 is($package->version->version, '1.0.7');
 $package = $bleeding_rhel5->find_newest_package_by_name('iplike', 'x86_64');
 is($package->version->version, '1.0.7');
+
+# test find_repos
+
+reset_repos();
+symlink('rhel5', "$t/testpackages/rpm/stable/centos5");
+$stable_common->index();
+$stable_rhel5->index();
+my $repos = OpenNMS::Release::YumRepo->find_repos("$t/testpackages/rpm");
+is(scalar(@$repos), 2);
 
 $stable_common->delete;
 $stable_rhel5->delete;

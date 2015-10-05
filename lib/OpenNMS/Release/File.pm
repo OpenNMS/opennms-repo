@@ -109,7 +109,7 @@ Delete the file from the filesystem.
 
 sub delete() {
 	my $self = shift;
-	return unlink($self->path);
+	return CORE::unlink($self->path);
 }
 
 =head2 * copy($target_path)
@@ -147,7 +147,7 @@ sub link($) {
 	unlink $filename if (-e $filename);
 	mkpath(dirname($filename));
 
-	my $ret = link($self->path, $filename);
+	my $ret = CORE::link($self->path, $filename);
 	return $ret? $self->new($filename) : undef;
 }
 
@@ -168,7 +168,7 @@ sub symlink($) {
 	unlink $filename if (-e $filename);
 	mkpath(dirname($filename));
 
-	my $ret = symlink($from, $filename);
+	my $ret = CORE::symlink($from, $filename);
 	return $ret? $self->new($filename) : undef;
 }
 
