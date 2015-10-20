@@ -79,6 +79,9 @@ closedir(DIR) or die "Can't close directory $repofiledir: $!\n";
 
 my $rpm_version = defined $existing_rpm? ($existing_rpm->version->version)     : $default_rpm_version;
 my $rpm_release = defined $existing_rpm? ($existing_rpm->version->release + 1) : $default_rpm_release;
+if ($rpm_release < 100) {
+	$rpm_release = 100;
+}
 
 print "- generating YUM repository RPM $rpmname, version $rpm_version-$rpm_release:\n";
 
