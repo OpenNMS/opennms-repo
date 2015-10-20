@@ -98,14 +98,14 @@ sub display {
 }
 
 # merge releases forward first
-for my $release (@sync_order) {
-	next unless (exists $releases->{$release});
-
-	for my $platform ("common", sort keys %{$releases->{$release}}) {
-		my $repo = $releases->{$release}->{$platform};
-		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
-	}
-}
+#for my $release (@sync_order) {
+#	next unless (exists $releases->{$release});
+#
+#	for my $platform ("common", sort keys %{$releases->{$release}}) {
+#		my $repo = $releases->{$release}->{$platform};
+#		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+#	}
+#}
 
 # then if this branch needs updating, do it
 if (defined $BRANCH) {
