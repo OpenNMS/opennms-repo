@@ -59,6 +59,8 @@ for my $release (@display_order) {
 	my $common = $repos->{'common'};
 
 	my $latest_rpm           = $common->find_newest_package_by_name('opennms-core', 'noarch');
+	next unless ($latest_rpm);
+
 	my $description          = $latest_rpm->description();
 	my ($git_url, $git_hash) = $description =~ /(https:\/\/github\.com\/OpenNMS\/opennms\/commit\/(\S+))$/gs;
 
