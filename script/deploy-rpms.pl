@@ -20,6 +20,7 @@ use OpenNMS::Release::RPMPackage 2.6.7;
 use vars qw(
 	$SCRIPTDIR
 	$YUMDIR
+	$NOTAR
 
 	$CMD_BUILDTOOL
 	$CMD_UPDATE_SF_REPO
@@ -38,11 +39,16 @@ use vars qw(
 
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
-$SCRIPTDIR = abs_path(dirname($0));
-$YUMDIR    = "/var/www/sites/opennms.org/site/yum";
+$SCRIPTDIR   = abs_path(dirname($0));
+$YUMDIR      = "/var/www/sites/opennms.org/site/yum";
+$NOTAR       = 0;
+$BRANCH_NAME = $ENV{'bamboo_planRepository_branchName'};
 
 my $result = GetOptions(
-	"y|yumdir=s" => \$YUMDIR,
+	"y|yumdir=s"  => \$YUMDIR,
+	"n|notar"     => \$NOTAR,
+	"r|release=s" => \$RELEASE,
+	"b|branch=s"  => \$BRANCH_NAME,
 );
 
 die "$YUMDIR does not exist!" unless (-d $YUMDIR);
@@ -55,7 +61,7 @@ my $passfile = File::Spec->catfile($ENV{'HOME'}, '.signingpass');
 if (-e $passfile) {
 	chomp($PASSWORD = read_file($passfile));
 } else {
-	print STDERR "WARNING: $passfile does not exist!  New RPMs will not be signed!";
+	print STDERR "WARNING: $passfile does not exist!  New RPMs will not be signed!\n";
 }
 
 opendir(FILES, '.') or die "Unable to read current directory: $!";
@@ -72,28 +78,40 @@ while (my $line = readdir(FILES)) {
 }
 closedir(FILES) or die "Unable to close current directory: $!";
 
-open(TAR, "tar -tzf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
-while (<TAR>) {
-	chomp($_);
-	if (/\/\.nightly$/) {
-		$FILE_NIGHTLY = $_;
-		last;
+if ($NOTAR) {
+	print STDERR "WARNING: skipping tarball deployment\n";
+} else {
+	open(TAR, "tar -tzf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
+	while (<TAR>) {
+		chomp($_);
+		if (/\/\.nightly$/) {
+			$FILE_NIGHTLY = $_;
+			last;
+		}
+	}
+	close(TAR);
+	die "Unable to find .nightly file in $FILE_SOURCE_TARBALL" unless (defined $FILE_NIGHTLY and $FILE_NIGHTLY ne "");
+	chomp($RELEASE=`tar -xzf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
+	if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
+		$RELEASE = $1;
+	} else {
+		die "Unable to determine the appropriate release repository from '$RELEASE'";
 	}
 }
-close(TAR);
 
-die "Unable to find .nightly file in $FILE_SOURCE_TARBALL" unless (defined $FILE_NIGHTLY and $FILE_NIGHTLY ne "");
-
-chomp($RELEASE=`tar -xzf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
-
-if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
-	$RELEASE = $1;
-} else {
-	die "Unable to determine the appropriate release repository from '$RELEASE'";
+if (not defined $RELEASE) {
+	die "Unable to determine release.  Please make sure you have a source tarball with a .nightly file, or have defined --release= on the command-line.";
 }
 
-my $branch_text = `rpm -qip "$FILES_RPMS[0]"`;
-($BRANCH_NAME) = $branch_text =~ /This is an OpenNMS build from the (.*?) branch/mg;
+if (not defined $BRANCH_NAME) {
+	my $branch_text = `rpm -qip "$FILES_RPMS[0]"`;
+	($BRANCH_NAME) = $branch_text =~ /This is an OpenNMS build from the (.*?) branch/mg;
+}
+
+if (not defined $BRANCH_NAME) {
+	die "Unable to determine branch name from RPM.  Please specify --branch= on the command-line to set manually.";
+}
+
 $BRANCH_NAME_SCRUBBED = $BRANCH_NAME;
 $BRANCH_NAME_SCRUBBED =~ s/[^[:alnum:]\.]+/\-/g;
 $BRANCH_NAME_SCRUBBED =~ s/\-*$//g;
