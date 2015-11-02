@@ -159,10 +159,14 @@ sub not_opennms {
 		# we keep all *opennms* packages in official release dirs
 		if ($repo->release =~ /^(obsolete|stable|unstable|opennms-[\d\.]+)$/) {
 			return 0;
+		} else {
+			# otherwise, delete old opennms packages
+			return 1;
 		}
 	}
 
-	return 1;
+	# keep any other 3rd-party packages
+	return 0;
 }
 
 sub install_packages {
