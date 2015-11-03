@@ -25,18 +25,20 @@ print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 my $HELP             = 0;
 my $ALL              = 0;
 my $RESIGN           = 0;
+my $NO_SYNC          = 0;
 
 my $BRANCH           = undef;
 my $SIGNING_PASSWORD = undef;
 my $SIGNING_ID       = 'opennms@opennms.org';
 
 my $result = GetOptions(
-	"h|help"     => \$HELP,
-	"a|all"      => \$ALL,
-	"b|branch=s" => \$BRANCH,
-	"s|sign=s"   => \$SIGNING_PASSWORD,
-	"g|gpg-id=s" => \$SIGNING_ID,
-	"r|resign"   => \$RESIGN,
+	"h|help"       => \$HELP,
+	"a|all"        => \$ALL,
+	"b|branch=s"   => \$BRANCH,
+	"s|sign=s"     => \$SIGNING_PASSWORD,
+	"g|gpg-id=s"   => \$SIGNING_ID,
+	"r|resign"     => \$RESIGN,
+	"n|no-sync"    => \$NO_SYNC,
 );
 
 my ($BASE, $RELEASE, $PLATFORM, $SUBDIRECTORY, @RPMS);
@@ -126,13 +128,19 @@ if (defined $BRANCH) {
 }
 
 # finally, update any platforms that need it
-for my $release (@sync_order) {
-	next unless (exists $releases->{$release});
-
-	for my $platform (sort keys %{$releases->{$release}}) {
-		my $repo = $releases->{$release}->{$platform};
-		update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
-		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+if ($NO_SYNC and not defined $BRANCH) {
+	my $repo = $releases->{$RELEASE}->{$PLATFORM};
+	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+	sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+} else {
+	for my $release (@sync_order) {
+		next unless (exists $releases->{$release});
+	
+		for my $platform (sort keys %{$releases->{$release}}) {
+			my $repo = $releases->{$release}->{$platform};
+			update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+			sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+		}
 	}
 }
 
