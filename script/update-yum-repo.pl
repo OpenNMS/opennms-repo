@@ -169,8 +169,10 @@ sub update_platform {
 	}
 
 	index_repo($release_repo, $signing_id, $signing_password);
-	
+
+	print "- replacing " . $orig_repo->to_string . " with " . $release_repo->to_string . "... ";
 	$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
+	print "done\n";
 }
 
 # return 1 if the obsolete RPM given should be deleted
@@ -251,7 +253,9 @@ sub sync_repo {
 	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
 	print $indexed? "done.\n" : "skipped.\n";
 
-	return $temp_repo->replace($to_repo, 1) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
+	print "- replacing " . $orig_repo->to_string . " with " . $release_repo->to_string . "... ";
+	my $replaced = $temp_repo->replace($to_repo, 1) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
+	print $replaced? "done.\n" : "failed.\n";
 }
 
 sub get_release_index {
