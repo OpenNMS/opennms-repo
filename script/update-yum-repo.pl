@@ -165,7 +165,7 @@ sub update_platform {
 	}
 
 	if ($REINDEX) {
-		print "- forcing reindex of $base/$release/$platform/\n";
+		print "- forcing reindex of $base/$release/$platform/:\n";
 		$dirty++;
 	}
 
@@ -177,7 +177,9 @@ sub update_platform {
 	}
 
 	if ($dirty) {
+		print "- creating temporary repository from " . $orig_repo->to_string . "... ";
 		my $release_repo = $orig_repo->create_temporary;
+		print "done.\n";
 
 		if ($resign) {
 			print "- re-signing packages in " . $release_repo->to_string . "... ";
