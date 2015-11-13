@@ -139,9 +139,9 @@ sub create_repo_file {
 	for my $plat ('common', $platform) {
 		my $description = $platform_descriptions->{$plat};
 		
-		my $baseurl = 'http://yum.mirrors.opennms.org/' . $release . '/' . $plat;
+		my $baseurl = 'http://yum.opennms.org/' . $release . '/' . $plat;
 		if ($BRANCH) {
-			$baseurl = 'http://yum.mirrors.opennms.org/branches/' . $scrubbed_release . '/' . $plat;
+			$baseurl = 'http://yum.opennms.org/branches/' . $scrubbed_release . '/' . $plat;
 		}
 
 		$output .= <<END;
