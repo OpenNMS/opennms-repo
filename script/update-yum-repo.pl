@@ -168,9 +168,9 @@ sub update_platform {
 # return 1 if the obsolete RPM given should be deleted
 sub not_opennms {
 	my ($rpm, $repo) = @_;
-	if ($rpm->name =~ /^opennms/) {
+	if ($rpm->name =~ /^(opennms|meridian)/) {
 		# we keep all opennms-* RPMs in official release dirs
-		if ($repo->release =~ /^(obsolete|stable|unstable)$/) {
+		if ($repo->release =~ /^(obsolete|stable|unstable|release)$/) {
 			return 0;
 		}
 	}

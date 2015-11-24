@@ -157,7 +157,7 @@ sub not_opennms {
 	my ($package, $repo) = @_;
 	if ($package->name =~ /opennms/) {
 		# we keep all *opennms* packages in official release dirs
-		if ($repo->release =~ /^(obsolete|stable|unstable|opennms-[\d\.]+)$/) {
+		if ($repo->release =~ /^(obsolete|stable|unstable|opennms-[\d\.]+|meridian-[\d\.]+)$/) {
 			return 0;
 		}
 	}
