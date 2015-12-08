@@ -33,9 +33,9 @@ my $BRANCH               = 0;
 my $REPOFILEDIR          = undef;
 
 my $result = GetOptions(
-        "h|help"     => \$help,
-        "s|sign=s"   => \$SIGNING_PASSWORD,
-        "g|gpg-id=s" => \$SIGNING_ID,
+	"h|help"     => \$help,
+	"s|sign=s"   => \$SIGNING_PASSWORD,
+	"g|gpg-id=s" => \$SIGNING_ID,
 	"b|branch"   => \$BRANCH,
 	"d|dir=s"    => \$REPOFILEDIR,
 );
@@ -148,6 +148,7 @@ sub create_repo_file {
 [${rpmname}-${plat}]
 name=${description} (${release_description})
 baseurl=${baseurl}
+enabled=1
 gpgcheck=1
 gpgkey=file:///etc/yum.repos.d/${rpmname}-${platform}.gpg
 
