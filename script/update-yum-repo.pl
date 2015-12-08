@@ -171,12 +171,12 @@ sub update_platform {
 		$dirty++;
 	}
 
-	if (not $dirty) {
-		my $obsolete = $orig_repo->find_obsolete_packages();
-		if (@$obsolete) {
-			$dirty++;
-		}
-	}
+#	if (not $dirty) {
+#		my $obsolete = $orig_repo->find_obsolete_packages();
+#		if (@$obsolete) {
+#			$dirty++;
+#		}
+#	}
 
 	if ($dirty) {
 		print "- creating temporary repository from " . $orig_repo->to_string . "... ";
@@ -234,9 +234,9 @@ sub index_repo {
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
-	print "- removing obsolete RPMs from repo: " . $release_repo->to_string . "... ";
-	my $removed = $release_repo->delete_obsolete_packages(\&not_opennms);
-	print $removed . " RPMs removed.\n";
+#	print "- removing obsolete RPMs from repo: " . $release_repo->to_string . "... ";
+#	my $removed = $release_repo->delete_obsolete_packages(\&not_opennms);
+#	print $removed . " RPMs removed.\n";
 
 	print "- reindexing repo: " . $release_repo->to_string . "... ";
 	$release_repo->enable_deltas(0) if ($NO_DELTAS);
