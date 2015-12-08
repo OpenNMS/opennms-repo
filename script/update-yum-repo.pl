@@ -27,6 +27,7 @@ my $ALL              = 0;
 my $RESIGN           = 0;
 my $REINDEX          = 0;
 my $NO_SYNC          = 0;
+my $NO_DELTAS        = 0;
 
 my $BRANCH           = undef;
 my $SIGNING_PASSWORD = undef;
@@ -40,6 +41,7 @@ my $result = GetOptions(
 	"g|gpg-id=s"   => \$SIGNING_ID,
 	"r|resign"     => \$RESIGN,
 	"n|no-sync"    => \$NO_SYNC,
+	"d|no-deltas"  => \$NO_DELTAS,
 	"i|reindex"    => \$REINDEX,
 );
 
@@ -237,6 +239,7 @@ sub index_repo {
 	print $removed . " RPMs removed.\n";
 
 	print "- reindexing repo: " . $release_repo->to_string . "... ";
+	$release_repo->enable_deltas(0) if ($NO_DELTAS);
 	$release_repo->index({ signing_id => $signing_id, signing_password => $signing_password });
 	print "done.\n";
 }
@@ -289,6 +292,7 @@ sub sync_repo {
 	print $num_removed . " RPMs removed.\n";
 
 	print "- indexing repo: " . $temp_repo->to_string . "... ";
+	$temp_repo->enable_deltas(0) if ($NO_DELTAS);
 	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
 	print $indexed? "done.\n" : "skipped.\n";
 

@@ -325,6 +325,19 @@ sub index($) {
 	return 1;
 }
 
+=head2 * enable_deltas(true/false)
+
+Whether or not deltas should be enabled when running createrepo.
+
+Takes a true/false value.
+
+=cut
+
+sub enable_deltas($) {
+	my $self    = shift;
+	$CREATEREPO_USE_DELTAS = shift;
+}
+
 1;
 
 __END__
