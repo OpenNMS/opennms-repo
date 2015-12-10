@@ -204,16 +204,16 @@ sub update_platform {
 }
 
 # return 1 if the obsolete RPM given should be deleted
-sub not_opennms {
+sub only_snapshot {
 	my ($rpm, $repo) = @_;
-	if ($rpm->name =~ /^opennms/) {
-		# we keep all opennms-* RPMs in official release dirs
-		if ($repo->release =~ /^(obsolete|stable|unstable)$/) {
-			return 0;
+	if ($rpm->name =~ /^(opennms|meridian)/) {
+		# we remove old snapshot RPMs
+		if ($rpm->release =~ /^0\./) {
+			return 1;
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 sub install_rpms {
@@ -234,9 +234,9 @@ sub index_repo {
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
-#	print "- removing obsolete RPMs from repo: " . $release_repo->to_string . "... ";
-#	my $removed = $release_repo->delete_obsolete_packages(\&not_opennms);
-#	print $removed . " RPMs removed.\n";
+	print "- removing obsolete RPMs from repo: " . $release_repo->to_string . "... ";
+	my $removed = $release_repo->delete_obsolete_packages(\&only_snapshot);
+	print $removed . " RPMs removed.\n";
 
 	print "- reindexing repo: " . $release_repo->to_string . "... ";
 	$release_repo->enable_deltas(0) if ($NO_DELTAS);
@@ -288,7 +288,7 @@ sub sync_repo {
 	print $num_shared . " RPMS updated.\n";
 
 	print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
-	my $num_removed = $temp_repo->delete_obsolete_packages(\&not_opennms);
+	my $num_removed = $temp_repo->delete_obsolete_packages(\&only_snapshot);
 	print $num_removed . " RPMs removed.\n";
 
 	print "- indexing repo: " . $temp_repo->to_string . "... ";
