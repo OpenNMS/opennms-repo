@@ -307,7 +307,7 @@ sub index($) {
 		if ($basedir =~ /^(.*)\/branches$/) {
 			$basedir = $1;
 		}
-		unshift(@args, '--deltas', '--num-deltas', '2', '--max-delta-rpm-size', '400000000');
+		unshift(@args, '--deltas', '--num-deltas', '5', '--max-delta-rpm-size', '400000000');
 
 		my @packages = @{$self->find_all_packages()};
 
