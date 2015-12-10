@@ -307,7 +307,30 @@ sub index($) {
 		if ($basedir =~ /^(.*)\/branches$/) {
 			$basedir = $1;
 		}
-		unshift(@args, '--deltas', '--num-deltas', '2', '--max-delta-rpm-size', '400000000', '--oldpackagedirs', File::Spec->catdir($basedir, 'obsolete', 'common', 'opennms'), '--oldpackagedirs', File::Spec->catdir($basedir, 'stable', 'common', 'opennms'));
+		unshift(@args, '--deltas', '--num-deltas', '2', '--max-delta-rpm-size', '400000000');
+
+		my @packages = @{$self->find_all_packages()};
+
+		my $stabledir = File::Spec->catdir($basedir, 'stable', $self->platform);
+		if (-d $stabledir) {
+			my $stable = OpenNMS::Release::YumRepo->new($basedir, 'stable', $self->platform);
+			push(@packages, @{$stable->find_all_packages()});
+		}
+
+		my $obsoletedir = File::Spec->catdir($basedir, 'obsolete', $self->platform);
+		if (-d $obsoletedir) {
+			my $obsolete = OpenNMS::Release::YumRepo->new($basedir, 'obsolete', $self->platform);
+			push(@packages, @{$obsolete->find_all_packages()});
+		}
+
+		my $dirs;
+		for my $package (@packages) {
+			my $path = dirname($package->path);
+			$dirs->{$path}++;
+		}
+		for my $dir (keys %$dirs) {
+			unshift(@args, '--oldpackagedirs', $dir);
+		}
 	}
 
 	system($CREATEREPO, @args) == 0 or croak "createrepo failed! $!";
