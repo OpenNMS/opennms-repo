@@ -25,18 +25,24 @@ print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 my $HELP             = 0;
 my $ALL              = 0;
 my $RESIGN           = 0;
+my $REINDEX          = 0;
+my $NO_SYNC          = 0;
+my $NO_DELTAS        = 0;
 
 my $BRANCH           = undef;
 my $SIGNING_PASSWORD = undef;
 my $SIGNING_ID       = 'opennms@opennms.org';
 
 my $result = GetOptions(
-	"h|help"     => \$HELP,
-	"a|all"      => \$ALL,
-	"b|branch=s" => \$BRANCH,
-	"s|sign=s"   => \$SIGNING_PASSWORD,
-	"g|gpg-id=s" => \$SIGNING_ID,
-	"r|resign"   => \$RESIGN,
+	"h|help"       => \$HELP,
+	"a|all"        => \$ALL,
+	"b|branch=s"   => \$BRANCH,
+	"s|sign=s"     => \$SIGNING_PASSWORD,
+	"g|gpg-id=s"   => \$SIGNING_ID,
+	"r|resign"     => \$RESIGN,
+	"n|no-sync"    => \$NO_SYNC,
+	"d|no-deltas"  => \$NO_DELTAS,
+	"i|reindex"    => \$REINDEX,
 );
 
 my ($BASE, $RELEASE, $PLATFORM, $SUBDIRECTORY, @RPMS);
@@ -60,7 +66,7 @@ if (not $ALL) {
 	if (not defined $RELEASE or not defined $PLATFORM) {
 		usage("You must specify a YUM repository base, release, and platform!");
 	}
-	
+
 	if (not defined $SUBDIRECTORY) {
 		usage("You must specify a subdirectory.");
 	}
@@ -98,14 +104,14 @@ sub display {
 }
 
 # merge releases forward first
-for my $release (@sync_order) {
-	next unless (exists $releases->{$release});
-
-	for my $platform ("common", sort keys %{$releases->{$release}}) {
-		my $repo = $releases->{$release}->{$platform};
-		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
-	}
-}
+#for my $release (@sync_order) {
+#	next unless (exists $releases->{$release});
+#
+#	for my $platform ("common", sort keys %{$releases->{$release}}) {
+#		my $repo = $releases->{$release}->{$platform};
+#		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+#	}
+#}
 
 # then if this branch needs updating, do it
 if (defined $BRANCH) {
@@ -126,13 +132,18 @@ if (defined $BRANCH) {
 }
 
 # finally, update any platforms that need it
-for my $release (@sync_order) {
-	next unless (exists $releases->{$release});
+if ($NO_SYNC) {
+	my $repo = $releases->{$RELEASE}->{$PLATFORM};
+	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+} else {
+	for my $release (@sync_order) {
+		next unless (exists $releases->{$release});
 
-	for my $platform (sort keys %{$releases->{$release}}) {
-		my $repo = $releases->{$release}->{$platform};
-		update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
-		sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+		for my $platform (sort keys %{$releases->{$release}}) {
+			my $repo = $releases->{$release}->{$platform};
+			update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+			sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
+		}
 	}
 }
 
@@ -144,25 +155,52 @@ sub update_platform {
 	my $subdirectory     = shift;
 	my @rpms             = @_;
 
+	my $dirty    = 0;
 	my $base     = $orig_repo->abs_base;
 	my $release  = $orig_repo->release;
 	my $platform = $orig_repo->platform;
 
 	print "=== Updating repo files in: $base/$release/$platform/ ===\n";
 
-	my $release_repo = $orig_repo->create_temporary;
-
-	if ($resign) {
-		$release_repo->sign_all_packages($signing_id, $signing_password, undef, \&display);
+	if ($resign or @rpms) {
+		$dirty++;
 	}
 
-	if (defined $subdirectory and @rpms) {
-		install_rpms($release_repo, $subdirectory, @rpms);
+	if ($REINDEX) {
+		print "- forcing reindex of $base/$release/$platform/:\n";
+		$dirty++;
 	}
 
-	index_repo($release_repo, $signing_id, $signing_password);
-	
-	$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
+#	if (not $dirty) {
+#		my $obsolete = $orig_repo->find_obsolete_packages();
+#		if (@$obsolete) {
+#			$dirty++;
+#		}
+#	}
+
+	if ($dirty) {
+		print "- creating temporary repository from " . $orig_repo->to_string . "... ";
+		my $release_repo = $orig_repo->create_temporary;
+		print "done.\n";
+
+		if ($resign) {
+			print "- re-signing packages in " . $release_repo->to_string . "... ";
+			$release_repo->sign_all_packages($signing_id, $signing_password, undef, \&display);
+			print "done.\n";
+		}
+
+		if (defined $subdirectory and @rpms) {
+			install_rpms($release_repo, $subdirectory, @rpms);
+		}
+
+		index_repo($release_repo, $signing_id, $signing_password);
+
+		print "- replacing " . $orig_repo->to_string . " with " . $release_repo->to_string . "... ";
+		$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
+		print "done.\n";
+	} else {
+		print "- No updates made.  Skipping.\n";
+	}
 }
 
 # return 1 if the obsolete RPM given should be deleted
@@ -174,7 +212,7 @@ sub not_opennms {
 			return 0;
 		}
 	}
-	
+
 	return 1;
 }
 
@@ -184,8 +222,10 @@ sub install_rpms {
 	my @rpms = @_;
 
 	for my $rpmname (@rpms) {
+		print "- installing $rpmname... ";
 		my $rpm = OpenNMS::Release::RPMPackage->new(Cwd::abs_path($rpmname));
 		$release_repo->install_package($rpm, $subdirectory);
+		print "done.\n";
 	}
 }
 
@@ -194,11 +234,12 @@ sub index_repo {
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
-	print "- removing obsolete RPMs from repo: " . $release_repo->to_string . "... ";
-	my $removed = $release_repo->delete_obsolete_packages(\&not_opennms);
-	print $removed . " RPMs removed.\n";
+#	print "- removing obsolete RPMs from repo: " . $release_repo->to_string . "... ";
+#	my $removed = $release_repo->delete_obsolete_packages(\&not_opennms);
+#	print $removed . " RPMs removed.\n";
 
 	print "- reindexing repo: " . $release_repo->to_string . "... ";
+	$release_repo->enable_deltas(0) if ($NO_DELTAS);
 	$release_repo->index({ signing_id => $signing_id, signing_password => $signing_password });
 	print "done.\n";
 }
@@ -229,7 +270,18 @@ sub sync_repo {
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
+	my $from_packages = $from_repo->packageset();
+	my $to_packages   = $to_repo->packageset();
+	if (not $from_packages or not $to_packages or $from_packages->has_newer_than($to_packages)) {
+		print "- sync_repo " . $from_repo->to_string . " -> " . $to_repo->to_string . "\n";
+	} else {
+		print "- no packages in " . $from_repo->to_string . " were newer than " . $to_repo->to_string . "... skipping sync.\n";
+		return $to_repo;
+	}
+
+	print "- creating temporary repository from " . $to_repo->to_string . "... ";
 	my $temp_repo = $to_repo->create_temporary;
+	print "done.\n";
 
 	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
 	my $num_shared = $temp_repo->share_all_packages($from_repo);
@@ -240,10 +292,15 @@ sub sync_repo {
 	print $num_removed . " RPMs removed.\n";
 
 	print "- indexing repo: " . $temp_repo->to_string . "... ";
+	$temp_repo->enable_deltas(0) if ($NO_DELTAS);
 	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
 	print $indexed? "done.\n" : "skipped.\n";
 
-	return $temp_repo->replace($to_repo, 1) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
+	print "- replacing " . $to_repo->to_string . " with " . $temp_repo->to_string . "... ";
+	my $replaced = $temp_repo->replace($to_repo, 1) or die "Unable to replace " . $to_repo->to_string . " with " . $temp_repo->to_string . "!";
+	print $replaced? "done.\n" : "failed.\n";
+
+	return $replaced;
 }
 
 sub get_release_index {
@@ -261,7 +318,9 @@ usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | [-b <branch_name>
 
 	-h            : print this help
 	-a            : update all repositories (release, platform, subdirectory, and rpms will be ignored in this case)
-	-r            : re-sign packages in the repositor(y|ies)
+	-r            : force re-signing of the packages in the repositor(y|ies)
+	-i            : force re-index of the repositor(y|ies)
+	-n            : no syncing of extra (platform) repositories
 	-s <password> : sign the rpm using this password for the gpg key
 	-g <gpg_id>   : sign using this gpg_id (default: opennms\@opennms.org)
 

@@ -24,15 +24,20 @@ use OpenNMS::Release::RPMPackage 2.0.0;
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $default_rpm_version  = '1.0';
-my $default_rpm_release  = 1;
+my $default_rpm_release  = 100;
 my $help                 = 0;
-my $signing_password     = undef;
-my $signing_id           = 'opennms@opennms.org';
+
+my $SIGNING_PASSWORD     = undef;
+my $SIGNING_ID           = 'opennms@opennms.org';
+my $BRANCH               = 0;
+my $REPOFILEDIR          = undef;
 
 my $result = GetOptions(
-        "h|help"     => \$help,
-        "s|sign=s"   => \$signing_password,
-        "g|gpg-id=s" => \$signing_id,
+	"h|help"     => \$help,
+	"s|sign=s"   => \$SIGNING_PASSWORD,
+	"g|gpg-id=s" => \$SIGNING_ID,
+	"b|branch"   => \$BRANCH,
+	"d|dir=s"    => \$REPOFILEDIR,
 );
 
 my ($base, $release, $platform) = @ARGV;
@@ -45,76 +50,107 @@ if (not defined $platform) {
 	usage('You must specify a base, release, and platform!');
 }
 
-if (not defined $signing_password or not defined $signing_id) {
+if (not defined $SIGNING_PASSWORD or not defined $SIGNING_ID) {
 	usage('You must specify a GPG ID and password!');
 }
 
 $base = Cwd::abs_path($base);
+my $scrubbed_release = $release;
+$scrubbed_release =~ s/[^[:alnum:]\.]+/\-/g;
+$scrubbed_release =~ s/\-*$//g;
 
-my $repo    = OpenNMS::Release::YumRepo->new($base, $release, $platform);
-my $rpmname = "opennms-repo-$release";
+my $rpmname = "opennms-repo-${scrubbed_release}";
+if ($BRANCH) {
+	$rpmname = "opennms-repo-branches-${scrubbed_release}";
+}
 
-my $newest_rpm  = $repo->find_newest_package_by_name($rpmname, 'noarch');
-my $rpm_version = defined $newest_rpm? ($newest_rpm->version->version)     : $default_rpm_version;
-my $rpm_release = defined $newest_rpm? ($newest_rpm->version->release + 1) : $default_rpm_release;
+my $repofiledir = defined $REPOFILEDIR? Cwd::abs_path($REPOFILEDIR) : File::Spec->catfile($base, 'repofiles');
+mkpath($repofiledir);
+
+my $existing_rpm = undef;
+opendir(DIR, $repofiledir) or die "Can't read from $repofiledir: $!\n";
+while (my $entry = readdir(DIR)) {
+	if ($entry =~ /^${rpmname}-/ and $entry =~ /\.rpm$/) {
+		my $filename = File::Spec->catfile($repofiledir, $entry);
+		$existing_rpm = OpenNMS::Release::RPMPackage->new($filename);
+	}
+}
+closedir(DIR) or die "Can't close directory $repofiledir: $!\n";
+
+my $rpm_version = defined $existing_rpm? ($existing_rpm->version->version)     : $default_rpm_version;
+my $rpm_release = defined $existing_rpm? ($existing_rpm->version->release + 1) : $default_rpm_release;
+if ($rpm_release < 100) {
+	$rpm_release = 100;
+}
 
 print "- generating YUM repository RPM $rpmname, version $rpm_version-$rpm_release:\n";
 
 my $platform_descriptions = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
-my $repofiledir           = File::Spec->catfile($base, 'repofiles');
 my $gpgfile               = File::Spec->catfile($repofiledir, 'OPENNMS-GPG-KEY');
 
 # first, we make sure OPENNMS-GPG-KEY is up-to-date with the key we're signing with
-create_gpg_file($signing_id, $signing_password, $gpgfile);
+create_gpg_file($SIGNING_ID, $SIGNING_PASSWORD, $gpgfile);
 
 # then, create the .repo files
-create_repo_file($release, $platform, $repofiledir);
+create_repo_file($release, $platform, $repofiledir, $platform_descriptions->{$platform}, $scrubbed_release, $rpmname);
 
 # generate an RPM which includes the GPG key and .repo files
-my $generated_rpm_filename = create_repo_rpm($release, $platform, $repofiledir, $rpm_version, $rpm_release);
+my $generated_rpm_filename = create_repo_rpm($release, $platform, $repofiledir, $rpm_version, $rpm_release, $scrubbed_release, $rpmname);
 
 # sign the resultant RPM
-sign_rpm($generated_rpm_filename, $signing_id, $signing_password);
+sign_rpm($generated_rpm_filename, $SIGNING_ID, $SIGNING_PASSWORD);
 
 # copy it to repofiles/
-my $repofiles_rpm_filename = install_rpm_to_repofiles($generated_rpm_filename, $repofiledir, $release, $platform);
+my $repofiles_rpm_filename = install_rpm_to_repofiles($generated_rpm_filename, $repofiledir, $release, $platform, $scrubbed_release, $rpmname);
 
 # copy *that* to the real repository
-install_rpm_to_repo($repofiles_rpm_filename, $repo, $signing_id, $signing_password);
+#install_rpm_to_repo($repofiles_rpm_filename, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
 
 sub create_gpg_file {
-	my $signing_id       = shift;
-	my $signing_password = shift;
+	my $SIGNING_ID       = shift;
+	my $SIGNING_PASSWORD = shift;
 	my $outputfile       = shift;
 
 	print "- writing GPG key to $outputfile... ";
-	gpg_write_key($signing_id, $signing_password, $outputfile);
+	gpg_write_key($SIGNING_ID, $SIGNING_PASSWORD, $outputfile);
 	print "done.\n";
 }
 
 sub create_repo_file {
-	my $release     = shift;
-	my $platform    = shift;
-	my $outputdir   = shift;
-	my $description = shift;
+	my $release          = shift;
+	my $platform         = shift;
+	my $outputdir        = shift;
+	my $description      = shift;
+	my $scrubbed_release = shift;
+	my $rpmname          = shift;
 
-	print "- creating YUM repository file for $release/$platform... ";
+	print "- creating YUM repository file for ${scrubbed_release}/${platform}... ";
+
+	my $release_description = $release;
+	if ($BRANCH) {
+		$release_description .= ' branch';
+	}
 
 	my $repohandle = IO::Handle->new();
-	my $repofilename = File::Spec->catfile($outputdir, "opennms-$release-$platform.repo");
+	my $repofilename = File::Spec->catfile($outputdir, "${rpmname}-${platform}.repo");
 	open($repohandle, '>' . $repofilename) or die "unable to write to $repofilename: $!";
 
 	my $output = "";
 	for my $plat ('common', $platform) {
 		my $description = $platform_descriptions->{$plat};
+		
+		my $baseurl = 'http://yum.opennms.org/' . $release . '/' . $plat;
+		if ($BRANCH) {
+			$baseurl = 'http://yum.opennms.org/branches/' . $scrubbed_release . '/' . $plat;
+		}
 
 		$output .= <<END;
-[opennms-$release-$plat]
-name=$description ($release)
-baseurl=http://yum.opennms.org/$release/$plat
-failovermethod=roundrobin
+[${rpmname}-${plat}]
+name=${description} (${release_description})
+baseurl=${baseurl}
+enabled=1
 gpgcheck=1
-gpgkey=file:///etc/yum.repos.d/OPENNMS-GPG-KEY
+gpgkey=file:///etc/yum.repos.d/${rpmname}-${platform}.gpg
 
 END
 	}
@@ -128,11 +164,13 @@ END
 }
 
 sub create_repo_rpm {
-	my $release     = shift;
-	my $platform    = shift;
-	my $repofiledir = shift;
-	my $rpm_version = shift;
-	my $rpm_release = shift;
+	my $release          = shift;
+	my $platform         = shift;
+	my $repofiledir      = shift;
+	my $rpm_version      = shift;
+	my $rpm_release      = shift;
+	my $scrubbed_release = shift;
+	my $rpmname          = shift;
 
 	print "- creating RPM build structure... ";
 	my $dir = tempdir( CLEANUP => 1 );
@@ -146,42 +184,49 @@ sub create_repo_rpm {
 	}
 
 	my $sourcedir = File::Spec->catfile($dir, 'SOURCES');
-	for my $file ("OPENNMS-GPG-KEY", "opennms-$release-$platform.repo") {
+	for my $file ("OPENNMS-GPG-KEY", "${rpmname}-${platform}.repo") {
 		my $from = File::Spec->catfile($repofiledir, $file);
 		my $to   = File::Spec->catfile($sourcedir, $file);
 		copy($from, $to) or die "unable to copy $from to $to: $!";
 	}
+	copy(File::Spec->catfile($sourcedir, 'OPENNMS-GPG-KEY'), File::Spec->catfile($sourcedir, "${rpmname}-${platform}.gpg"));
 	print "done.\n";
 
-	print "- creating YUM repository RPM for $release/$platform:\n";
+	print "- creating YUM repository RPM for ${scrubbed_release}/${platform}:\n";
+
+	my $tree = $scrubbed_release;
+	if ($BRANCH) {
+		$tree = "branches/${scrubbed_release}";
+	}
 
 	system(
 		'rpmbuild',
 		'-bb',
 		'--nosignature',
-		"--buildroot=$dir/tmp/buildroot",
-		'--define', "_topdir $dir",
-		'--define', "_tree $release",
-		'--define', "_osname $platform",
-		'--define', "_version $rpm_version",
-		'--define', "_release $rpm_release",
-		'--define', '_signature %{nil}',
+		"--buildroot=${dir}/tmp/buildroot",
+		'--define', "_topdir ${dir}",
+		'--define', "_tree ${tree}",
+		'--define', "_osname ${platform}",
+		'--define', "_version ${rpm_version}",
+		'--define', "_release ${rpm_release}",
+		'--define', '_signature \%{nil}',
+		'--define', "_rpmname ${rpmname}",
 		'--define', 'vendor The OpenNMS Group, Inc.',
 		dist_file('OpenNMS-Release', 'repo.spec')
 	) == 0 or die "unable to build rpm: $!";
 
-	print "- finished creating RPM for $release/$platform.\n";
+	print "- finished creating RPM for ${tree}/${platform}.\n";
 
-	return File::Spec->catfile($dir, "RPMS", "noarch", "opennms-repo-$release-$rpm_version-$rpm_release.noarch.rpm");
+	return File::Spec->catfile($dir, "RPMS", "noarch", "${rpmname}-${rpm_version}-${rpm_release}.noarch.rpm");
 }
 
 sub sign_rpm {
 	my $rpm_filename     = shift;
-	my $signing_id       = shift;
-	my $signing_password = shift;
+	my $SIGNING_ID       = shift;
+	my $SIGNING_PASSWORD = shift;
 
 	print "- signing $rpm_filename... ";
-	my $signed = OpenNMS::Release::RPMPackage->new($rpm_filename)->sign($signing_id, $signing_password);
+	my $signed = OpenNMS::Release::RPMPackage->new($rpm_filename)->sign($SIGNING_ID, $SIGNING_PASSWORD);
 	die "failed while signing RPM: $!" unless ($signed);
 	print "- done signing.\n";
 
@@ -193,9 +238,11 @@ sub install_rpm_to_repofiles {
 	my $repofiledir         = shift;
 	my $release             = shift;
 	my $platform            = shift;
+	my $scrubbed_release    = shift;
+	my $rpmname             = shift;
 
-	print "- copying repo rpm to $repofiledir/... ";
-	my $target_rpm_filename = File::Spec->catfile($repofiledir, "opennms-repo-$release-$platform.noarch.rpm");
+	my $target_rpm_filename = File::Spec->catfile($repofiledir, "${rpmname}-${platform}.noarch.rpm");
+	print "- copying repo rpm to ${target_rpm_filename}... ";
 	copy($source_rpm_filename, $target_rpm_filename) or die "Unable to copy $source_rpm_filename to $repofiledir: $!";
 	print "done\n";
 
@@ -205,8 +252,8 @@ sub install_rpm_to_repofiles {
 sub install_rpm_to_repo {
 	my $rpm_filename     = shift;
 	my $repo             = shift;
-	my $signing_id       = shift;
-	my $signing_password = shift;
+	my $SIGNING_ID       = shift;
+	my $SIGNING_PASSWORD = shift;
 
 	print "- creating temporary repository from " . $repo->to_string . "... ";
 	my $rpm = OpenNMS::Release::RPMPackage->new($rpm_filename);
@@ -218,7 +265,7 @@ sub install_rpm_to_repo {
 	print "done\n";
 
 	print "- reindexing temporary repo... ";
-	$newrepo->index({signing_id => $signing_id, signing_password => $signing_password});
+	$newrepo->index({signing_id => $SIGNING_ID, signing_password => $SIGNING_PASSWORD});
 	print "done\n";
 
 	print "- replacing repository with updated temporary repo... ";
@@ -236,8 +283,10 @@ sub usage {
 usage: $0 [-h] [-g <gpg_id>] <-s signing_password> <base> <release> <platform>
 
 	-h            : print this help
+	-b            : signify the 'release' is a branch name
 	-s <password> : sign the rpm using this password for the gpg key
 	-g <gpg_id>   : sign using this gpg_id (default: opennms\@opennms.org)
+	-d <dir>      : the directory to use for reading/writing repo files and RPMs
 
 	base          : the base directory of the YUM repository
 	release       : the release tree (e.g., "stable", "unstable", "snapshot", etc.)

@@ -307,7 +307,7 @@ sub index($) {
 		if ($basedir =~ /^(.*)\/branches$/) {
 			$basedir = $1;
 		}
-		unshift(@args, '--deltas', '--num-deltas', '5', '--max-delta-rpm-size', '400000000', '--oldpackagedirs', File::Spec->catdir($basedir, 'obsolete', 'common', 'opennms'), '--oldpackagedirs', File::Spec->catdir($basedir, 'stable', 'common', 'opennms'));
+		unshift(@args, '--deltas', '--num-deltas', '2', '--max-delta-rpm-size', '400000000', '--oldpackagedirs', File::Spec->catdir($basedir, 'obsolete', 'common', 'opennms'), '--oldpackagedirs', File::Spec->catdir($basedir, 'stable', 'common', 'opennms'));
 	}
 
 	system($CREATEREPO, @args) == 0 or croak "createrepo failed! $!";
@@ -323,6 +323,19 @@ sub index($) {
 
 	$self->_dirty(0);
 	return 1;
+}
+
+=head2 * enable_deltas(true/false)
+
+Whether or not deltas should be enabled when running createrepo.
+
+Takes a true/false value.
+
+=cut
+
+sub enable_deltas($) {
+	my $self    = shift;
+	$CREATEREPO_USE_DELTAS = shift;
 }
 
 1;

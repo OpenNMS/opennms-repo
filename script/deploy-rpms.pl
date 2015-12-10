@@ -7,17 +7,20 @@ $|++;
 
 use Cwd qw(abs_path);
 use File::Basename;
+use File::ShareDir qw(:ALL);
 use File::Slurp;
 use File::Spec;
 use Getopt::Long qw(:config gnu_getopt);
 use version;
 
+use OpenNMS::Util;
 use OpenNMS::Release;
 use OpenNMS::Release::RPMPackage 2.6.7;
 
 use vars qw(
 	$SCRIPTDIR
 	$YUMDIR
+	$NOTAR
 
 	$CMD_BUILDTOOL
 	$CMD_UPDATE_SF_REPO
@@ -36,11 +39,16 @@ use vars qw(
 
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
-$SCRIPTDIR = abs_path(dirname($0));
-$YUMDIR    = "/var/www/packages";
+$SCRIPTDIR   = abs_path(dirname($0));
+$YUMDIR      = "/var/www/packages";
+$NOTAR       = 0;
+$BRANCH_NAME = $ENV{'bamboo_planRepository_branchName'};
 
 my $result = GetOptions(
-	"y|yumdir=s" => \$YUMDIR,
+	"y|yumdir=s"  => \$YUMDIR,
+	"n|notar"     => \$NOTAR,
+	"r|release=s" => \$RELEASE,
+	"b|branch=s"  => \$BRANCH_NAME,
 );
 
 die "$YUMDIR does not exist!" unless (-d $YUMDIR);
@@ -53,7 +61,7 @@ my $passfile = File::Spec->catfile($ENV{'HOME'}, '.signingpass');
 if (-e $passfile) {
 	chomp($PASSWORD = read_file($passfile));
 } else {
-	print STDERR "WARNING: $passfile does not exist!  New RPMs will not be signed!";
+	print STDERR "WARNING: $passfile does not exist!  New RPMs will not be signed!\n";
 }
 
 opendir(FILES, '.') or die "Unable to read current directory: $!";
@@ -70,28 +78,40 @@ while (my $line = readdir(FILES)) {
 }
 closedir(FILES) or die "Unable to close current directory: $!";
 
-open(TAR, "tar -tzf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
-while (<TAR>) {
-	chomp($_);
-	if (/\/\.nightly$/) {
-		$FILE_NIGHTLY = $_;
-		last;
+if ($NOTAR) {
+	print STDERR "WARNING: skipping tarball deployment\n";
+} else {
+	open(TAR, "tar -tzf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
+	while (<TAR>) {
+		chomp($_);
+		if (/\/\.nightly$/) {
+			$FILE_NIGHTLY = $_;
+			last;
+		}
+	}
+	close(TAR);
+	die "Unable to find .nightly file in $FILE_SOURCE_TARBALL" unless (defined $FILE_NIGHTLY and $FILE_NIGHTLY ne "");
+	chomp($RELEASE=`tar -xzf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
+	if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
+		$RELEASE = $1;
+	} else {
+		die "Unable to determine the appropriate release repository from '$RELEASE'";
 	}
 }
-close(TAR);
 
-die "Unable to find .nightly file in $FILE_SOURCE_TARBALL" unless (defined $FILE_NIGHTLY and $FILE_NIGHTLY ne "");
-
-chomp($RELEASE=`tar -xzf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
-
-if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
-	$RELEASE = $1;
-} else {
-	die "Unable to determine the appropriate release repository from '$RELEASE'";
+if (not defined $RELEASE) {
+	die "Unable to determine release.  Please make sure you have a source tarball with a .nightly file, or have defined --release= on the command-line.";
 }
 
-my $branch_text = `rpm -qip "$FILES_RPMS[0]"`;
-($BRANCH_NAME) = $branch_text =~ /This is an OpenNMS build from the (.*?) branch/mg;
+if (not defined $BRANCH_NAME) {
+	my $branch_text = `rpm -qip "$FILES_RPMS[0]"`;
+	($BRANCH_NAME) = $branch_text =~ /This is an OpenNMS build from the (.*?) branch/mg;
+}
+
+if (not defined $BRANCH_NAME) {
+	die "Unable to determine branch name from RPM.  Please specify --branch= on the command-line to set manually.";
+}
+
 $BRANCH_NAME_SCRUBBED = $BRANCH_NAME;
 $BRANCH_NAME_SCRUBBED =~ s/[^[:alnum:]\.]+/\-/g;
 $BRANCH_NAME_SCRUBBED =~ s/\-*$//g;
@@ -122,6 +142,25 @@ print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:
 system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel5", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel6", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel7", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+
+print STDOUT "- updating repo RPMs for $BRANCH_NAME if necessary:\n";
+my $platforms = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
+my @platform_order = split(/\s*,\s*/, $platforms->{order_display});
+delete $platforms->{order_display};
+for my $platform (@platform_order) {
+	next if ($platform eq 'common');
+	my $reporpm = "opennms-repo-branches-${BRANCH_NAME_SCRUBBED}-${platform}.noarch.rpm";
+	my $repodir = File::Spec->catdir($YUMDIR, 'repofiles');
+	print "  * ${reporpm}... ";
+	if (-e File::Spec->catfile($repodir, $reporpm)) {
+		print "exists\n";
+	} else {
+		print "creating:\n";
+		my @command = ("create-repo-rpm.pl", "-s", $PASSWORD, "-b", $YUMDIR, $BRANCH_NAME, $platform);
+		print "@command\n";
+		system(@command) == 0 or die "Failed to create repo RPM: $!\n";
+	}
+}
 
 #print STDOUT "- generating YUM HTML index:\n";
 #system($CMD_GENERATE, $YUMDIR) == 0 or die "Failed to generate YUM HTML: $!";

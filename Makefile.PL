@@ -9,6 +9,7 @@ requires       'Git'                       => undef;
 requires       'Expect'                    => 1.20;
 requires       'File::ShareDir'            => undef;
 requires       'File::Slurp'               => undef;
+requires       'List::Compare'             => undef;
 requires       'Module::Load::Conditional' => undef;
 requires       'Net::SFTP::Foreign'        => undef;
 requires       'version'                   => undef;

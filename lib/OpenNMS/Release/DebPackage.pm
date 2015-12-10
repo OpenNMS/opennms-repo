@@ -91,8 +91,11 @@ sub new {
 	my ($epoch, $version, $release, $arch);
 	if ($d_version =~ /^\d+\:/) {
 		($epoch, $version, $release) = $d_version =~ /^(\d+):([^\-]+)-(.*?)$/;
-	} else {
+	} elsif ($d_version =~ /-/) {
 		($version, $release) = $d_version =~ /^([^\-]+)-(.*?)$/;
+	} else {
+		($version) = $d_version =~ /^([\d\.]+)$/;
+		$release = 0;
 	}
 	$version = OpenNMS::Release::DebVersion->new($version, $release, $epoch);
 	$arch = $d_architecture;

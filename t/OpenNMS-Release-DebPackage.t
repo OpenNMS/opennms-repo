@@ -7,7 +7,7 @@ use Test::More;
 BEGIN {
 	my $dpkg = `which dpkg 2>/dev/null`;
 	if ($? == 0) {
-		plan tests => 20;
+		plan tests => 26;
 		use_ok('OpenNMS::Release::DebPackage');
 	} else {
 		plan skip_all => '`dpkg` not found, skipping Debian tests.';
@@ -61,3 +61,12 @@ unlink "$t/test2.deb";
 $deb->symlink("$t");
 ok(-l "$t/opennms_1.11.0-0.20111216.14_all.deb");
 unlink("$t/opennms_1.11.0-0.20111216.14_all.deb");
+
+$deb = OpenNMS::Release::DebPackage->new("$t/packages/deb/grafana-opennms-plugin_1.1.0_all.deb");
+isa_ok($deb, 'OpenNMS::Release::DebPackage');
+
+is($deb->name,             'grafana-opennms-plugin', 'Package name is "grafana-opennms-plugin".');
+is($deb->version->epoch,   undef,                    'Epoch should be undefined.');
+is($deb->version->version, '1.1.0',                  'Version should be 1.1.0.');
+is($deb->version->release, '0',                      'Release should be 1.');
+is($deb->arch,             'all',                    'Architecture should be "all".');

@@ -6,8 +6,9 @@ use warnings;
 
 use Carp;
 use Data::Dumper;
+use List::Compare;
 
-our $VERSION = 2.1.0;
+our $VERSION = 2.9.13;
 
 sub new {
 	my $proto = shift;
@@ -72,6 +73,28 @@ sub set(@) {
 	my $self = shift;
 	$self->{PACKAGES} = {};
 	$self->add(@_);
+}
+
+sub has_newer_than($) {
+	my $self = shift;
+	my $other = shift;
+
+	for my $package (@{$self->find_all()}) {
+		if ($package->name and $package->arch) {
+			my $other_package = $other->find_newest_by_name_and_arch($package->name, $package->arch);
+			if (not $other_package) {
+				#print STDERR "package " . $package->to_string . " does not exist in the other package set.\n";
+				return 1;
+			}
+			if ($package->is_newer_than($other_package)) {
+				#print STDERR "package " . $package->to_string . " is newer than the version in the other package set. (" . $other_package->to_string . ")\n";
+				return 1;
+			} else {
+				#print STDERR "package " . $package->to_string . " is the same or older than the version in the other package set. (" . $other_package->to_string . ")\n";
+			}
+		}
+	}
+	return 0;
 }
 
 sub find_all() {

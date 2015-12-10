@@ -8,6 +8,7 @@ use warnings;
 use Data::Dumper;
 use File::Basename;
 use File::ShareDir qw(:ALL);
+use File::Slurp;
 use File::Spec;
 use version;
 
@@ -18,6 +19,7 @@ use OpenNMS::Release::YumRepo 2.0.0;
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 my $base = shift @ARGV;
+my $PASSWORD = undef;
 
 if (not defined $base or not -d $base) {
 	print "usage: $0 <repository_base>\n\n";
@@ -41,6 +43,13 @@ for my $repo (@$repos) {
 	$repo_map->{$repo->release}->{$repo->platform} = $repo;
 }
 
+my $passfile = File::Spec->catfile($ENV{'HOME'}, '.signingpass');
+if (-e $passfile) {
+	chomp($PASSWORD = read_file($passfile));
+} else {
+	print STDERR "WARNING: $passfile does not exist!  We will be unable to create new repository RPMs.";
+}
+
 for my $release (@display_order) {
 	next unless (exists $repo_map->{$release});
 
@@ -50,6 +59,8 @@ for my $release (@display_order) {
 	my $common = $repos->{'common'};
 
 	my $latest_rpm           = $common->find_newest_package_by_name('opennms-core', 'noarch');
+	next unless ($latest_rpm);
+
 	my $description          = $latest_rpm->description();
 	my ($git_url, $git_hash) = $description =~ /(https:\/\/github\.com\/OpenNMS\/opennms\/commit\/(\S+))$/gs;
 
@@ -68,6 +79,11 @@ for my $release (@display_order) {
 
 		my $rpmname = "opennms-repo-$release-$platform.noarch.rpm";
 
+		if ($platform ne "common" and not -e "$base/repofiles/$rpmname") {
+			print STDERR "WARNING: repo RPM does not exist for $release/$platform... creating.\n";
+			system("create-repo-rpm.pl", "-s", $PASSWORD, $base, $release, $platform) == 0 or die "Failed to create repo RPM: $!\n";
+		}
+
 		if (-e "$base/repofiles/$rpmname") {
 			$index_text .= "<li><a href=\"repofiles/$rpmname\">$platform_descriptions->{$platform}</a> (<a href=\"$release/$platform\">browse</a>)</li>\n";
 		} else {
@@ -83,6 +99,7 @@ for my $release (@display_order) {
 	$index_text .= "</ul>\n";
 }
 
+$index_text .= "<p>Index generated: " . localtime(time) . "</p>";
 $index_text .= slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.post'));
 
 open (FILEOUT, ">$base/index.html") or die "unable to write to $base/index.html: $!";
