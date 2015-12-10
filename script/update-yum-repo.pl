@@ -208,7 +208,7 @@ sub only_snapshot {
 	my ($rpm, $repo) = @_;
 	if ($rpm->name =~ /^(opennms|meridian)/) {
 		# we remove old snapshot RPMs
-		if ($rpm->release =~ /^0\./) {
+		if ($rpm->version->release =~ /^0\./) {
 			return 1;
 		}
 	}
