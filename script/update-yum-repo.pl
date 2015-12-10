@@ -118,7 +118,7 @@ if (defined $BRANCH) {
 	my $branch_base = File::Spec->catdir($BASE, 'branches');
 
 	# first, make sure we have all the platform repos for the branch
-	for my $platform ("common", @platform_order) {
+	for my $platform (@platform_order) {
 		my $from_repo = OpenNMS::Release::YumRepo->new($BASE, $RELEASE, $platform);
 		my $to_repo   = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH,  $platform);
 		sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
