@@ -173,9 +173,20 @@ sub install_packages {
 	my $release_repo = shift;
 	my @packages = @_;
 
-	for my $packagename (@packages) {
-		my $package = OpenNMS::Release::DebPackage->new(Cwd::abs_path($packagename));
-		$release_repo->install_package($package);
+	if (@packages) {
+		print "* installing " . scalar(@packages) . " packages:\n";
+		for my $packagename (@packages) {
+			my $package = OpenNMS::Release::DebPackage->new(Cwd::abs_path($packagename));
+			my $existing = $release_repo->find_newest_package_by_name($package->name, $package->arch);
+			if ($existing) {
+				print "  * removing existing package: " . $existing->to_string . "... ";
+				$release_repo->delete_package($existing);
+				print "done.\n";
+			}
+			print "  * installing package: " . $package->to_string . "... ";
+			$release_repo->install_package($package);
+			print "done.\n";
+		}
 	}
 }
 

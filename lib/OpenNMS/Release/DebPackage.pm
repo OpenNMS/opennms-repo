@@ -35,7 +35,8 @@ things.
 =cut
 
 our $DPKG_SIG = undef;
-our $VERSION = 2.5.0;
+our $DEBSIGS  = undef;
+our $VERSION = '2.9.14';
 
 =head1 CONSTRUCTOR
 
@@ -57,10 +58,17 @@ sub new {
 		return undef;
 	}
 
+	if (not defined $DEBSIGS) {
+		$DEBSIGS = find_executable('debsigs');
+		if (not defined $DEBSIGS) {
+			croak "Unable to locate debsigs!  Try \`apt-get install debsigs\`.";
+		}
+	}
+
 	if (not defined $DPKG_SIG) {
 		$DPKG_SIG = find_executable('dpkg-sig');
 		if (not defined $DPKG_SIG) {
-			croak "Unable to locate dpkg-sig! Try \`apt-get install dpkg-sig`."
+			croak "Unable to locate dpkg-sig! Try \`apt-get install dpkg-sig`.";
 		}
 	}
 
@@ -118,7 +126,8 @@ sub sign ($$) {
 
 	my $expect = Expect->new();
 	$expect->raw_pty(1);
-	$expect->spawn($DPKG_SIG, '--sign', 'builder', '-k', $gpg_id, $self->path) or die "Can't spawn $DPKG_SIG: $!";
+	#$expect->spawn($DPKG_SIG, '--sign', 'builder', '-k', $gpg_id, $self->path) or die "Can't spawn $DPKG_SIG: $!";
+	$expect->spawn($DEBSIGS, '--sign', 'archive', '--verify', '-k', $gpg_id, $self->path) or die "Can't spawn $DEBSIGS: $!";
 
 	$expect->expect(60, [
 		qr/Enter passphrase:\s*/ => sub {
