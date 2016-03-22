@@ -221,11 +221,20 @@ sub install_rpms {
 	my $subdirectory = shift;
 	my @rpms = @_;
 
-	for my $rpmname (@rpms) {
-		print "- installing $rpmname... ";
-		my $rpm = OpenNMS::Release::RPMPackage->new(Cwd::abs_path($rpmname));
-		$release_repo->install_package($rpm, $subdirectory);
-		print "done.\n";
+	if (@rpms) {
+		print "- installing " . scalar(@rpms) . " packages:\n";
+		for my $rpmname (@rpms) {
+			my $rpm = OpenNMS::Release::RPMPackage->new(Cwd::abs_path($rpmname));
+			my $existing = $release_repo->find_newest_package_by_name($rpm->name, $rpm->arch);
+			if ($existing) {
+				print "  - removing existing package: " . $existing->to_string . "... ";
+				$release_repo->delete_package($existing);
+				print "done.\n";
+			}
+			print "  * installing package: " . $rpm->to_string . "... ";
+			$release_repo->install_package($rpm, $subdirectory);
+			print "done.\n";
+		}
 	}
 }
 
