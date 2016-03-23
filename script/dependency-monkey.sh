@@ -2,6 +2,12 @@
 
 MYDIR=`dirname $0`
 TOPDIR=`cd $MYDIR; cd ..; pwd`
+TOPDIR="$1"; shift
+
+if [ -z "$TOPDIR" ] || [ ! -d "$TOPDIR" ]; then
+	echo "usage: $0 <opennms-directory> [--force]"
+	exit 1
+fi
 
 echo 'WARNING: THIS SCRIPT WILL DELETE YOUR ~/.m2/repository director(y|ies)!'
 if [ "$1" != "--force" ]; then
@@ -14,6 +20,8 @@ if [ "$1" != "--force" ]; then
 		exit 1
 	fi
 fi
+
+cd "$TOPDIR"
 
 find * -name pom.xml | grep -vE '(^target/|/target/)' | grep -v opennms-tools | while read POM; do
 	printf -- "- cleaning ~/.m2/repository*... "
