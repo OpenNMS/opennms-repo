@@ -17,34 +17,29 @@ if [ "$1" != "--force" ]; then
 		echo "Don't say I didn't warn ya..."
 	else
 		echo "Dodged that bullet, eh?"
+		echo ""
 		exit 1
 	fi
 fi
 
 cd "$TOPDIR"
+echo "- building source once to prime dependency:tree"
+"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo install
+"$TOPDIR/compile.pl" dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' | grep -vE '^org.opennms:opennms$' > /tmp/modules.$$
+cd opennms-full-assembly
+	"$TOPDIR/compile.pl" dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' >> /tmp/modules.$$
+cd -
 
-find * -name pom.xml | grep -vE '(^target/|/target/)' | grep -v opennms-tools | while read POM; do
+cat /tmp/modules.$$ | while read PROJECT; do
+	echo "- running ./clean.pl"
+	./clean.pl
+
 	printf -- "- cleaning ~/.m2/repository*... "
 	rm -rf ~/.m2/repository*
 	echo "done"
 
-	echo "- running ./clean.pl"
-	./clean.pl
-
-	printf -- "- scanning $POM... "
-	POMDIR=`dirname "$POM"`
-	PROJECT=""
-	pushd $POMDIR >/dev/null 2>&1
-		PROJECT=`"$TOPDIR/compile.pl" dependency:tree | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' | head -n 1`
-	popd >/dev/null 2>&1
-
-	if [ -n "$PROJECT" ]; then
-		echo "$PROJECT"
-		echo "- running:" "$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
-		"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
-	else
-		echo ""
-		echo "ERROR: unable to determine project name from $POM"
-		exit 1
-	fi
+	echo "- building project: $PROJECT:" "$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
+	"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
 done
+
+rm -f /tmp/modules.$$
