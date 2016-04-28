@@ -80,7 +80,9 @@ sub not_empty {
 }
 
 if (not defined $BRANCH) {
-	if (not_empty('bamboo_planRepository_branchName')) {
+	if (not_empty('BAMBOO_OPENNMS_BRANCH_NAME')) {
+		$BRANCH = $ENV{'BAMBOO_OPENNMS_BRANCH_NAME'};
+	} elsif (not_empty('bamboo_planRepository_branchName')) {
 		$BRANCH = $ENV{'bamboo_planRepository_branchName'};
 	} else {
 		$BRANCH = get_branch();
@@ -294,6 +296,10 @@ sub get_repository {
 			}
 		}
 		close($handle) or die "Failed to close $file filehandle: $!\n";
+	}
+
+	if (exists $ENV{'BAMBOO_OPENNMS_SOURCE_REPO'} and $ENV{'BAMBOO_OPENNMS_SOURCE_REPO'} ne "") {
+		$ret = $ENV{'BAMBOO_OPENNMS_SOURCE_REPO'};
 	}
 
 	if (not defined $ret) {
