@@ -79,13 +79,13 @@ if (-e $repo_file) {
 	$RELEASE='unstable';
 }
 
-if (exists $ENV{'BAMBOO_OPENNMS_SOURCE_REPO'} and $ENV{'BAMBOO_OPENNMS_SOURCE_REPO'} ne "") {
-	$RELEASE=$ENV{'BAMBOO_OPENNMS_SOURCE_REPO'};
+if (exists $ENV{'bamboo_OPENNMS_SOURCE_REPO'} and $ENV{'bamboo_OPENNMS_SOURCE_REPO'} ne "") {
+	$RELEASE=$ENV{'bamboo_OPENNMS_SOURCE_REPO'};
 }
 
 chomp($BRANCH_NAME = read_file('opennms-build-branch.txt'));
-if (exists $ENV{'BAMBOO_OPENNMS_BRANCH_NAME'} and $ENV{'BAMBOO_OPENNMS_BRANCH_NAME'} ne "") {
-	$BRANCH_NAME=$ENV{'BAMBOO_OPENNMS_BRANCH_NAME'};
+if (exists $ENV{'bamboo_OPENNMS_BRANCH_NAME'} and $ENV{'bamboo_OPENNMS_BRANCH_NAME'} ne "") {
+	$BRANCH_NAME=$ENV{'bamboo_OPENNMS_BRANCH_NAME'};
 }
 $BRANCH_NAME_SCRUBBED = $BRANCH_NAME;
 $BRANCH_NAME_SCRUBBED =~ s/[^[:alnum:]\.]+/\-/g;
