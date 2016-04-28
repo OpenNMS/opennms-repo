@@ -42,7 +42,7 @@ print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 $SCRIPTDIR   = abs_path(dirname($0));
 $YUMDIR      = "/var/www/packages";
 $NOTAR       = 0;
-$BRANCH_NAME = $ENV{'BAMBOO_OPENNMS_BRANCH_NAME'} || $ENV{'bamboo_planRepository_branchName'};
+$BRANCH_NAME = $ENV{'bamboo_OPENNMS_BRANCH_NAME'} || $ENV{'bamboo_planRepository_branchName'};
 
 my $result = GetOptions(
 	"y|yumdir=s"  => \$YUMDIR,
@@ -99,16 +99,16 @@ if ($NOTAR) {
 	}
 }
 
-if (exists $ENV{'BAMBOO_OPENNMS_SOURCE_REPO'} and $ENV{'BAMBOO_OPENNMS_SOURCE_REPO'} ne "") {
-	$RELEASE=$ENV{'BAMBOO_OPENNMS_SOURCE_REPO'};
+if (exists $ENV{'bamboo_OPENNMS_SOURCE_REPO'} and $ENV{'bamboo_OPENNMS_SOURCE_REPO'} ne "") {
+	$RELEASE=$ENV{'bamboo_OPENNMS_SOURCE_REPO'};
 }
 
 if (not defined $RELEASE) {
 	die "Unable to determine release.  Please make sure you have a source tarball with a .nightly file, or have defined --release= on the command-line.";
 }
 
-if (exists $ENV{'BAMBOO_OPENNMS_BRANCH_NAME'} and $ENV{'BAMBOO_OPENNMS_BRANCH_NAME'} ne "") {
-	$BRANCH_NAME=$ENV{'BAMBOO_OPENNMS_BRANCH_NAME'};
+if (exists $ENV{'bamboo_OPENNMS_BRANCH_NAME'} and $ENV{'bamboo_OPENNMS_BRANCH_NAME'} ne "") {
+	$BRANCH_NAME=$ENV{'bamboo_OPENNMS_BRANCH_NAME'};
 }
 
 if (not defined $BRANCH_NAME) {
