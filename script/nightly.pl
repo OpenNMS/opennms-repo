@@ -80,13 +80,15 @@ sub not_empty {
 }
 
 if (not defined $BRANCH) {
-	if (not_empty('BAMBOO_OPENNMS_BRANCH_NAME')) {
-		$BRANCH = $ENV{'BAMBOO_OPENNMS_BRANCH_NAME'};
-	} elsif (not_empty('bamboo_planRepository_branchName')) {
+	if (not_empty('bamboo_planRepository_branchName')) {
 		$BRANCH = $ENV{'bamboo_planRepository_branchName'};
 	} else {
 		$BRANCH = get_branch();
 	}
+}
+
+if (not_empty('BAMBOO_OPENNMS_BRANCH_NAME')) {
+	$BRANCH = $ENV{'BAMBOO_OPENNMS_BRANCH_NAME'};
 }
 
 if (not defined $BUILDNAME) {
