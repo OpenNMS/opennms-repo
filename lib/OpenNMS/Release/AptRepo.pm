@@ -297,7 +297,7 @@ sub index($) {
 	my $password = $options->{'signing_password'};
 
 	if (defined $id and defined $password) {
-		gpg_detach_sign_file($id, $password, $releasefile, $releasefile . '.gpg');
+		gpg_detach_sign_file($id, $password, $releasefile, $releasefile . '.gpg', 1);
 	} else {
 		# carp "skipping gpg-signing of '$releasefile'";
 	}
