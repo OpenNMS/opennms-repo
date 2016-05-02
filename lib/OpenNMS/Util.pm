@@ -151,8 +151,15 @@ sub gpg_detach_sign_file {
 	my $password = shift;
 	my $file     = shift;
 	my $output   = shift || $file . '.asc';
+	my $sha256   = shift;
 
-	system("gpg --passphrase '$password' --batch --yes -a --default-key '$id' --detach-sign -o '$output' '$file'") == 0 or croak "unable to detach-sign '$file' with GPG id '$id': $!";
+	my $command = "gpg --passphrase '$password' --batch --yes -a";
+	if ($sha256) {
+		$command .= " --digest-algo SHA256";
+	}
+	$command .= " --default-key '$id' --detach-sign -o '$output' '$file'";
+
+	system($command) == 0 or croak "unable to detach-sign '$file' with GPG id '$id': $!";
 	return 1;
 }
 
