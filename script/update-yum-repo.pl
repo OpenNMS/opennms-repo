@@ -28,21 +28,23 @@ my $RESIGN           = 0;
 my $REINDEX          = 0;
 my $NO_SYNC          = 0;
 my $NO_DELTAS        = 0;
+my $NO_OBSOLETE      = 0;
 
 my $BRANCH           = undef;
 my $SIGNING_PASSWORD = undef;
 my $SIGNING_ID       = 'opennms@opennms.org';
 
 my $result = GetOptions(
-	"h|help"       => \$HELP,
-	"a|all"        => \$ALL,
-	"b|branch=s"   => \$BRANCH,
-	"s|sign=s"     => \$SIGNING_PASSWORD,
-	"g|gpg-id=s"   => \$SIGNING_ID,
-	"r|resign"     => \$RESIGN,
-	"n|no-sync"    => \$NO_SYNC,
-	"d|no-deltas"  => \$NO_DELTAS,
-	"i|reindex"    => \$REINDEX,
+	"h|help"        => \$HELP,
+	"a|all"         => \$ALL,
+	"b|branch=s"    => \$BRANCH,
+	"s|sign=s"      => \$SIGNING_PASSWORD,
+	"g|gpg-id=s"    => \$SIGNING_ID,
+	"r|resign"      => \$RESIGN,
+	"n|no-sync"     => \$NO_SYNC,
+	"d|no-deltas"   => \$NO_DELTAS,
+	"i|reindex"     => \$REINDEX,
+	"o|no-obsolete" => \$NO_OBSOLETE,
 );
 
 my ($BASE, $RELEASE, $PLATFORM, $SUBDIRECTORY, @RPMS);
@@ -243,9 +245,11 @@ sub index_repo {
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
-	print "- removing obsolete RPMs from repo: " . $release_repo->to_string . "... ";
-	my $removed = $release_repo->delete_obsolete_packages(\&only_snapshot);
-	print $removed . " RPMs removed.\n";
+	if (!$NO_OBSOLETE) {
+		print "- removing obsolete RPMs from repo: " . $release_repo->to_string . "... ";
+		my $removed = $release_repo->delete_obsolete_packages(\&only_snapshot);
+		print $removed . " RPMs removed.\n";
+	}
 
 	print "- reindexing repo: " . $release_repo->to_string . "... ";
 	$release_repo->enable_deltas(0) if ($NO_DELTAS);
@@ -296,9 +300,11 @@ sub sync_repo {
 	my $num_shared = $temp_repo->share_all_packages($from_repo);
 	print $num_shared . " RPMS updated.\n";
 
-	print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
-	my $num_removed = $temp_repo->delete_obsolete_packages(\&only_snapshot);
-	print $num_removed . " RPMs removed.\n";
+	if (!$NO_OBSOLETE) {
+		print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
+		my $num_removed = $temp_repo->delete_obsolete_packages(\&only_snapshot);
+		print $num_removed . " RPMs removed.\n";
+	}
 
 	print "- indexing repo: " . $temp_repo->to_string . "... ";
 	$temp_repo->enable_deltas(0) if ($NO_DELTAS);
@@ -332,6 +338,7 @@ usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | [-b <branch_name>
 	-n            : no syncing of extra (platform) repositories
 	-s <password> : sign the rpm using this password for the gpg key
 	-g <gpg_id>   : sign using this gpg_id (default: opennms\@opennms.org)
+	-o            : don't remove obsolete packages
 
 	base          : the base directory of the YUM repository
 	release       : the release tree (e.g., "stable", "unstable", "snapshot", etc.)

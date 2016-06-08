@@ -25,18 +25,20 @@ print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 my $HELP             = 0;
 my $ALL              = 0;
 my $RESIGN           = 0;
+my $NO_OBSOLETE      = 0;
 
 my $BRANCH           = undef;
 my $SIGNING_PASSWORD = undef;
 my $SIGNING_ID       = 'opennms@opennms.org';
 
 my $result = GetOptions(
-	"h|help"     => \$HELP,
-	"a|all"      => \$ALL,
-	"b|branch=s" => \$BRANCH,
-	"s|sign=s"   => \$SIGNING_PASSWORD,
-	"g|gpg-id=s" => \$SIGNING_ID,
-	"r|resign"   => \$RESIGN,
+	"h|help"        => \$HELP,
+	"a|all"         => \$ALL,
+	"b|branch=s"    => \$BRANCH,
+	"s|sign=s"      => \$SIGNING_PASSWORD,
+	"g|gpg-id=s"    => \$SIGNING_ID,
+	"r|resign"      => \$RESIGN,
+	"o|no-obsolete" => \$NO_OBSOLETE,
 );
 
 my ($BASE, $RELEASE, @PACKAGES);
@@ -178,7 +180,7 @@ sub install_packages {
 		for my $packagename (@packages) {
 			my $package = OpenNMS::Release::DebPackage->new(Cwd::abs_path($packagename));
 			my $existing = $release_repo->find_newest_package_by_name($package->name, $package->arch);
-			if ($existing) {
+			if ($existing && !$NO_OBSOLETE) {
 				print "  * removing existing package: " . $existing->to_string . "... ";
 				$release_repo->delete_package($existing);
 				print "done.\n";
@@ -195,9 +197,11 @@ sub index_repo {
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
-	print "- removing obsolete packages from repo: " . $release_repo->to_string . "... ";
-	my $removed = $release_repo->delete_obsolete_packages(\&not_opennms);
-	print $removed . " packages removed.\n";
+	if (!$NO_OBSOLETE) {
+		print "- removing obsolete packages from repo: " . $release_repo->to_string . "... ";
+		my $removed = $release_repo->delete_obsolete_packages(\&not_opennms);
+		print $removed . " packages removed.\n";
+	}
 
 	print "- reindexing repo: " . $release_repo->to_string . "... ";
 	$release_repo->index({ signing_id => $signing_id, signing_password => $signing_password });
@@ -262,6 +266,7 @@ usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | [-b <branch_name>
 	-r            : re-sign packages in the repositor(y|ies)
 	-s <password> : sign the package using this password for the gpg key
 	-g <gpg_id>   : sign using this gpg_id (default: opennms\@opennms.org)
+	-o            : don't remove obsolete packages
 
 	base          : the base directory of the APT repository
 	release       : the release tree (e.g., "opennms-1.8", "nightly-1.9", etc.)
