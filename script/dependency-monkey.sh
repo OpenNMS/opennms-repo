@@ -24,7 +24,7 @@ fi
 
 cd "$TOPDIR"
 echo "- building source once to prime dependency:tree"
-"$TOPDIR/compile.pl" -Daether.connector.basic.threads=1 -Daether.connector.resumeDownloads=false -T1C -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo install
+"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo install
 "$TOPDIR/compile.pl" dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' | grep -vE '^org.opennms:opennms$' > /tmp/modules.$$
 cd opennms-full-assembly
 	"$TOPDIR/compile.pl" dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' >> /tmp/modules.$$
@@ -32,14 +32,14 @@ cd -
 
 cat /tmp/modules.$$ | while read PROJECT; do
 	echo "- running ./clean.pl"
-	./clean.pl -Daether.connector.basic.threads=1 -Daether.connector.resumeDownloads=false -T1C
+	./clean.pl
 
 	printf -- "- cleaning ~/.m2/repository*... "
 	rm -rf ~/.m2/repository*
 	echo "done"
 
-	echo "- building project: $PROJECT:" "$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make -Daether.connector.basic.threads=1 -Daether.connector.resumeDownloads=false -T1C install
-	"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make -Daether.connector.basic.threads=1 -Daether.connector.resumeDownloads=false -T1C install
+	echo "- building project: $PROJECT:" "$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
+	"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
 done
 
 rm -f /tmp/modules.$$
