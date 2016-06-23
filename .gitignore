@@ -3,6 +3,10 @@
 *.json
 *.old
 *.yml
+.classpath
+.project
+.settings
+target/
 OpenNMS-Release-*.tar.gz
 Makefile
 blib
