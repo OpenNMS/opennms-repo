@@ -98,9 +98,9 @@ sub new {
 			if (/--checksum=SUMTYPE/) {
 				$CREATEREPO_USE_CHECKSUM = 1;
 			}
-			if (/--deltas/) {
-				$CREATEREPO_USE_DELTAS = 1;
-			}
+			#if (/--deltas/) {
+			#	$CREATEREPO_USE_DELTAS = 1;
+			#}
 			#if (/--update/) {
 			#	$CREATEREPO_USE_UPDATE = 1;
 			#}
