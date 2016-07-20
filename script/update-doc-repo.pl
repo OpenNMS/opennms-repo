@@ -183,6 +183,7 @@ sub get_projects {
 	while (my $entry = readdir(DIR)) {
 		my $path = File::Spec->catdir($projectsroot, $entry);
 		next if ($entry =~ /^\./);
+		next if ($entry =~ /^\@eaDir/);
 		next if ($entry =~ /^index\.html$/);
 		next if ($entry =~ /^(api|documentation|Minion-Events|OpenNMS|PRIS|SMNnepO)$/);
 		next if (-l $path);
@@ -236,6 +237,7 @@ sub get_releases {
 		for my $releaseentry (sort readdir(RELEASESDIR)) {
 			my $releasedir = File::Spec->catdir($releasesdir, $releaseentry);
 			next if ($releaseentry =~ /^\./);
+			next if ($releaseentry =~ /^\@eaDir/);
 			next if ($releaseentry =~ /^index\.html$/);
 			next if (-l $releasedir);
 			next unless (-d $releasedir);
@@ -283,6 +285,7 @@ sub get_docs_for_release {
 	for my $entry (sort readdir(DIR)) {
 		my $docpath = File::Spec->catdir($release->{'path'}, $entry);
 		next if ($entry =~ /^\./);
+		next if ($entry =~ /^\@eaDir/);
 		next if ($entry =~ /^index\.html$/);
 		next if (-l $docpath);
 		next unless (-d $docpath);
@@ -698,7 +701,7 @@ sub process_opennms_asciidoc_docdir {
 	my $docdir = shift;
 
 	opendir(DIR, $docdir) or die "Failed to open $docdir for reading: $!\n";
-	my @guides = sort grep { !/^\.\.?$/ } readdir(DIR);
+	my @guides = sort grep { !/^(\.\.?|\@eaDir)$/ } readdir(DIR);
 	closedir(DIR) or die "Failed to close $docdir: $!\n";
 
 	for my $dir (@guides) {
