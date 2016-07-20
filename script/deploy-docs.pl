@@ -17,9 +17,8 @@ use vars qw(
 	$DESTPATH
 );
 
-$DESTPATH = '/var/www/sites/opennms.org/site/docs/OpenNMS';
-
 my $dir = shift @ARGV || '.';
+$DESTPATH = shift @ARGV || '/mnt/docs.opennms.org/OpenNMS';
 
 opendir(DIR, $dir) or die "Unable to read from $dir: $!\n";
 while (my $entry = readdir(DIR)) {
