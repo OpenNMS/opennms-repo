@@ -17,9 +17,8 @@ use vars qw(
 	$DESTPATH
 );
 
-$DESTPATH = '/var/www';
-
 my $dir = shift @ARGV || '.';
+$DESTPATH = shift @ARGV || '/var/www';
 
 opendir(DIR, $dir) or die "Unable to read from $dir: $!\n";
 while (my $entry = readdir(DIR)) {
