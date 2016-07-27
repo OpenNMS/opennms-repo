@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.PackageUtils;
 import org.opennms.repo.api.Repository;
@@ -169,5 +170,36 @@ public class RPMRepository extends AbstractRepository {
     @Override
     public String toString() {
         return "RPMRepository:" + Util.relativize(getRoot());
+    }
+
+    @Override
+    public Repository cloneInto(final Path to) {
+        final Path path = to.normalize().toAbsolutePath();
+        LOG.info("Cloning repository {} into {}", this, path);
+        //LOG.debug("clone: {}", path);
+        try {
+            FileUtils.cleanDirectory(path.toFile());
+            Files.walk(getRoot()).forEach(p -> {
+                try {
+                    final Path relativePath = getRoot().relativize(p);
+                    if (relativePath.getFileName().toString().equals(REPO_METADATA_FILENAME)) {
+                        return;
+                    }
+                    final Path targetPath = path.resolve(relativePath).normalize();
+                    if (p.toFile().isDirectory()) {
+                        LOG.debug("clone: creating directory {}", Util.relativize(targetPath));
+                        Files.createDirectories(targetPath);
+                    } else {
+                        LOG.debug("clone: Copying {} to {}", Util.relativize(p), Util.relativize(targetPath));
+                        Files.createLink(targetPath, p);
+                    }
+                } catch (final IOException e) {
+                    throw new RepositoryException(e);
+                }
+            });
+        } catch (final IOException e) {
+            throw new RepositoryException(e);
+        }
+        return new RPMRepository(to, this);
     }
 }

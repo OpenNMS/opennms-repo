@@ -45,7 +45,6 @@ public class RPMRepositoryTest {
     private static final File JRRD3_FILE = new File("src/test/resources/jrrd-1.1.0-3.el7.centos.x86_64.rpm");
 
     @Before
-    //@After
     public void cleanUp() throws IOException {
         Util.recursiveDelete(Paths.get("target/repositories"));
     }
@@ -269,6 +268,41 @@ public class RPMRepositoryTest {
         final GPGInfo gpginfo = TestUtils.generateGPGInfo();
         targetRepo.index(gpginfo);
         assertFileExists(jrrd2TargetPath);
+    }
+
+    @Test
+    public void testClone() throws Exception {
+        final String sourceRepositoryPath = "target/repositories/RPMRepositoryTest.testClone/source";
+        final String targetRepositoryPath = "target/repositories/RPMRepositoryTest.testClone/target";
+        final GPGInfo gpginfo = TestUtils.generateGPGInfo();
+
+        final File sourceRepositoryDir = new File(sourceRepositoryPath);
+        final File targetRepositoryDir = new File(targetRepositoryPath);
+        Files.createDirectories(Paths.get(sourceRepositoryPath));
+        Files.createDirectories(Paths.get(targetRepositoryPath));
+
+        FileUtils.copyFileToDirectory(JRRD1_FILE, targetRepositoryDir);
+        FileUtils.copyFileToDirectory(JRRD2_FILE, sourceRepositoryDir);
+        FileUtils.copyFileToDirectory(JRRD3_FILE, sourceRepositoryDir);
+
+        Repository sourceRepo = new RPMRepository(Paths.get(sourceRepositoryPath));
+        Repository targetRepo = new RPMRepository(Paths.get(targetRepositoryPath));
+        sourceRepo.index(gpginfo);
+        targetRepo.index(gpginfo);
+
+        final String jrrd1TargetPath = targetRepositoryDir + File.separator + JRRD1_FILE.getName();
+        final String jrrd2TargetPath = targetRepositoryDir + File.separator + JRRD2_FILE.getName();
+        final String jrrd3TargetPath = targetRepositoryDir + File.separator + JRRD3_FILE.getName();
+        assertFileExists(jrrd1TargetPath);
+        assertFileDoesNotExist(jrrd2TargetPath);
+        assertFileDoesNotExist(jrrd3TargetPath);
+
+        sourceRepo.cloneInto(Paths.get(targetRepositoryPath));
+        targetRepo.index(gpginfo);
+
+        assertFileDoesNotExist(jrrd1TargetPath);
+        assertFileExists(jrrd2TargetPath);
+        assertFileExists(jrrd3TargetPath);
     }
 
     private void assertFileExists(final String path) {
