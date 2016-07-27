@@ -71,6 +71,11 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpg-jdk15on</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.redline-rpm</groupId>
+      <artifactId>redline</artifactId>
+      <version>1.2.2</version>
+    </dependency>
 
     <dependency>
       <groupId>junit</groupId>

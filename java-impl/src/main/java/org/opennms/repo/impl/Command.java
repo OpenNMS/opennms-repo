@@ -10,8 +10,12 @@ import java.util.Map;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.OS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class Command extends CommandLine implements Runnable {
+    public static final Logger LOG = LoggerFactory.getLogger(Command.class);
+
     public Command(final String executable) {
         super(which(executable));
     }
@@ -35,6 +39,7 @@ public abstract class Command extends CommandLine implements Runnable {
             }
         }
 
+        LOG.warn("Unable to locate executable: {}", executable);
         return null;
     }
 
@@ -45,4 +50,7 @@ public abstract class Command extends CommandLine implements Runnable {
         }
         return newenv;
     }
+    
+    public abstract List<String> getOutput();
+    public abstract List<String> getErrorOutput();
 }

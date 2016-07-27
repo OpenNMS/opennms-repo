@@ -3,6 +3,7 @@ package org.opennms.repo.impl;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.KeyPairGenerator;
@@ -20,6 +21,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
@@ -29,8 +31,11 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.RepositoryException;
+import org.opennms.repo.api.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +64,7 @@ public abstract class GPGUtils {
     }
 
     public static void detach_sign(final Path inputFile, final Path outputFile, final GPGInfo gpginfo, final boolean sha256) throws IOException, InterruptedException {
-        LOG.debug("Detach-signing {} with key {}", inputFile, gpginfo.getKey());
+        LOG.debug("Detach-signing {} with key {}", Util.relativize(inputFile), gpginfo.getKey());
 
         try (
             final FileInputStream sFis = new FileInputStream(inputFile.toFile());
@@ -95,4 +100,19 @@ public abstract class GPGUtils {
             throw new RepositoryException("Failed to detach-sign " + inputFile, e);
         }
     }
+
+    public static void exportKeyRing(final Path outputFile, final PGPPublicKeyRingCollection keyRing) throws IOException {
+        try(final FileWriter fw = new FileWriter(outputFile.toFile()); final PemWriter writer = new PemWriter(fw);) {
+            writer.writeObject(new PemObject("PGP PUBLIC KEY BLOCK", keyRing.getEncoded()));
+        }
+    }
+
+    /*
+    public static void exportKey(final Path outputFile, final PGPPublicKey publicKey) throws IOException {
+        try(final FileWriter fw = new FileWriter(outputFile.toFile()); final PemWriter writer = new PemWriter(fw);) {
+            writer.writeObject(new PemObject("PGP PUBLIC KEY BLOCK", publicKey.getEncoded()));
+        }
+    }
+    */
+
 }

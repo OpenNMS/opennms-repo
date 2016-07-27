@@ -1,16 +1,21 @@
-package org.opennms.repo.impl;
+package org.opennms.repo.impl.rpm;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.launcher.CommandLauncherFactory;
+import org.apache.commons.io.IOUtils;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
+import org.opennms.repo.impl.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +27,9 @@ public class CreaterepoCommand extends Command {
     private boolean m_supportsChecksum;
     //private boolean m_supportsDeltas;
     private boolean m_supportsUpdate;
+
+    private List<String> m_output;
+    private List<String> m_errorOutput;
 
     public CreaterepoCommand(Path root) throws RepositoryException {
         super("createrepo");
@@ -82,6 +90,9 @@ public class CreaterepoCommand extends Command {
     }
 
     public void run() {
+        m_output = Collections.emptyList();
+        m_errorOutput = Collections.emptyList();
+
         final String rootDirectory = m_root.toAbsolutePath().toString();
 
         try {
@@ -92,8 +103,26 @@ public class CreaterepoCommand extends Command {
             exec.setSubstitutionMap(this.getSubstitutionMap());
             final Process p = CommandLauncherFactory.createVMLauncher().exec(exec, getEnvironment());
             p.waitFor();
+
+            try (final InputStream err = p.getErrorStream(); final InputStream out = p.getInputStream()) {
+                m_output = IOUtils.readLines(out, Charset.defaultCharset());
+                m_errorOutput = IOUtils.readLines(err, Charset.defaultCharset());
+            }
         } catch (final IOException | InterruptedException e) {
             throw new RepositoryIndexException(e);
         }
+    }
+
+    public List<String> getOutput() {
+        if (m_output == null) {
+            throw new IllegalStateException("You can't read the output if you have not executed the command yet!");
+        }
+        return m_output;
+    }
+    public List<String> getErrorOutput() {
+        if (m_errorOutput == null) {
+            throw new IllegalStateException("You can't read the error output if you have not executed the command yet!");
+        }
+        return m_errorOutput;
     }
 }
