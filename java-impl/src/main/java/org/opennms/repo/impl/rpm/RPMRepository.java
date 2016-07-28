@@ -1,18 +1,16 @@
 package org.opennms.repo.impl.rpm;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileTime;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.opennms.repo.api.GPGInfo;
-import org.opennms.repo.api.PackageUtils;
 import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
@@ -20,186 +18,153 @@ import org.opennms.repo.api.RepositoryPackage;
 import org.opennms.repo.api.Util;
 import org.opennms.repo.impl.AbstractRepository;
 import org.opennms.repo.impl.GPGUtils;
+import org.opennms.repo.impl.RepoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RPMRepository extends AbstractRepository {
-    private static final Logger LOG = LoggerFactory.getLogger(RPMRepository.class);
+	private static final Logger LOG = LoggerFactory.getLogger(RPMRepository.class);
 
-    public RPMRepository(final Path path) {
-        super(path);
-    }
+	public RPMRepository(final Path path) {
+		super(path);
+	}
 
-    public RPMRepository(final Path path, final Repository parent) {
-        super(path, parent);
-    }
+	public RPMRepository(final Path path, final Repository parent) {
+		super(path, parent);
+	}
 
-    @Override
-    public Collection<RepositoryPackage> getPackages() {
-        final Path root = getRoot();
-        try {
-            return Files.walk(root).filter(path -> {
-                return path.toString().endsWith(".rpm") && path.toFile().isFile();
-            }).map(path -> {
-                try {
-                    return RPMUtils.getPackage(path.toFile());
-                } catch (final Exception e) {
-                    return null;
-                }
-            }).sorted().collect(Collectors.toList());
-        } catch (final IOException e) {
-            throw new RepositoryException("Unable to walk " + root + " directory for RPMs", e);
-        }
-    }
+	@Override
+	public Collection<RepositoryPackage> getPackages() {
+		final Path root = getRoot();
+		try {
+			return Files.walk(root).filter(path -> {
+				return path.toString().endsWith(".rpm") && path.toFile().isFile();
+			}).map(path -> {
+				try {
+					return RPMUtils.getPackage(path.toFile());
+				} catch (final Exception e) {
+					return null;
+				}
+			}).sorted().collect(Collectors.toList());
+		} catch (final IOException e) {
+			throw new RepositoryException("Unable to walk " + root + " directory for RPMs", e);
+		}
+	}
 
-    @Override
-    public boolean isValid() {
-        if (!getRoot().toFile().exists()) {
-            return false;
-        }
-        final Path repomdfile = getRoot().resolve("repodata/repomd.xml");
-        return repomdfile.toFile().exists();
-    }
+	@Override
+	public boolean isValid() {
+		if (!getRoot().toFile().exists()) {
+			return false;
+		}
+		return getRoot().resolve("repodata").resolve("repomd.xml").toFile().exists() &&
+				getRoot().resolve(REPO_METADATA_FILENAME).toFile().exists();
+	}
 
-    @Override
-    public void index(final GPGInfo gpginfo) throws RepositoryIndexException {
-        final Path root = getRoot();
-        try {
-            if (!root.toFile().exists()) {
-                Files.createDirectories(root);
-            }
-        } catch (final Exception e) {
-            throw new RepositoryIndexException("Unable to create repository root '" + root + "'!", e);
-        }
+	private void ensureRootExists() {
+		final Path root = getRoot();
+		try {
+			if (!root.toFile().exists()) {
+				Files.createDirectories(root);
+			}
+		} catch (final Exception e) {
+			throw new RepositoryIndexException("Unable to create repository root '" + root + "'!", e);
+		}
+	}
 
-        final Repository parentRepository = getParent();
-        if (parentRepository != null) {
-            addPackages(parentRepository);
-        }
+	@Override
+	public void index(final GPGInfo gpginfo) throws RepositoryIndexException {
+		LOG.info("index(): {}", this);
+		final Path root = getRoot();
 
-        if (!isDirty()) {
-            LOG.info("RPM repository not changed: {}", this);
-            return;
-        }
+		final Repository parentRepository = getParent();
+		if (parentRepository != null) {
+			ensureRootExists();
+			addPackages(parentRepository);
+		} else {
+			LOG.debug("No parent {}", this);
+		}
 
-        generateDeltas();
+		refresh();
 
-        LOG.info("Indexing RPM repository: {}", this);
-        try {
-            final CreaterepoCommand command = new CreaterepoCommand(root);
-            command.run();
+		if (!isDirty()) {
+			LOG.info("RPM repository not changed: {}", this);
+			return;
+		}
 
-            if (gpginfo == null) {
-                LOG.warn("Skipping repomd.xml signing!");
-            } else {
-                final Path repomdfile = root.resolve("repodata/repomd.xml");
+		ensureRootExists();
+		generateDeltas();
 
-                final Path signfile = Paths.get(repomdfile.toString() + ".asc");
-                GPGUtils.detach_sign(repomdfile, signfile, gpginfo, false);
+		LOG.info("Indexing RPM repository: {}", this);
+		try {
+			final CreaterepoCommand command = new CreaterepoCommand(root);
+			command.run();
+			final Path repomdfile = root.resolve("repodata").resolve("repomd.xml");
 
-                final Path keyfile = Paths.get(repomdfile.toString() + ".key");
-                GPGUtils.exportKeyRing(keyfile, gpginfo.getPublicKeyRing());
-            }
-        } catch (final RepositoryException | IOException | InterruptedException e) {
-            throw new RepositoryIndexException("Failed to run `createrepo`!", e);
-        }
-    }
+			if (gpginfo == null) {
+				LOG.warn("Skipping repomd.xml signing!");
+			} else {
+				final String ascPath = repomdfile.toString() + ".asc";
+				final String keyPath = repomdfile.toString() + ".key";
 
-    public void generateDeltas() throws RepositoryException {
-        final Path root = getRoot();
-        LOG.info("Generating deltas for RPM repository: {}", this);
-        RPMUtils.generateDeltas(root.toFile());
-    }
+				final Path signfile = Paths.get(ascPath);
+				GPGUtils.detach_sign(repomdfile, signfile, gpginfo, false);
 
-    private boolean isDirty() {
-        final Path root = getRoot();
-        try {
-            final FileTime newestRepodata = getNewestRepodataEdit();
-            final Optional<FileTime> res = Files.walk(root).filter(path -> {
-                return !path.startsWith(root.resolve("repodata"));
-            }).map(path -> {
-                try {
-                    return PackageUtils.getFileTime(path);
-                } catch (final Exception e) {
-                    return null;
-                }
-            }).max((a, b) -> {
-                return a.compareTo(b);
-            });
-            
-            if (res.isPresent()) {
-                final FileTime reduced = res.get();
-                if (reduced.compareTo(newestRepodata) == 1) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (final Exception e) {
-            LOG.warn("Failed while checking for a dirty repository: {}", this, e);
-            return true;
-        }
-    }
+				final Path keyfile = Paths.get(keyPath);
+				GPGUtils.exportKeyRing(keyfile, gpginfo.getPublicKeyRing());
+				
+				FileUtils.touch(new File(ascPath));
+				FileUtils.touch(new File(keyPath));
+			}
 
-    private FileTime getNewestRepodataEdit() throws IOException {
-        FileTime epoch = FileTime.from(Instant.EPOCH);
-        final Path repodata = getRoot().resolve("repodata");
-        if (!repodata.toFile().exists()) {
-            return epoch;
-        }
-        final Optional<FileTime> res = Files.walk(repodata).map(path -> {
-            try {
-                return PackageUtils.getFileTime(path);
-            } catch (final Exception e) {
-                return null;
-            }
-        }).max((a, b) -> {
-            return a.compareTo(b);
-        });
-        if (res.isPresent()) {
-            final FileTime reduced = res.get();
-            if (reduced.compareTo(epoch) == 1) {
-                return reduced;
-            }
-        }
-        return epoch;
-    }
+			FileUtils.touch(repomdfile.toFile());
+		} catch (final RepositoryException | IOException | InterruptedException e) {
+			throw new RepositoryIndexException("Failed to run `createrepo`!", e);
+		}
+		updateLastIndexed();
+	}
 
-    @Override
-    public String toString() {
-        return "RPMRepository:" + Util.relativize(getRoot());
-    }
+	public void generateDeltas() throws RepositoryException {
+		final Path root = getRoot();
+		LOG.info("Generating deltas for RPM repository: {}", this);
+		RPMUtils.generateDeltas(root.toFile());
+		LOG.info("Finished generating deltas for RPM repository: {}", this);
+	}
 
-    @Override
-    public Repository cloneInto(final Path to) {
-        final Path path = to.normalize().toAbsolutePath();
-        LOG.info("Cloning repository {} into {}", this, path);
-        //LOG.debug("clone: {}", path);
-        try {
-            FileUtils.cleanDirectory(path.toFile());
-            Files.walk(getRoot()).forEach(p -> {
-                try {
-                    final Path relativePath = getRoot().relativize(p);
-                    if (relativePath.getFileName().toString().equals(REPO_METADATA_FILENAME)) {
-                        return;
-                    }
-                    final Path targetPath = path.resolve(relativePath).normalize();
-                    if (p.toFile().isDirectory()) {
-                        LOG.debug("clone: creating directory {}", Util.relativize(targetPath));
-                        Files.createDirectories(targetPath);
-                    } else {
-                        LOG.debug("clone: Copying {} to {}", Util.relativize(p), Util.relativize(targetPath));
-                        Files.createLink(targetPath, p);
-                    }
-                } catch (final IOException e) {
-                    throw new RepositoryException(e);
-                }
-            });
-        } catch (final IOException e) {
-            throw new RepositoryException(e);
-        }
-        return new RPMRepository(to, this);
-    }
+	protected boolean isDirty() {
+		final Path root = getRoot();
+		try {
+			final long lastIndexed = getLastIndexed();
+			final Optional<Long> res = Files.walk(root).filter(path -> {
+				return !path.startsWith(root.resolve("repodata")) && !RepoUtils.isMetadata(path);
+			}).map(path -> {
+				try {
+					final Path filePath = path;
+					return Util.getFileTime(filePath).toMillis();
+				} catch (final Exception e) {
+					return null;
+				}
+			}).max((a, b) -> {
+				return a.compareTo(b);
+			});
+
+			LOG.debug("newest repodata edit: {} {}", lastIndexed, this);
+			if (res.isPresent()) {
+				final long reduced = res.get();
+				LOG.debug("newest other file: {} {}", reduced, this);
+				return reduced > lastIndexed;
+			} else {
+				LOG.warn("No file times found in repository {}!", this);
+				return false;
+			}
+		} catch (final Exception e) {
+			LOG.warn("Failed while checking for a dirty repository: {}", this, e);
+			return true;
+		}
+	}
+
+	@Override
+	public Repository cloneInto(final Path to) {
+		RepoUtils.cloneDirectory(getRoot(), to);
+		return new RPMRepository(to, this);
+	}
 }

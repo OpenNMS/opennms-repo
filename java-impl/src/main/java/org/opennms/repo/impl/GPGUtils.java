@@ -49,7 +49,7 @@ public abstract class GPGUtils {
     }
 
     public static PGPSecretKey generateKey(final String keyId, final String passphrase) throws IOException, InterruptedException {
-        LOG.debug("Generating key for id: {}", keyId);
+        LOG.info("Generating key for id: {}", keyId);
 
         try {
             final KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
@@ -64,7 +64,7 @@ public abstract class GPGUtils {
     }
 
     public static void detach_sign(final Path inputFile, final Path outputFile, final GPGInfo gpginfo, final boolean sha256) throws IOException, InterruptedException {
-        LOG.debug("Detach-signing {} with key {}", Util.relativize(inputFile), gpginfo.getKey());
+        LOG.info("Detach-signing {} with key {}", Util.relativize(inputFile), gpginfo.getKey());
 
         try (
             final FileInputStream sFis = new FileInputStream(inputFile.toFile());
@@ -73,16 +73,15 @@ public abstract class GPGUtils {
             final ArmoredOutputStream aos = new ArmoredOutputStream(os);
         ) {
             final PGPPublicKey publicKey = gpginfo.getPublicKey();
-            LOG.debug("publicKey: {}", publicKey);
+            LOG.trace("publicKey: {}", publicKey);
             final PGPSecretKey secretKey = gpginfo.getSecretKey();
-            LOG.debug("secretKey: {}", secretKey);
+            LOG.trace("secretKey: {}", secretKey);
             final PGPPrivateKey privateKey = gpginfo.getPrivateKey();
-            LOG.debug("privateKey: {}", privateKey);
+            LOG.trace("privateKey: {}", privateKey);
             final PGPSignatureGenerator generator = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(publicKey.getAlgorithm(), sha256? PGPUtil.SHA256 : PGPUtil.SHA1).setProvider("BC"));
-            LOG.debug("generator: {}", generator);
+            LOG.trace("generator: {}", generator);
 
             generator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
-            LOG.debug("Generator initialized.");
             BCPGOutputStream out = new BCPGOutputStream(aos);
 
             int ch;
@@ -91,12 +90,10 @@ public abstract class GPGUtils {
             }
             sBis.close();
 
-            LOG.debug("Encoding to output.");
             generator.generate().encode(out);
-            LOG.debug("Finished.");
             out.close();
         } catch (final PGPException e) {
-            LOG.debug("PGP exception: {}", e.getMessage(), e);
+            LOG.error("PGP exception: {}", e.getMessage(), e);
             throw new RepositoryException("Failed to detach-sign " + inputFile, e);
         }
     }

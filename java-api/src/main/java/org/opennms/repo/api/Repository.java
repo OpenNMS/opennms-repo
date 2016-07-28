@@ -18,6 +18,11 @@ public interface Repository extends Comparable<Repository> {
     public Repository getParent();
 
     /**
+     * Whether or not this repository has a parent.
+     */
+    public boolean hasParent();
+
+    /**
      * Get the repository's display name.
      * @return the name
      */
@@ -47,6 +52,13 @@ public interface Repository extends Comparable<Repository> {
     public void index(final GPGInfo gpginfo) throws RepositoryIndexException;
 
     /**
+     * Refresh the repository.  Use this in the case that the repository
+     * could be modified after the repository has been created.
+     * @throws RepositoryException
+     */
+    public void refresh() throws RepositoryException;
+
+    /**
      * Get the complete list of packages in the repository.
      * @return a collection of {@link RepositoryPackage} objects.
      */
@@ -68,10 +80,29 @@ public interface Repository extends Comparable<Repository> {
     public<T extends Repository> void addPackages(T repository);
 
     /**
+     * Add the specified packages to the repository.
+     * @param packages zero or more packages to add to the repo
+     */
+    public void addPackages(RepositoryPackage... packages);
+
+    /**
      * Copy the contents of a repository into a new directory.  If the directory has
      * existing files, they will be removed.
      * @param path the path to clone to
      * @return the new repository
      */
     public Repository cloneInto(Path path);
+
+    /**
+     * Cast the current repository to the given repository class.
+     * @param clazz the class to cast the repository to
+     * @return the repository as the given class
+     */
+    public<T extends Repository> T as(Class<T> clazz);
+
+    @Override
+    public int hashCode();
+
+    @Override
+    public boolean equals(final Object obj);
 }

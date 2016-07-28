@@ -20,7 +20,7 @@ public abstract class RPMUtils {
     }
 
     public static RPMPackage getPackage(final File rpmFile) {
-        final Path rpmPath = rpmFile.toPath();
+        final Path rpmPath = rpmFile.toPath().normalize().toAbsolutePath();
         final RPMCommand command = new RPMCommand(rpmPath).query("%{name}|%{epoch}|%{version}|%{release}|%{arch}");
         command.run();
         final List<String> output = command.getOutput();
@@ -80,10 +80,10 @@ public abstract class RPMUtils {
             Files.walk(root.toPath().toAbsolutePath()).forEach(path -> {
                 if (path.toFile().isFile()) {
                     if (path.toString().endsWith(".rpm")) {
-                        LOG.debug("found RPM: {}", path);
+                        LOG.trace("found RPM: {}", path);
                         rpms.add(RPMUtils.getPackage(path.toFile()));
                     } else {
-                        LOG.debug("Not an RPM: {}", path);
+                        LOG.trace("Not an RPM: {}", path);
                     }
                 }
             });
@@ -95,13 +95,13 @@ public abstract class RPMUtils {
         RPMPackage previous = null;
         for (final RPMPackage rpm : rpms) {
             if (previous != null && previous.getName().equals(rpm.getName())) {
-                LOG.debug("Same package: '{}' and '{}'", previous, rpm);
+                LOG.trace("Same package: '{}' and '{}'", previous, rpm);
                 final String deltaName = RPMUtils.getDeltaFileName(previous, rpm);
                 final File deltaRPMFile = new File(deltaDir, deltaName);
                 boolean generate = false;
                 if (!deltaRPMFile.exists()) {
                     generate = true;
-                    LOG.debug("drpm does not exist: {}", deltaName);
+                    LOG.trace("drpm does not exist: {}", deltaName);
                 } else {
                     try {
                         final BasicFileAttributes drpmAttr = Files.readAttributes(deltaRPMFile.toPath(), BasicFileAttributes.class);
@@ -122,10 +122,10 @@ public abstract class RPMUtils {
                     }
                 }
                 if (generate) {
-                    LOG.debug("generating {}", deltaName);
+                    LOG.trace("generating {}", deltaName);
                     RPMUtils.generateDelta(previous.getFile(), rpm.getFile(), deltaRPMFile);
                 } else {
-                    LOG.debug("NOT generating {}", deltaName);
+                    LOG.trace("NOT generating {}", deltaName);
                 }
             }
             previous = rpm;

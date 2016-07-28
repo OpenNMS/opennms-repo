@@ -36,18 +36,18 @@ public class MakeDeltaRPMCommand extends Command {
         this(fromRPM, toRPM, null);
     }
 
-    public MakeDeltaRPMCommand(final Path fromRPM, final Path toRPM, final Path outputRPM) throws RepositoryException {
-        this(RPMUtils.getPackage(fromRPM.toFile()), RPMUtils.getPackage(toRPM.toFile()), outputRPM);
+    public MakeDeltaRPMCommand(final Path fromRPM, final Path toRPM, final Path outputDeltaRPM) throws RepositoryException {
+        this(RPMUtils.getPackage(fromRPM.toFile()), RPMUtils.getPackage(toRPM.toFile()), outputDeltaRPM);
     }
 
-    public MakeDeltaRPMCommand(final RPMPackage fromRPM, final RPMPackage toRPM, final Path outputRPM) throws RepositoryException {
+    public MakeDeltaRPMCommand(final RPMPackage fromRPM, final RPMPackage toRPM, final Path outputDeltaRPM) throws RepositoryException {
         super("makedeltarpm");
         m_fromRPM = fromRPM;
         m_toRPM = toRPM;
         if (!m_fromRPM.getName().equals(m_toRPM.getName())) {
             throw new IllegalArgumentException("RPM packages do not match!  We can't make a delta RPM from unrelated packages.");
         }
-        m_outputRPM = outputRPM.toAbsolutePath();
+        m_outputRPM = outputDeltaRPM;
     }
 
     public MakeDeltaRPMCommand output(final Path outputRPM) {
@@ -59,15 +59,15 @@ public class MakeDeltaRPMCommand extends Command {
         try {
             m_output = Collections.emptyList();
             m_errorOutput = Collections.emptyList();
-            final Path outputRPM = getOutputRPMPath();
-            Files.createDirectories(outputRPM.getParent());
+            final Path outputDeltaRPM = getOutputRPMPath();
+            Files.createDirectories(outputDeltaRPM.getParent());
 
             final CommandLine exec = new CommandLine(this.getExecutable());
             exec.addArgument(m_fromRPM.getPath().toString());
             exec.addArgument(m_toRPM.getPath().toString());
-            exec.addArgument(outputRPM.toString());
+            exec.addArgument(outputDeltaRPM.toString());
 
-            LOG.debug("makedeltarpm {} {} {}", Util.relativize(m_fromRPM.getPath()), Util.relativize(m_toRPM.getPath()), outputRPM);
+            LOG.debug("makedeltarpm {} {} {}", Util.relativize(m_fromRPM.getPath()), Util.relativize(m_toRPM.getPath()), outputDeltaRPM);
 
             exec.setSubstitutionMap(this.getSubstitutionMap());
             final Process p = CommandLauncherFactory.createVMLauncher().exec(exec, getEnvironment());
@@ -86,7 +86,7 @@ public class MakeDeltaRPMCommand extends Command {
     Path getOutputRPMPath() {
         if (m_outputRPM == null) {
             final String deltaRPMName = RPMUtils.getDeltaFileName(m_fromRPM, m_toRPM);
-            return m_fromRPM.getPath().getParent().resolve("drpms").resolve(deltaRPMName);
+            return m_fromRPM.getPath().getParent().normalize().toAbsolutePath().resolve("drpms").resolve(deltaRPMName);
         }
         return m_outputRPM;
     }

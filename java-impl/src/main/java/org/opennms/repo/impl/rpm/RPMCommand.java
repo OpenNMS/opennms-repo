@@ -16,11 +16,9 @@ import org.apache.commons.io.IOUtils;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
 import org.opennms.repo.impl.Command;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RPMCommand extends Command {
-    private static final Logger LOG = LoggerFactory.getLogger(RPMCommand.class);
+    //private static final Logger LOG = LoggerFactory.getLogger(RPMCommand.class);
     private static final String[] EMPTY_STRING = new String[0];
 
     private String m_command;

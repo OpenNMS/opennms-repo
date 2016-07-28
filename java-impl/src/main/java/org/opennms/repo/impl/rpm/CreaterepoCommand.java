@@ -54,16 +54,16 @@ public class CreaterepoCommand extends Command {
     }
 
     private void init() throws IOException, InterruptedException {
-        LOG.debug("CreaterepoCommand.init()");
+        LOG.trace("CreaterepoCommand.init()");
 
         final CommandLine cl = new CommandLine("createrepo").addArgument("--help");
-        LOG.debug("CreaterepoCommand.init(): command line = {}", cl);
+        LOG.trace("CreaterepoCommand.init(): command line = {}", cl);
 
         final Process p = CommandLauncherFactory.createVMLauncher().exec(cl, getEnvironment());
 
-        LOG.debug("CreaterepoCommand.init(): process created: {}", p);
+        LOG.trace("CreaterepoCommand.init(): process created: {}", p);
         try (final InputStream s = p.getInputStream(); final Reader r = new InputStreamReader(s); final BufferedReader br = new BufferedReader(r);) {
-            LOG.debug("s={}, r={}, br={}", s, r, br);
+            LOG.trace("s={}, r={}, br={}", s, r, br);
             String line = null;
             do {
                 line = br.readLine();

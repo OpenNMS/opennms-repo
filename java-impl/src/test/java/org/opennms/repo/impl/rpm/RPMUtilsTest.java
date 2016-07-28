@@ -15,7 +15,6 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.opennms.repo.api.RepositoryPackage.Architecture;
 import org.slf4j.Logger;
@@ -88,17 +87,15 @@ public class RPMUtilsTest {
     }
 
     @Test
-    @Ignore("WHY DO THESE FAIL?!?")
     public void testCreateDeltaRPM() throws Exception {
         final File deltaRPM = RPMUtils.generateDelta(JRRD1_FILE, JRRD2_FILE);
         assertNotNull(deltaRPM);
         assertEquals("jrrd-1.1.0-1_1.1.0-2.el7.centos.x86_64.drpm", deltaRPM.getName());
         assertTrue(deltaRPM.length() > 0);
-        assertEquals(JRRD1_FILE.getParentFile().toPath().resolve("drpms"), deltaRPM.toPath().getParent());
+        assertEquals(JRRD1_FILE.getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"), deltaRPM.toPath().getParent());
     }
     
     @Test
-    @Ignore("WHY DO THESE FAIL?!?")
     public void testCreateDeltaRPMOutOfOrder() throws Exception {
         assert(JRRD1_FILE != null);
         assert(JRRD2_FILE != null);
@@ -106,7 +103,7 @@ public class RPMUtilsTest {
         assertNotNull(deltaRPM);
         assertEquals("jrrd-1.1.0-1_1.1.0-2.el7.centos.x86_64.drpm", deltaRPM.getName());
         assertTrue(deltaRPM.length() > 0);
-        assertEquals(JRRD1_FILE.getParentFile().toPath().resolve("drpms"), deltaRPM.toPath().getParent());
+        assertEquals(JRRD1_FILE.getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"), deltaRPM.toPath().getParent());
     }
     
     @Test
