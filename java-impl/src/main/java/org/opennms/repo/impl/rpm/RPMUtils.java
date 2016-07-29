@@ -77,10 +77,10 @@ public abstract class RPMUtils {
         final File deltaDir = new File(root, "drpms");
 
         try {
-            Files.walk(root.toPath().toAbsolutePath()).forEach(path -> {
+            Files.walk(root.toPath().normalize().toAbsolutePath()).forEach(path -> {
                 if (path.toFile().isFile()) {
                     if (path.toString().endsWith(".rpm")) {
-                        LOG.trace("found RPM: {}", path);
+                        LOG.debug("found RPM: {}", path);
                         rpms.add(RPMUtils.getPackage(path.toFile()));
                     } else {
                         LOG.trace("Not an RPM: {}", path);

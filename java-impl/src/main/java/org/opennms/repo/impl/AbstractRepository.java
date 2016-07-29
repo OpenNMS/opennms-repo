@@ -148,6 +148,7 @@ public abstract class AbstractRepository implements Repository {
                     FileUtils.copyFile(pack.getFile(), targetPath.toFile());
                     FileUtils.touch(targetPath.toFile());
                     updatePackage(pack);
+                    m_lastIndexed = -1;
                 } else {
                     LOG.debug("NOT copying {} to {} ({} is newer)", pack, relativeTargetPath, existingPackage);
                 }
@@ -198,6 +199,7 @@ public abstract class AbstractRepository implements Repository {
         }
         LOG.debug("Repository {} packages: {}", this, existing);
         m_packageCache = existing;
+        updateMetadata();
     }
 
     @Override
@@ -227,7 +229,7 @@ public abstract class AbstractRepository implements Repository {
         return getClass().getSimpleName() + "@" + System.identityHashCode(this) + ":" + getName() + "(parent=" + hasParent() + "):" + Util.relativize(getRoot());
     }
     
-    protected void updateMetadata() {
+    public void updateMetadata() {
     	try {
     		final Map<String,String> onDisk = readMetadata();
     		final Map<String,String> current = getMetadata();
@@ -237,6 +239,7 @@ public abstract class AbstractRepository implements Repository {
                 m_name = getRoot().getFileName().toString();
             }
     		current.put("name", getName());
+    		current.put("type", getClass().getName());
 
     		current.put("lastIndexed", String.valueOf(m_lastIndexed));
 

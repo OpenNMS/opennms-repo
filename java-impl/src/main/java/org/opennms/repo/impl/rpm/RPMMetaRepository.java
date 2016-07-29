@@ -13,7 +13,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import org.opennms.repo.api.GPGInfo;
+import org.opennms.repo.api.MetaRepository;
 import org.opennms.repo.api.Repository;
+import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
 import org.opennms.repo.api.RepositoryPackage;
 import org.opennms.repo.impl.AbstractRepository;
@@ -21,7 +23,7 @@ import org.opennms.repo.impl.RepoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RPMMetaRepository extends AbstractRepository {
+public class RPMMetaRepository extends AbstractRepository implements MetaRepository {
     private static final Logger LOG = LoggerFactory.getLogger(RPMMetaRepository.class);
     private static final RepoSetComparator REPOSET_COMPARATOR = new RepoSetComparator();
 
@@ -67,21 +69,21 @@ public class RPMMetaRepository extends AbstractRepository {
     	}
         getSubRepositories().forEach(repo -> {
         	LOG.debug("indexing: {}", repo);
-        	if (repo.isValid()) {
-        		repo.index(gpginfo);
-        	} else {
-                LOG.warn("Repository {} is not a valid sub-repository of {}", repo, this);
-        	}
+        	repo.index(gpginfo);
         });
     }
 
     @Override
     public void refresh() {
-    	final List<RPMRepository> subrepos = getSubRepositories();
+    	final Collection<Repository> subrepos = getSubRepositories();
     	LOG.debug("Refreshing sub-repositories: {}", subrepos);
 		subrepos.stream().forEach(repo -> {
     		repo.refresh();
     	});
+    }
+
+    public Repository getSubRepository(final String subrepo) {
+    	return getSubRepository(subrepo, false);
     }
 
     /**
@@ -91,7 +93,7 @@ public class RPMMetaRepository extends AbstractRepository {
      * @param subRepoName the name of the sub-repository
      * @return the matching RPMRepository, if it exists and is valid
      */
-    private RPMRepository getSubRepository(final String subRepoName, final boolean create) {
+    protected RPMRepository getSubRepository(final String subRepoName, final boolean create) {
         LOG.debug("getSubRepository: {}", subRepoName);
         if (m_subRepositories.containsKey(subRepoName)) {
         	return m_subRepositories.get(subRepoName);
@@ -119,13 +121,14 @@ public class RPMMetaRepository extends AbstractRepository {
     @Override
     public Collection<RepositoryPackage> getPackages() {
     	final List<RepositoryPackage> packages = new ArrayList<>();
-    	for (final RPMRepository repository : getSubRepositories()) {
+    	for (final Repository repository : getSubRepositories()) {
     	    packages.addAll(repository.getPackages());
     	}
     	return packages;
     }
 
-    protected List<RPMRepository> getSubRepositories() {
+    @Override
+    public Collection<Repository> getSubRepositories() {
         try {
         	ensureCommonRepositoryExists(null);
             final RPMMetaRepository parent = getParent() == null? null : getParent().as(RPMMetaRepository.class);
@@ -181,10 +184,31 @@ public class RPMMetaRepository extends AbstractRepository {
     }
 
     @Override
+    public void addPackages(final String subrepo, final Repository repository) {
+		final RPMRepository to = getSubRepository(subrepo, true);
+		final Repository from;
+    	if (repository instanceof RPMMetaRepository) {
+    		from = ((RPMMetaRepository) repository).getSubRepository(subrepo, true);
+    	} else if (repository instanceof RPMRepository) {
+    		from = repository;
+    	} else {
+    		throw new RepositoryException("Repository must be an RPM meta repository with a matching subrepo, or an RPM repository!");
+    	}
+    	//LOG.debug("from = {}, to = {}", from, to);
+    	to.addPackages(from);
+    }
+
+    @Override
     public void addPackages(final RepositoryPackage... packages) {
     	refresh();
         final RPMRepository subRepo = getSubRepository("common", true);
         subRepo.addPackages(packages);
+    }
+
+    @Override
+    public void addPackages(final String subrepo, final RepositoryPackage...packages) {
+    	final RPMRepository repo = getSubRepository(subrepo, true);
+    	repo.addPackages(packages);
     }
 
     @Override
@@ -198,8 +222,8 @@ public class RPMMetaRepository extends AbstractRepository {
     public int compareTo(final Repository o) {
         if (o instanceof RPMMetaRepository) {
             final RPMMetaRepository other = (RPMMetaRepository) o;
-            final SortedSet<RPMRepository> myRepositories = new TreeSet<>(getSubRepositories());
-            final SortedSet<RPMRepository> otherRepositories = new TreeSet<>(other.getSubRepositories());
+            final SortedSet<Repository> myRepositories = new TreeSet<>(getSubRepositories());
+            final SortedSet<Repository> otherRepositories = new TreeSet<>(other.getSubRepositories());
             return REPOSET_COMPARATOR.compare(myRepositories, otherRepositories);
         }
         return -1;

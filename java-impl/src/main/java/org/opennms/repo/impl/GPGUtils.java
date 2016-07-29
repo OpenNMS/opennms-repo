@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -12,6 +13,7 @@ import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.util.Date;
 
+import org.apache.commons.io.FileUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -64,7 +66,10 @@ public abstract class GPGUtils {
     }
 
     public static void detach_sign(final Path inputFile, final Path outputFile, final GPGInfo gpginfo, final boolean sha256) throws IOException, InterruptedException {
-        LOG.info("Detach-signing {} with key {}", Util.relativize(inputFile), gpginfo.getKey());
+        LOG.info("Detach-signing {} with key {} into {}", Util.relativize(inputFile), gpginfo.getKey(), Util.relativize(outputFile));
+
+        Files.createDirectories(outputFile.getParent());
+        FileUtils.touch(outputFile.toFile());
 
         try (
             final FileInputStream sFis = new FileInputStream(inputFile.toFile());

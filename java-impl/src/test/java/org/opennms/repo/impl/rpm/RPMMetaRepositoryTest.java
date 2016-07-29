@@ -29,6 +29,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.opennms.repo.api.GPGInfo;
+import org.opennms.repo.api.MetaRepository;
 import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.Util;
 import org.opennms.repo.api.Version;
@@ -67,7 +68,7 @@ public class RPMMetaRepositoryTest {
 
     @Test
     public void testAddRPMsToMetaRepository() throws Exception {
-        final String repositoryPath = "target/repositories/RPMMetaRepositoryTest.testAddRPMsToRepository";
+        final String repositoryPath = "target/repositories/RPMMetaRepositoryTest.testAddRPMsToMetaRepository";
         Repository repo = new RPMMetaRepository(Paths.get(repositoryPath));
         assertFalse(repo.isValid());
 
@@ -77,6 +78,26 @@ public class RPMMetaRepositoryTest {
         final File jrrd3File = new File(outputPath.toFile(), JRRD3_FILE.getName());
 
         repo.addPackages(RPMUtils.getPackage(JRRD1_FILE), RPMUtils.getPackage(JRRD2_FILE), RPMUtils.getPackage(JRRD3_FILE));
+        repo.index(m_gpginfo);
+
+        TestUtils.assertFileExists(outputPath.resolve("..").resolve("drpms").resolve(RPMUtils.getDeltaFileName(jrrd1File, jrrd2File)).normalize().toString());
+        TestUtils.assertFileExists(jrrd1File.getAbsolutePath());
+        TestUtils.assertFileExists(jrrd2File.getAbsolutePath());
+        TestUtils.assertFileExists(jrrd3File.getAbsolutePath());
+    }
+
+    @Test
+    public void testAddRPMsToMetaSubRepository() throws Exception {
+        final String repositoryPath = "target/repositories/RPMMetaRepositoryTest.testAddRPMsToMetaSubRepository";
+        MetaRepository repo = new RPMMetaRepository(Paths.get(repositoryPath));
+        assertFalse(repo.isValid());
+
+        final Path outputPath = Paths.get(repositoryPath).resolve("rhel5").resolve("amd64");
+        final File jrrd1File = new File(outputPath.toFile(), JRRD1_FILE.getName());
+        final File jrrd2File = new File(outputPath.toFile(), JRRD2_FILE.getName());
+        final File jrrd3File = new File(outputPath.toFile(), JRRD3_FILE.getName());
+
+        repo.addPackages("rhel5", RPMUtils.getPackage(JRRD1_FILE), RPMUtils.getPackage(JRRD2_FILE), RPMUtils.getPackage(JRRD3_FILE));
         repo.index(m_gpginfo);
 
         TestUtils.assertFileExists(outputPath.resolve("..").resolve("drpms").resolve(RPMUtils.getDeltaFileName(jrrd1File, jrrd2File)).normalize().toString());
@@ -240,6 +261,32 @@ public class RPMMetaRepositoryTest {
         TestUtils.assertFileDoesNotExist(jrrd2TargetFile);
 
         targetRepo.addPackages(sourceRepo);
+        TestUtils.assertFileExists(jrrd2TargetFile);
+    }
+
+    @Test
+    public void testAddPackagesToSubrepo() throws Exception {
+        final String sourceRepositoryPath = "target/repositories/RPMMetaRepositoryTest.testAddPackagesToSubrepo/source";
+        final String targetRepositoryPath = "target/repositories/RPMMetaRepositoryTest.testAddPackagesToSubrepo/target";
+        MetaRepository sourceRepo = new RPMMetaRepository(Paths.get(sourceRepositoryPath));
+        MetaRepository targetRepo = new RPMMetaRepository(Paths.get(targetRepositoryPath));
+
+        final Path sourceRepositoryCommon = Paths.get(sourceRepositoryPath).resolve("rhel5");
+        final Path targetRepositoryCommon = Paths.get(targetRepositoryPath).resolve("rhel5");
+        Files.createDirectories(sourceRepositoryCommon.resolve("amd64"));
+        Files.createDirectories(targetRepositoryCommon.resolve("amd64"));
+        final File jrrd1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(), JRRD1_FILE.getName());
+        final File jrrd2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(), JRRD2_FILE.getName());
+        final Path jrrd2TargetFile = targetRepositoryCommon.resolve("amd64").resolve(JRRD2_FILE.getName());
+
+        FileUtils.copyFileToDirectory(JRRD1_FILE, new File(targetRepositoryCommon.toFile(), "amd64"));
+        FileUtils.copyFileToDirectory(JRRD2_FILE, new File(sourceRepositoryCommon.toFile(), "amd64"));
+
+        TestUtils.assertFileExists(jrrd1TargetFile.getAbsolutePath());
+        TestUtils.assertFileExists(jrrd2SourceFile.getAbsolutePath());
+        TestUtils.assertFileDoesNotExist(jrrd2TargetFile);
+
+        targetRepo.addPackages("rhel5", sourceRepo);
         TestUtils.assertFileExists(jrrd2TargetFile);
     }
 
