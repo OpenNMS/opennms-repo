@@ -17,6 +17,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.opennms.repo.api.RepositoryPackage.Architecture;
+import org.opennms.repo.impl.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +25,6 @@ public class RPMUtilsTest {
     private static final Logger LOG = LoggerFactory.getLogger(RPMUtilsTest.class);
 
     private static final boolean skipDelete = false;
-
-    private static final File JRRD1_FILE = new File("target/test-classes/jrrd-1.1.0-1.x86_64.rpm");
-    private static final File JRRD2_FILE = new File("target/test-classes/jrrd-1.1.0-2.el7.centos.x86_64.rpm");
-    private static final File JRRD3_FILE = new File("target/test-classes/jrrd-1.1.0-3.el7.centos.x86_64.rpm");
 
     private static final Set<Path> s_deleteMe = new HashSet<>();
 
@@ -55,9 +52,9 @@ public class RPMUtilsTest {
 
     @Test
     public void testReadRPMPackage() throws Exception {
-        final RPMPackage rpm = RPMUtils.getPackage(JRRD1_FILE);
+        final RPMPackage rpm = RPMUtils.getPackage(TestUtils.JRRD1_PATH.toFile());
         assertEquals("jrrd", rpm.getName());
-        assertEquals(JRRD1_FILE.getAbsolutePath(), rpm.getPath().toAbsolutePath().toString());
+        assertEquals(TestUtils.JRRD1_PATH.toFile().getAbsolutePath(), rpm.getPath().toAbsolutePath().toString());
         assertEquals(Architecture.AMD64, rpm.getArchitecture());
         assertNotNull(rpm.getVersion());
         assertEquals(0, rpm.getVersion().getEpoch());
@@ -67,9 +64,9 @@ public class RPMUtilsTest {
 
     @Test
     public void testCompareRPMPackage() throws Exception {
-        final RPMPackage jrrd1 = RPMUtils.getPackage(JRRD1_FILE);
-        final RPMPackage jrrd1again = RPMUtils.getPackage(JRRD1_FILE);
-        final RPMPackage jrrd2 = RPMUtils.getPackage(JRRD2_FILE);
+        final RPMPackage jrrd1 = RPMUtils.getPackage(TestUtils.JRRD1_PATH.toFile());
+        final RPMPackage jrrd1again = RPMUtils.getPackage(TestUtils.JRRD1_PATH.toFile());
+        final RPMPackage jrrd2 = RPMUtils.getPackage(TestUtils.JRRD2_PATH.toFile());
 
         assertEquals(0, jrrd1.compareTo(jrrd1));
         assertEquals(jrrd1, jrrd1again);
@@ -79,31 +76,31 @@ public class RPMUtilsTest {
 
     @Test
     public void testGenerateDeltaRPMName() throws Exception {
-        String deltaRPM = RPMUtils.getDeltaFileName(JRRD1_FILE, JRRD2_FILE);
+        String deltaRPM = RPMUtils.getDeltaFileName(TestUtils.JRRD1_PATH.toFile(), TestUtils.JRRD2_PATH.toFile());
         assertEquals("jrrd-1.1.0-1_1.1.0-2.el7.centos.x86_64.drpm", deltaRPM);
         
-        deltaRPM = RPMUtils.getDeltaFileName(RPMUtils.getPackage(JRRD1_FILE), RPMUtils.getPackage(JRRD2_FILE));
+        deltaRPM = RPMUtils.getDeltaFileName(RPMUtils.getPackage(TestUtils.JRRD1_PATH.toFile()), RPMUtils.getPackage(TestUtils.JRRD2_PATH.toFile()));
         assertEquals("jrrd-1.1.0-1_1.1.0-2.el7.centos.x86_64.drpm", deltaRPM);
     }
 
     @Test
     public void testCreateDeltaRPM() throws Exception {
-        final File deltaRPM = RPMUtils.generateDelta(JRRD1_FILE, JRRD2_FILE);
+        final File deltaRPM = RPMUtils.generateDelta(TestUtils.JRRD1_PATH.toFile(), TestUtils.JRRD2_PATH.toFile());
         assertNotNull(deltaRPM);
         assertEquals("jrrd-1.1.0-1_1.1.0-2.el7.centos.x86_64.drpm", deltaRPM.getName());
         assertTrue(deltaRPM.length() > 0);
-        assertEquals(JRRD1_FILE.getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"), deltaRPM.toPath().getParent());
+        assertEquals(TestUtils.JRRD1_PATH.toFile().getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"), deltaRPM.toPath().getParent());
     }
     
     @Test
     public void testCreateDeltaRPMOutOfOrder() throws Exception {
-        assert(JRRD1_FILE != null);
-        assert(JRRD2_FILE != null);
-        final File deltaRPM = RPMUtils.generateDelta(JRRD2_FILE, JRRD1_FILE);
+        assert(TestUtils.JRRD1_PATH.toFile() != null);
+        assert(TestUtils.JRRD2_PATH.toFile() != null);
+        final File deltaRPM = RPMUtils.generateDelta(TestUtils.JRRD2_PATH.toFile(), TestUtils.JRRD1_PATH.toFile());
         assertNotNull(deltaRPM);
         assertEquals("jrrd-1.1.0-1_1.1.0-2.el7.centos.x86_64.drpm", deltaRPM.getName());
         assertTrue(deltaRPM.length() > 0);
-        assertEquals(JRRD1_FILE.getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"), deltaRPM.toPath().getParent());
+        assertEquals(TestUtils.JRRD1_PATH.toFile().getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"), deltaRPM.toPath().getParent());
     }
     
     @Test
@@ -112,13 +109,13 @@ public class RPMUtilsTest {
         Files.createDirectories(tempPath);
         s_deleteMe.add(tempPath);
         
-        final File jrrd1File = new File(tempPath.toFile(), JRRD1_FILE.getName());
-        final File jrrd2File = new File(tempPath.toFile(), JRRD2_FILE.getName());
-        final File jrrd3File = new File(tempPath.toFile(), JRRD3_FILE.getName());
+        final File jrrd1File = new File(tempPath.toFile(), TestUtils.JRRD1_FILENAME);
+        final File jrrd2File = new File(tempPath.toFile(), TestUtils.JRRD2_FILENAME);
+        final File jrrd3File = new File(tempPath.toFile(), TestUtils.JRRD3_FILENAME);
 
-        FileUtils.copyFileToDirectory(JRRD1_FILE, tempPath.toFile());
-        FileUtils.copyFileToDirectory(JRRD2_FILE, tempPath.toFile());
-        FileUtils.copyFileToDirectory(JRRD3_FILE, tempPath.toFile());
+        FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), tempPath.toFile());
+        FileUtils.copyFileToDirectory(TestUtils.JRRD2_PATH.toFile(), tempPath.toFile());
+        FileUtils.copyFileToDirectory(TestUtils.JRRD3_PATH.toFile(), tempPath.toFile());
 
         assertTrue(jrrd1File.exists());
         assertTrue(jrrd2File.exists());

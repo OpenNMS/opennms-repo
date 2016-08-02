@@ -1,13 +1,8 @@
 package org.opennms.repo.impl;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,13 +10,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
+import org.opennms.repo.api.RepositoryMetadata;
 import org.opennms.repo.api.RepositoryPackage;
 import org.opennms.repo.api.Util;
 import org.slf4j.Logger;
@@ -32,28 +26,37 @@ public abstract class AbstractRepository implements Repository {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRepository.class);
 
-    private final Path m_root;
+    private final RepositoryMetadata m_metadata;
     private final Repository m_parent;
-    private String m_name;
-    private long m_lastIndexed = -1;
-    private Map<String,String> m_metadata = new ConcurrentHashMap<>();
+
     private Map<String,RepositoryPackage> m_packageCache = new HashMap<>();
 
     public AbstractRepository(final Path path) {
-        m_root = path.normalize().toAbsolutePath();
-        m_parent = initializeParent();
-        updateMetadata();
+    	this(path, null);
     }
 
     public AbstractRepository(final Path path, final Repository parent) {
-        m_root = path.normalize().toAbsolutePath();
-        m_parent = parent;
-        updateMetadata();
+    	LOG.debug("AbstractRepository: path={}, parent={}", path, parent);
+    	if (parent == null) {
+        	m_metadata = new RepositoryMetadata(path, this.getClass());
+        	LOG.debug("parent is null, using metadata: {}", m_metadata);
+        	if (m_metadata.hasParent()) {
+        		m_parent = m_metadata.getParentMetadata().getRepositoryInstance();
+        		LOG.debug("parent={}", m_parent);
+        	} else {
+        		LOG.debug("no parent from metadata :(");
+        		m_parent = null;
+        	}
+    	} else {
+        	m_metadata = new RepositoryMetadata(path, this.getClass(), parent.getRoot(), parent.getClass());
+    		LOG.debug("parent is not null, using metadata: {}", m_metadata);
+        	m_parent = parent;
+    	}
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(m_name, m_root, m_parent);
+        return Objects.hash(m_metadata, m_parent);
     }
 
     @Override
@@ -68,14 +71,13 @@ public abstract class AbstractRepository implements Repository {
             return false;
         }
         AbstractRepository other = (AbstractRepository) obj;
-        return Objects.equals(m_name, other.m_name) &&
-                Objects.equals(m_root, other.m_root) &&
+        return Objects.equals(m_metadata, other.m_metadata) &&
                 Objects.equals(m_parent, other.m_parent);
     }
 
     @Override
     public Path getRoot() {
-        return m_root;
+    	return m_metadata.getRoot();
     }
 
     @Override
@@ -85,20 +87,21 @@ public abstract class AbstractRepository implements Repository {
 
     @Override
     public boolean hasParent() {
-    	return m_parent != null;
+    	return m_parent != null && m_metadata.hasParent();
     }
 
     @Override
     public String getName() {
-        return m_name;
+        return m_metadata.getName();
     }
     
     @Override
     public void setName(final String name) {
-        m_name = name;
-        updateMetadata();
+    	m_metadata.setName(name);
+    	m_metadata.store();
     }
 
+    /*
     public Map<String,String> getMetadata() {
     	return m_metadata;
     }
@@ -106,6 +109,7 @@ public abstract class AbstractRepository implements Repository {
     public void setMetadata(final Map<String,String> metadata) {
     	m_metadata = metadata;
     }
+    */
 
     @Override
     public Path relativePath(final RepositoryPackage p) {
@@ -148,7 +152,8 @@ public abstract class AbstractRepository implements Repository {
                     FileUtils.copyFile(pack.getFile(), targetPath.toFile());
                     FileUtils.touch(targetPath.toFile());
                     updatePackage(pack);
-                    m_lastIndexed = -1;
+                    m_metadata.resetLastIndexed();
+                    m_metadata.store();
                 } else {
                     LOG.debug("NOT copying {} to {} ({} is newer)", pack, relativeTargetPath, existingPackage);
                 }
@@ -208,16 +213,16 @@ public abstract class AbstractRepository implements Repository {
     }
 
     protected long getLastIndexed() {
-    	return m_lastIndexed;
+    	return m_metadata.getLastIndexed();
     }
 
     protected void updateLastIndexed() {
-    	m_lastIndexed = System.currentTimeMillis();
+    	m_metadata.touchLastIndexed();
     }
 
     @Override
     public int compareTo(final Repository o) {
-        int ret = m_root.compareTo(o.getRoot());
+        int ret = getRoot().compareTo(o.getRoot());
         if (ret == 0) {
             ret = m_parent.compareTo(o.getParent());
         }
@@ -226,103 +231,23 @@ public abstract class AbstractRepository implements Repository {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "@" + System.identityHashCode(this) + ":" + getName() + "(parent=" + hasParent() + "):" + Util.relativize(getRoot());
+        return getClass().getSimpleName() + "@" + System.identityHashCode(this) + ":" + getName() + "(parent=" + hasParent() + "):" + getRoot();
     }
     
     public void updateMetadata() {
-    	try {
-    		final Map<String,String> onDisk = readMetadata();
-    		final Map<String,String> current = getMetadata();
-
-    		// update name
-        	if (m_name == null) {
-                m_name = getRoot().getFileName().toString();
-            }
-    		current.put("name", getName());
-    		current.put("type", getClass().getName());
-
-    		current.put("lastIndexed", String.valueOf(m_lastIndexed));
-
-    		// update parent info
-            final Repository parent = getParent();
-            if (parent != null) {
-                current.put("parent", getRoot().relativize(parent.getRoot().normalize().toAbsolutePath()).toString());
-                current.put("parentType", parent.getClass().getName());
-            }
-
-            boolean dirty = false;
-
-            for (final String key : current.keySet()) {
-            	if (!Objects.equals(current.get(key), onDisk.get(key))) {
-            		dirty = true;
-            		break;
-            	}
-            }
-            
-            if (dirty) {
-            	LOG.debug("Metadata has changed. Updating {}", this);
-            	setMetadata(current);
-            	writeMetadata(current);
-            } else {
-            	LOG.debug("Metadata is unchanged. Leaving {}", this);
-            }
-    	} catch (final IOException e) {
-    		throw new RepositoryException(e);
-    	}
+    	m_metadata.store();
     }
 
     protected Map<String,String> readMetadata() throws IOException {
-    	final Map<String,String> metadata = new ConcurrentHashMap<>();
-    	final File metadataFile = getRoot().resolve(REPO_METADATA_FILENAME).toFile();
-    	if (metadataFile.exists()) {
-        	try (final FileReader fr = new FileReader(metadataFile)) {
-            	final Properties props = new Properties();
-            	props.load(fr);
-            	for (final Map.Entry<Object,Object> entry : props.entrySet()) {
-            		final Object value = entry.getValue();
-					metadata.put(entry.getKey().toString(), value == null? null : value.toString());
-            	}
-			}
-    	}
-    	return metadata;
+    	return Util.readMetadata(getRoot());
     }
 
     protected void writeMetadata(final Map<String,String> metadata) throws IOException {
-    	final Properties props = new Properties();
-    	for (final Map.Entry<String,String> entry : metadata.entrySet()) {
-    		props.put(entry.getKey(), entry.getValue());
-    	}
-    	if (!getRoot().toFile().exists()) {
-    		Files.createDirectories(getRoot());
-    	}
-    	try (final FileWriter fw = new FileWriter(getRoot().resolve(REPO_METADATA_FILENAME).toFile())) {
-        	props.store(fw, "Repository Metadata");
-    	}
+    	Util.writeMetadata(metadata, getRoot());
     }
 
     @Override
     public<T extends Repository> T as(final Class<T> repository) {
         return repository.cast(this);
-    }
-
-    protected Repository initializeParent() {
-        final Map<String,String> metadata = getMetadata();
-        if (metadata.containsKey("parent") && metadata.containsKey("parentType")) {
-        	final String parentType = metadata.get("parentType");
-        	final String parentPath = metadata.get("parent");
-        	LOG.debug("Initializing parent {}={}", parentPath, parentType);
-        	try {
-				final Class<? extends Repository> clazz = Class.forName(parentType).asSubclass(Repository.class);
-				final Constructor<? extends Repository> constructor = clazz.getConstructor(Path.class);
-				final Repository instance = constructor.newInstance(Paths.get(parentPath));
-				LOG.debug("Got parent: {}", instance);
-				return instance;
-			} catch (final Exception e) {
-				throw new RepositoryException("Failed to create parent of type " + parentType, e);
-			}
-        } else {
-        	LOG.debug("No parent found for {}", this);
-        }
-        return null;
     }
 }

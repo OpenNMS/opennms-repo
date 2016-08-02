@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,10 @@ public class RPMRepository extends AbstractRepository {
     @Override
     public Collection<RepositoryPackage> getPackages() {
         final Path root = getRoot();
+        if (!root.toFile().exists() || !root.toFile().isDirectory()) {
+        	return Collections.emptyList();
+        }
+
         try {
             return Files.walk(root).filter(path -> {
                 return path.toString().endsWith(".rpm") && path.toFile().isFile();
@@ -76,10 +81,10 @@ public class RPMRepository extends AbstractRepository {
     public void index(final GPGInfo gpginfo) throws RepositoryIndexException {
         LOG.info("index(): {}", this);
         final Path root = getRoot();
+        ensureRootExists();
 
         final Repository parentRepository = getParent();
         if (parentRepository != null) {
-            ensureRootExists();
             addPackages(parentRepository);
         } else {
             LOG.debug("No parent {}", this);

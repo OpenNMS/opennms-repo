@@ -10,6 +10,7 @@ import java.util.TreeSet;
 
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryPackage.Architecture;
+import org.opennms.repo.api.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,13 +22,16 @@ public abstract class RPMUtils {
 
     public static RPMPackage getPackage(final File rpmFile) {
         final Path rpmPath = rpmFile.toPath().normalize().toAbsolutePath();
+        return RPMUtils.getPackage(rpmPath);
+    }
+    public static RPMPackage getPackage(final Path rpmPath) {
         final RPMCommand command = new RPMCommand(rpmPath).query("%{name}|%{epoch}|%{version}|%{release}|%{arch}");
         command.run();
         final List<String> output = command.getOutput();
         if (output.size() < 1) {
-            LOG.debug("Unable to get output from RPM query on {}", rpmFile);
+            LOG.debug("Unable to get output from RPM query on {}", rpmPath);
             LOG.debug("STDERR was: {}", command.getErrorOutput());
-            throw new IllegalStateException("Unable to get output from RPM query on " + rpmFile);
+            throw new IllegalStateException("Unable to get output from RPM query on " + Util.relativize(rpmPath));
         }
         final String[] entries = output.get(0).split("\\|");
         final String rpmName = entries[0];

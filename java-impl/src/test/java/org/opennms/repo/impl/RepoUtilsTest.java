@@ -2,6 +2,8 @@ package org.opennms.repo.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,5 +45,38 @@ public class RepoUtilsTest {
 
         final Collection<Repository> repositories = RepoUtils.findRepositories(Paths.get(repositoryPath));
         assertEquals(2, repositories.size());
+    }
+    
+    @Test
+    public void testCreateTempRepository() throws Exception {
+        final String repositoryPath = "target/repositories/RepoUtilsTest.testCreateTempRepository";
+
+        final Path sourceRepoPath = Paths.get(repositoryPath).resolve("source");
+        final Repository sourceRepo = new RPMRepository(sourceRepoPath);
+        sourceRepo.index();
+
+        final Repository tempRepo = RepoUtils.createTempRepository(sourceRepo);
+        assertNotNull(tempRepo);
+        assertTrue(tempRepo.isValid());
+        assertFalse(tempRepo.hasParent());
+    }
+    
+    @Test
+    public void testCreateTempRepositoryWithParent() throws Exception {
+        final String repositoryPath = "target/repositories/RepoUtilsTest.testCreateTempRepositoryWithParent";
+
+        final Path parentRepoPath = Paths.get(repositoryPath).resolve("parent");
+		final Repository parentRepo = new RPMRepository(parentRepoPath);
+        parentRepo.index();
+
+        final Path sourceRepoPath = Paths.get(repositoryPath).resolve("source");
+        final Repository sourceRepo = new RPMRepository(sourceRepoPath, parentRepo);
+        sourceRepo.index();
+
+        final Repository tempRepo = RepoUtils.createTempRepository(sourceRepo);
+        assertNotNull(tempRepo);
+        assertTrue(tempRepo.isValid());
+        assertTrue(tempRepo.hasParent());
+        assertEquals(tempRepo.getParent().getRoot().normalize().toAbsolutePath(), parentRepoPath.normalize().toAbsolutePath());
     }
 }

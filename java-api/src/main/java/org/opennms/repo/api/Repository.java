@@ -5,6 +5,7 @@ import java.util.Collection;
 
 public interface Repository extends Comparable<Repository> {
     public static final String REPO_METADATA_FILENAME = ".repometa";
+
     /**
      * Get the root path of the repository.
      * @return The repository root as a {@link Path}.

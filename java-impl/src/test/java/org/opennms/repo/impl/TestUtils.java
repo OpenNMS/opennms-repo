@@ -12,7 +12,16 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.opennms.repo.api.GPGInfo;
 
 public abstract class TestUtils {
-    private TestUtils() {}
+	public static final Path JRRD1_PATH = Paths.get("target/test-classes/jrrd-1.1.0-1.x86_64.rpm");
+	public static final String JRRD1_FILENAME = JRRD1_PATH.getFileName().toString();
+
+	public static final Path JRRD2_PATH = Paths.get("target/test-classes/jrrd-1.1.0-2.el7.centos.x86_64.rpm");
+	public static final String JRRD2_FILENAME = JRRD2_PATH.getFileName().toString();
+
+	public static final Path JRRD3_PATH = Paths.get("target/test-classes/jrrd-1.1.0-3.el7.centos.x86_64.rpm");
+	public static final String JRRD3_FILENAME = JRRD3_PATH.getFileName().toString();
+
+	private TestUtils() {}
 
     public static GPGInfo generateGPGInfo() throws IOException, InterruptedException, PGPException {
         final String keyId = "foo@bar.com";
