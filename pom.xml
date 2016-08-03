@@ -34,42 +34,58 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <buildHelperMavenPluginVersion>1.12</buildHelperMavenPluginVersion>
+    <jacocoMavenPluginVersion>0.7.7.201606060606</jacocoMavenPluginVersion>
+    <mavenAssemblyPluginVersion>2.6</mavenAssemblyPluginVersion>
+    <mavenBundlePluginVersion>3.2.0</mavenBundlePluginVersion>
+    <mavenCompilerPluginVersion>3.5.1</mavenCompilerPluginVersion>
+    <mavenDependencyPluginVersion>2.10</mavenDependencyPluginVersion>
+    <mavenGpgPluginVersion>1.6</mavenGpgPluginVersion>
+    <mavenJavadocPluginVersion>2.10.4</mavenJavadocPluginVersion>
+    <mavenShadePluginVersion>2.4.3</mavenShadePluginVersion>
+    <mavenSourcePluginVersion>3.0.1</mavenSourcePluginVersion>
+    <nexusStagingMavenPluginVersion>1.6.7</nexusStagingMavenPluginVersion>
+    <wagonSshExternalVersion>2.10</wagonSshExternalVersion>
+
+    <args4jVersion>2.32</args4jVersion>
+    <bouncyCastleVersion>1.54</bouncyCastleVersion>
+    <commonsExecVersion>1.3</commonsExecVersion>
+    <commonsIoVersion>2.5</commonsIoVersion>
+    <commonsLangVersion>3.4</commonsLangVersion>
+    <jnaNativeVersion>3.0.4</jnaNativeVersion>
     <junitVersion>4.12</junitVersion>
     <logbackVersion>1.1.3</logbackVersion>
     <mockitoVersion>1.10.19</mockitoVersion>
     <slf4jVersion>1.7.12</slf4jVersion>
-    <args4jVersion>2.32</args4jVersion>
-    <bouncyCastleVersion>1.54</bouncyCastleVersion>
   </properties>
 
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>${slf4jVersion}</version>
+        <groupId>args4j</groupId>
+        <artifactId>args4j</artifactId>
+        <version>${args4jVersion}</version>
       </dependency>
       <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
         <version>${logbackVersion}</version>
       </dependency>
-
       <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
-        <version>${slf4jVersion}</version>
-      </dependency>
-            
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>${junitVersion}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-exec</artifactId>
+        <version>${commonsExecVersion}</version>
       </dependency>
       <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <version>${mockitoVersion}</version>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commonsIoVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commonsLangVersion}</version>
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
@@ -80,16 +96,52 @@
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcpg-jdk15on</artifactId>
         <version>${bouncyCastleVersion}</version>
-    </dependency>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4jVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>${slf4jVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hudsonci.plugins</groupId>
+        <artifactId>jna-native-support-plugin</artifactId>
+        <version>${jnaNativeVersion}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junitVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockitoVersion}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <version>${mavenBundlePluginVersion}</version>
+          <extensions>true</extensions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>${mavenCompilerPluginVersion}</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -99,7 +151,7 @@
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.7</version>
+        <version>${nexusStagingMavenPluginVersion}</version>
         <extensions>true</extensions>
         <configuration>
           <serverId>newts-ossrh</serverId>
@@ -111,27 +163,27 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.10</version>
+        <version>${mavenDependencyPluginVersion}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.6</version>
+        <version>${mavenAssemblyPluginVersion}</version>
       </plugin>
       <plugin>
          <groupId>org.codehaus.mojo</groupId>
          <artifactId>build-helper-maven-plugin</artifactId>
-         <version>1.10</version>
+         <version>${buildHelperMavenPluginVersion}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.3</version>
+        <version>${mavenShadePluginVersion}</version>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.7.7.201606060606</version>
+        <version>${jacocoMavenPluginVersion}</version>
         <executions>
           <execution>
             <goals>
@@ -152,7 +204,7 @@
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
         <artifactId>wagon-ssh-external</artifactId>
-        <version>2.10</version>
+        <version>${wagonSshExternalVersion}</version>
       </extension>
     </extensions>
   </build>
@@ -165,7 +217,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>${mavenGpgPluginVersion}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -179,7 +231,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>
-            <version>3.0.0</version>
+            <version>${mavenSourcePluginVersion}</version>
             <executions>
               <execution>
                 <id>attach-sources</id>
@@ -192,7 +244,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.4</version>
+            <version>${mavenJavadocPluginVersion}</version>
             <executions>
               <execution>
                 <id>attach-javadocs</id>
