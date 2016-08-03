@@ -11,17 +11,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.Util;
+import org.opennms.repo.impl.Options;
 import org.opennms.repo.impl.TestUtils;
-import org.opennms.repo.impl.actions.CloneRepository;
+import org.opennms.repo.impl.actions.CloneAction;
 import org.opennms.repo.impl.rpm.RPMRepository;
 
-public class CloneRepositoryTest {
-	private static final Path repositoryRoot = Paths.get("target/commands/repositories");
+public class CloneActionTest {
+	private static final Path repositoryRoot = Paths.get("target/commands/clone/repositories");
 	private GPGInfo m_gpginfo;
 
 	@Before
 	public void setUp() throws Exception {
-		Util.recursiveDelete(Paths.get("target/commands"));
+		Util.recursiveDelete(Paths.get("target/commands/clone"));
 		m_gpginfo = TestUtils.generateGPGInfo();
 	}
 
@@ -35,7 +36,7 @@ public class CloneRepositoryTest {
 		assertTrue(sourceRepo.getRoot().toFile().exists());
 		assertTrue(sourceRepo.getRoot().resolve(TestUtils.JRRD1_FILENAME).toFile().exists());
 
-		final CloneRepository command = new CloneRepository(Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
+		final CloneAction command = new CloneAction(new Options(), Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
 		command.run();
 
 		// make sure the source repo is still the same
@@ -70,7 +71,7 @@ public class CloneRepositoryTest {
 		assertTrue(sourceRepo.getRoot().resolve(TestUtils.JRRD2_FILENAME).toFile().exists());
 		assertTrue(sourceRepo.hasParent());
 
-		final CloneRepository command = new CloneRepository(Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
+		final CloneAction command = new CloneAction(new Options(), Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
 		command.run();
 
 		// make sure the source repo is still the same
