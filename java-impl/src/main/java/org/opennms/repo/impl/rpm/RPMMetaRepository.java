@@ -60,19 +60,23 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	}
 
 	@Override
-	public void index(final GPGInfo gpginfo) throws RepositoryIndexException {
+	public boolean index(final GPGInfo gpginfo) throws RepositoryIndexException {
 		LOG.debug("index");
 		ensureCommonRepositoryExists(gpginfo);
 		if (hasParent()) {
 			RPMMetaRepository parent = getParent().as(RPMMetaRepository.class);
 			parent.ensureCommonRepositoryExists(gpginfo);
 		}
-		getSubRepositories().forEach(repo -> {
+		boolean changed = false;
+		for (final Repository repo : getSubRepositories()) {
 			LOG.debug("indexing: {}", repo);
-			repo.index(gpginfo);
-		});
+			if (repo.index(gpginfo)) {
+				changed = true;
+			}
+		}
 		updateLastIndexed();
 		updateMetadata();
+		return changed;
 	}
 
 	@Override

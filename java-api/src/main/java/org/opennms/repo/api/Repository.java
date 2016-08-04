@@ -49,8 +49,9 @@ public interface Repository extends Comparable<Repository> {
 
 	/**
 	 * Generate/update indexes for the repository without signing them.
+	 * @return whether or not an index was necessary
 	 */
-	public void index() throws RepositoryIndexException;
+	public boolean index() throws RepositoryIndexException;
 
 	/**
 	 * Generate/update indexes for the repository.
@@ -58,7 +59,7 @@ public interface Repository extends Comparable<Repository> {
 	 * @param gpginfo
 	 *            the GPG key and identity info
 	 */
-	public void index(final GPGInfo gpginfo) throws RepositoryIndexException;
+	public boolean index(final GPGInfo gpginfo) throws RepositoryIndexException;
 
 	/**
 	 * Refresh the repository. Use this in the case that the repository could be

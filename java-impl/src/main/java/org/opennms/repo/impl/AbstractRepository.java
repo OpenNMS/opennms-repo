@@ -204,8 +204,8 @@ public abstract class AbstractRepository implements Repository {
 	}
 
 	@Override
-	public void index() throws RepositoryIndexException {
-		index(null);
+	public boolean index() throws RepositoryIndexException {
+		return index(null);
 	}
 
 	protected long getLastIndexed() {

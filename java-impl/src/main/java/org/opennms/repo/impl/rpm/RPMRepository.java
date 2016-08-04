@@ -79,7 +79,7 @@ public class RPMRepository extends AbstractRepository {
 	}
 
 	@Override
-	public void index(final GPGInfo gpginfo) throws RepositoryIndexException {
+	public boolean index(final GPGInfo gpginfo) throws RepositoryIndexException {
 		LOG.info("index(): {}", this);
 		final Path root = getRoot();
 		ensureRootExists();
@@ -95,7 +95,7 @@ public class RPMRepository extends AbstractRepository {
 
 		if (!isDirty()) {
 			LOG.info("RPM repository not changed: {}", this);
-			return;
+			return false;
 		}
 
 		ensureRootExists();
@@ -145,6 +145,7 @@ public class RPMRepository extends AbstractRepository {
 		}
 		updateLastIndexed();
 		updateMetadata();
+		return true;
 	}
 
 	public void generateDeltas() throws RepositoryException {
