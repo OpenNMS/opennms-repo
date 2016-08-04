@@ -53,10 +53,11 @@
     <commonsExecVersion>1.3</commonsExecVersion>
     <commonsIoVersion>2.5</commonsIoVersion>
     <commonsLangVersion>3.4</commonsLangVersion>
-    <jnaNativeVersion>3.0.4</jnaNativeVersion>
+    <jnrPosixVersion>3.0.29</jnrPosixVersion>
     <junitVersion>4.12</junitVersion>
     <logbackVersion>1.1.3</logbackVersion>
     <mockitoVersion>1.10.19</mockitoVersion>
+    <reflectionsVersion>0.9.10</reflectionsVersion>
     <slf4jVersion>1.7.12</slf4jVersion>
   </properties>
 
@@ -71,6 +72,11 @@
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
         <version>${logbackVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.jnr</groupId>
+        <artifactId>jnr-posix</artifactId>
+        <version>${jnrPosixVersion}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
@@ -98,6 +104,11 @@
         <version>${bouncyCastleVersion}</version>
       </dependency>
       <dependency>
+        <groupId>org.reflections</groupId>
+        <artifactId>reflections</artifactId>
+        <version>${reflectionsVersion}</version>
+      </dependency>
+      <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>${slf4jVersion}</version>
@@ -106,11 +117,6 @@
         <groupId>org.slf4j</groupId>
         <artifactId>jcl-over-slf4j</artifactId>
         <version>${slf4jVersion}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.hudsonci.plugins</groupId>
-        <artifactId>jna-native-support-plugin</artifactId>
-        <version>${jnaNativeVersion}</version>
       </dependency>
 
       <dependency>

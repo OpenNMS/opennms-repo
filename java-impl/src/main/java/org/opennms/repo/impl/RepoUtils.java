@@ -99,9 +99,9 @@ public abstract class RepoUtils {
 			RepoUtils.cloneDirectory(repo.getRoot(), tempPath);
 			final RepositoryMetadata newMetadata;
 			if (parent == null) {
-				newMetadata = new RepositoryMetadata(tempPath, repo.getClass());
+				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), null, null);
 			} else {
-				newMetadata = new RepositoryMetadata(tempPath, repo.getClass(), parent.getRoot().normalize().toAbsolutePath(), parent.getClass());
+				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), parent.getRoot().normalize().toAbsolutePath(), parent.getClass());
 			}
 			LOG.debug("createTempRepository: new metadata={}", newMetadata);
 			newMetadata.store();

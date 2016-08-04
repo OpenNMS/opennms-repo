@@ -1,6 +1,7 @@
 package org.opennms.repo.impl.actions;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -30,8 +31,13 @@ public class IndexAction implements Action {
     @Argument
     public List<String> m_arguments = new ArrayList<>();
 
-    private Path m_repoPath;
-	private Options m_options;
+    private final Path m_repoPath;
+	private final Options m_options;
+
+	public IndexAction() {
+		m_repoPath = null;
+		m_options = null;
+	}
 
 	public IndexAction(final Options options, final List<String> arguments) {
 		final CmdLineParser parser = new CmdLineParser(this);
@@ -77,7 +83,7 @@ public class IndexAction implements Action {
 				throw new IllegalArgumentException("Unknown repository type: " + m_type);
 			}
 		} else {
-			final RepositoryMetadata metadata = RepositoryMetadata.getInstance(m_repoPath);
+			final RepositoryMetadata metadata = RepositoryMetadata.getInstance(m_repoPath, null, null, null);
 			repo = metadata.getRepositoryInstance();
 		}
 
@@ -87,6 +93,21 @@ public class IndexAction implements Action {
 		} else {
 			repo.index();
 		}
+		repo.refresh();
+	}
+
+	@Override
+	public String getDescription() {
+		return "Index the specified repository.";
+	}
+
+	@Override
+	public void printUsage(final PrintStream out) {
+		out.println("Usage: index [options] <repository>");
+		out.println("");
+
+		final CmdLineParser parser = new CmdLineParser(this);
+		parser.printUsage(out);
 	}
 
 }

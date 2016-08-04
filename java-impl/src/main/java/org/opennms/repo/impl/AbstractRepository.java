@@ -36,20 +36,20 @@ public abstract class AbstractRepository implements Repository {
     }
 
     public AbstractRepository(final Path path, final Repository parent) {
-    	LOG.debug("AbstractRepository: path={}, parent={}", path, parent);
+    	LOG.debug("Creating repository {}: path={}, parent={}", getClass().getSimpleName(), path, parent);
     	if (parent == null) {
-        	m_metadata = new RepositoryMetadata(path, this.getClass());
-        	LOG.debug("parent is null, using metadata: {}", m_metadata);
+    		m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), null, null);
+    		LOG.trace("parent is null, using metadata: {}", m_metadata);
         	if (m_metadata.hasParent()) {
         		m_parent = m_metadata.getParentMetadata().getRepositoryInstance();
-        		LOG.debug("parent={}", m_parent);
+        		LOG.trace("parent={}", m_parent);
         	} else {
-        		LOG.debug("no parent from metadata :(");
+        		LOG.trace("no parent from metadata");
         		m_parent = null;
         	}
     	} else {
-        	m_metadata = new RepositoryMetadata(path, this.getClass(), parent.getRoot(), parent.getClass());
-    		LOG.debug("parent is not null, using metadata: {}", m_metadata);
+    		m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), parent.getRoot(), parent.getClass());
+    		LOG.trace("parent is not null, using metadata: {}", m_metadata);
         	m_parent = parent;
     	}
     }
@@ -153,7 +153,6 @@ public abstract class AbstractRepository implements Repository {
                     FileUtils.touch(targetPath.toFile());
                     updatePackage(pack);
                     m_metadata.resetLastIndexed();
-                    m_metadata.store();
                 } else {
                     LOG.debug("NOT copying {} to {} ({} is newer)", pack, relativeTargetPath, existingPackage);
                 }
@@ -161,6 +160,7 @@ public abstract class AbstractRepository implements Repository {
                 throw new RepositoryException(e);
             }
         }
+        m_metadata.store();
     }
 
     protected void updatePackage(final RepositoryPackage pack) {
@@ -236,14 +236,6 @@ public abstract class AbstractRepository implements Repository {
     
     public void updateMetadata() {
     	m_metadata.store();
-    }
-
-    protected Map<String,String> readMetadata() throws IOException {
-    	return Util.readMetadata(getRoot());
-    }
-
-    protected void writeMetadata(final Map<String,String> metadata) throws IOException {
-    	Util.writeMetadata(metadata, getRoot());
     }
 
     @Override

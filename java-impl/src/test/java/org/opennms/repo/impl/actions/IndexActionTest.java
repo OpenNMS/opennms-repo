@@ -12,7 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.Util;
-import org.opennms.repo.impl.GPGUtils;
 import org.opennms.repo.impl.Options;
 import org.opennms.repo.impl.TestUtils;
 import org.opennms.repo.impl.rpm.RPMRepository;

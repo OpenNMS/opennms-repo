@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -87,7 +88,7 @@ public class RPMRepository extends AbstractRepository {
         if (parentRepository != null) {
             addPackages(parentRepository);
         } else {
-            LOG.debug("No parent {}", this);
+            LOG.trace("No parent {}", this);
         }
 
         refresh();
@@ -143,6 +144,7 @@ public class RPMRepository extends AbstractRepository {
             throw new RepositoryException(e);
         }
         updateLastIndexed();
+        updateMetadata();
     }
 
     public void generateDeltas() throws RepositoryException {
@@ -156,12 +158,12 @@ public class RPMRepository extends AbstractRepository {
         final Path root = getRoot();
         try {
             final long lastIndexed = getLastIndexed();
-            final Optional<Long> res = Files.walk(root).filter(path -> {
+            final Optional<FileTime> res = Files.walk(root).filter(path -> {
                 return !path.startsWith(root.resolve("repodata")) && !RepoUtils.isMetadata(path);
             }).map(path -> {
                 try {
                     final Path filePath = path;
-                    return Util.getFileTime(filePath).toMillis();
+                    return Util.getFileTime(filePath);
                 } catch (final Exception e) {
                     return null;
                 }
@@ -169,10 +171,10 @@ public class RPMRepository extends AbstractRepository {
                 return a.compareTo(b);
             });
 
-            LOG.debug("newest repodata edit: {} {}", lastIndexed, this);
+            LOG.trace("newest repodata edit: {} {}", lastIndexed, this);
             if (res.isPresent()) {
-                final long reduced = res.get();
-                LOG.debug("newest other file: {} {}", reduced, this);
+                final long reduced = res.get().toMillis();
+                LOG.trace("newest other file: {} {}", reduced, this);
                 return reduced > lastIndexed;
             } else {
                 LOG.warn("No file times found in repository {}!", this);

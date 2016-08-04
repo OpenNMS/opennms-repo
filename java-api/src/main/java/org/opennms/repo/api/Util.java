@@ -13,10 +13,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.hudsonci.plugins.jna.PosixAPI;
-import org.jruby.ext.posix.FileStat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import jnr.posix.FileStat;
+import jnr.posix.LinuxFileStat32;
+import jnr.posix.LinuxFileStat64;
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
 
 public abstract class Util {
 	private static final Logger LOG = LoggerFactory.getLogger(Util.class);
@@ -44,17 +48,33 @@ public abstract class Util {
     }
 
     public static FileTime getFileTime(final Path filePath) throws IOException {
-    	//LOG.debug("getFileTime({})", filePath);
-
-    	// me love you
-    	long time = 0;
+    	long ctime = -1;
+    	long mtime = -1;
 
     	try {
-    		final FileStat stat = PosixAPI.get().stat(filePath.normalize().toString());
-    		time = stat.ctime();
-    		if (stat.mtime() > stat.ctime()) {
-    			time = stat.mtime();
+    		final POSIX posix = POSIXFactory.getNativePOSIX();
+    		final FileStat stat = posix.stat(filePath.normalize().toAbsolutePath().toString());
+    		ctime = stat.ctime() * 1000;
+    		mtime = stat.mtime() * 1000;
+    		if (posix.isNative()) {
+    			long ctimeNanoSecs = 0;
+    			long mtimeNanoSecs = 0;
+    			if (stat instanceof LinuxFileStat32) {
+    				final LinuxFileStat32 lfs = (LinuxFileStat32)stat;
+    				ctimeNanoSecs = lfs.cTimeNanoSecs();
+    				mtimeNanoSecs = lfs.mTimeNanoSecs();
+    			} else if (stat instanceof LinuxFileStat64) {
+    				final LinuxFileStat64 lfs = (LinuxFileStat64)stat;
+    				ctimeNanoSecs = lfs.cTimeNanoSecs();
+    				mtimeNanoSecs = lfs.mTimeNanoSecs();
+    			}
+    			ctime = Math.max(ctime, ctimeNanoSecs/1000L);
+    			mtime = Math.max(mtime, mtimeNanoSecs/1000L);
     		}
+
+        	// me love you
+    		final long time = Math.max(ctime, mtime);
+
     		LOG.trace("getFileTime({}): {}", filePath, time);
     		return FileTime.fromMillis(time);
     	} catch (final Throwable t) {

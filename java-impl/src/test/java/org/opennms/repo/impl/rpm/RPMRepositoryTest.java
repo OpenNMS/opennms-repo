@@ -204,10 +204,11 @@ public class RPMRepositoryTest {
             fileTimes.put(p, Util.getFileTime(p));
         }
 
+        repo = new RPMRepository(Paths.get(repositoryPath));
         repo.index(gpginfo);
     
         for (final Path p : repositoryPaths) {
-            assertEquals(p + " time should not have changed after a reindex", fileTimes.get(p), Util.getFileTime(p));
+            assertEquals(p + " time should not have changed after a reindex", fileTimes.get(p).toMillis(), Util.getFileTime(p).toMillis());
         }
     }
 

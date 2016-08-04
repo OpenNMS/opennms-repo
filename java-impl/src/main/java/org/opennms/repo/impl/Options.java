@@ -34,4 +34,10 @@ public class Options {
 	public boolean isGPGConfigured() {
 		return m_keyId != null && m_password != null && m_keyRing != null && m_keyRing.toFile().exists();
 	}
+
+	@Override
+	public String toString() {
+		return "Options [keyId=" + m_keyId + ", password=" + (m_password == null? "not-set":"set") + ", keyRing=" + m_keyRing + "]";
+	}
+	
 }

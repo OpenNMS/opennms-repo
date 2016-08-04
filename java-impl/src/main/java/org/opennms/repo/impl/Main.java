@@ -5,14 +5,15 @@ import java.lang.reflect.Constructor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.opennms.repo.impl.actions.Action;
-import org.opennms.repo.impl.actions.CloneAction;
-import org.opennms.repo.impl.actions.IndexAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,9 @@ public class Main {
     @Option(name="--debug", aliases = {"-d"}, required=false, usage="enable debug logging")
     public boolean m_debug = false;
 
+    @Option(name="--help", aliases = {"-h"}, required=false, usage="this help", help=true, hidden=true)
+    public boolean m_help = false;
+
     @Argument
     public List<String> m_arguments = new ArrayList<>();
 
@@ -44,11 +48,36 @@ public class Main {
     }
 
     public void doMain(final String... args) {
+    	final Set<String> commands = getActions();
         m_parser = new CmdLineParser(this);
         try {
-            m_parser.parseArgument(args);
+        	boolean done = false;
+        	final List<String> before = new ArrayList<>();
+        	final List<String> after = new ArrayList<>();
+        	for (final String arg : args) {
+        		if (done) {
+        			after.add(arg);
+        		} else if ("--".equals(arg)) {
+        			done = true;
+        		} else if (commands.contains(arg.toLowerCase())) {
+        			done = true;
+        			after.add(arg);
+        		} else {
+        			before.add(arg);
+        		}
+        	}
+        	LOG.debug("before: {}", before);
+        	LOG.debug("after: {}", after);
+            m_parser.parseArgument(before);
+            m_arguments = new ArrayList<>(m_arguments);
+            m_arguments.addAll(after);
+            LOG.debug("arguments: {}", m_arguments);
         } catch (final Exception e) {
             printUsage(e.getMessage());
+        }
+
+        if (m_help) {
+        	printUsage(null);
         }
 
         if (m_debug) {
@@ -68,34 +97,47 @@ public class Main {
         }
 
         final String action = m_arguments.remove(0);
-        LOG.debug("Action = {}", action);
+        //LOG.debug("Action = {}", action);
 
-        switch (action.toLowerCase()) {
-        	case "clone": runCommand(CloneAction.class); break;
-        	case "index": runCommand(IndexAction.class); break;
-        	default: printUsage("Unknown action: " + action); break;
+        final Class<? extends Action> actionClass = Action.getAction(action);
+        LOG.debug("action class: {}", actionClass);
+        try {
+        	runCommand(actionClass);
+        } catch (final Throwable t) {
+        	LOG.debug("Failed to find action {}", action, t);
+        	printUsage("Unknown action: " + action);
         }
+
         System.exit(0);
     }
 
-    private void runCommand(final Class<? extends Action> action) {
-    	LOG.debug("Running {}({})", action, m_arguments);
+    private Set<String> getActions() {
+    	final Set<String> actions = new TreeSet<>();
+    	for (final Class<? extends Action> action : Action.getActions()) {
+    		actions.add(action.getSimpleName().replaceAll("Action$", "").toLowerCase());
+    	}
+    	return actions;
+	}
+
+	private void runCommand(final Class<? extends Action> action) {
+		final Options options = new Options();
+		if (m_keyRing != null) {
+			options.setKeyRing(Paths.get(m_keyRing));
+		}
+		if (m_keyId != null) {
+			options.setKeyId(m_keyId);
+		}
+		if (m_password != null) {
+			options.setPassword(m_password);
+		}
+
+		LOG.debug("Running {}({}, {})", action, options, m_arguments);
     	try {
     		final Constructor<? extends Action> constructor = action.getConstructor(Options.class, List.class);
-    		final Options options = new Options();
-    		if (m_keyRing != null) {
-    			options.setKeyRing(Paths.get(m_keyRing));
-    		}
-    		if (m_keyId != null) {
-    			options.setKeyId(m_keyId);
-    		}
-    		if (m_password != null) {
-    			options.setPassword(m_password);
-    		}
-    		final Action runme = constructor.newInstance(m_arguments);
+    		final Action runme = constructor.newInstance(options, m_arguments);
 			runme.run();
 		} catch (final Throwable t) {
-			LOG.debug("Error running {}({})", action, m_arguments, t);
+			LOG.debug("Error running {}({}, {})", action, options, m_arguments, t);
 			handleError(t);
 		}
     }
@@ -109,7 +151,7 @@ public class Main {
     }
 
     private void printUsage(final String errorMessage) {
-    	System.err.println("Usage: opennms-repo [-k <gpg-key>] [-p <gpg-password>] [-s <sub-repository>] <action> [arguments]");
+    	System.err.println("Usage: opennms-repo [-k <gpg-key>] [-p <gpg-password>] [-r </path/to/secring.gpg>] <action> [arguments]");
     	if (errorMessage != null) {
     		System.err.println("ERROR: " + errorMessage);
     	}
@@ -119,6 +161,17 @@ public class Main {
     	System.err.println("");
 
     	System.err.println("Actions:\n");
+    	final Collection<Class<? extends Action>> actions = Action.getActions();
+    	for (final Class<? extends Action> action : actions) {
+    		try {
+	    		final String name = action.getSimpleName().replaceAll("Action$", "").toLowerCase();
+	    		final String description = action.newInstance().getDescription();
+	
+	    		System.err.println(name + ": " + description);
+    		} catch (final Exception e) {
+    			LOG.warn("Failed to enumerate action {}", action, e);
+    		}
+    	}
 
     	System.err.println("");
     	System.exit(1);

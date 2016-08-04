@@ -71,6 +71,8 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
         	LOG.debug("indexing: {}", repo);
         	repo.index(gpginfo);
         });
+        updateLastIndexed();
+        updateMetadata();
     }
 
     @Override
