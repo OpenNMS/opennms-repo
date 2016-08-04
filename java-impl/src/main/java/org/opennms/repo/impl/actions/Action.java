@@ -9,7 +9,9 @@ import org.slf4j.LoggerFactory;
 
 public interface Action {
 	public String getDescription();
+
 	public void run() throws ActionException;
+
 	public void printUsage(PrintStream out);
 
 	public static Class<? extends Action> getAction(final String action) {

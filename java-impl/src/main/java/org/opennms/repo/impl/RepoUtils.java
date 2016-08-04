@@ -19,31 +19,32 @@ import org.slf4j.LoggerFactory;
 public abstract class RepoUtils {
 	private static final Logger LOG = LoggerFactory.getLogger(RepoUtils.class);
 
-	private RepoUtils() {}
-    
-    public static Collection<Repository> findRepositories(final Path path) {
-        try {
-            return Files.walk(path).filter(p -> {
-                if (p.toFile().isDirectory()) {
-                    final RPMRepository repo = new RPMRepository(p);
-                    return repo.isValid();
-                }
-                return false;
-            }).map(p -> {
-                try {
-                    return new RPMRepository(p);
-                } catch (final Exception e) {
-                    return null;
-                }
-            }).sorted().collect(Collectors.toList());
-        } catch (final IOException e) {
-            throw new RepositoryException(e);
-        }
-    }
+	private RepoUtils() {
+	}
 
-    public static boolean isMetadata(final Path p) {
-    	return p.getFileName().toString().equals(Repository.REPO_METADATA_FILENAME);
-    }
+	public static Collection<Repository> findRepositories(final Path path) {
+		try {
+			return Files.walk(path).filter(p -> {
+				if (p.toFile().isDirectory()) {
+					final RPMRepository repo = new RPMRepository(p);
+					return repo.isValid();
+				}
+				return false;
+			}).map(p -> {
+				try {
+					return new RPMRepository(p);
+				} catch (final Exception e) {
+					return null;
+				}
+			}).sorted().collect(Collectors.toList());
+		} catch (final IOException e) {
+			throw new RepositoryException(e);
+		}
+	}
+
+	public static boolean isMetadata(final Path p) {
+		return p.getFileName().toString().equals(Repository.REPO_METADATA_FILENAME);
+	}
 
 	public static void cloneDirectory(final Path from, final Path to) {
 		final Path fromPath = from.normalize().toAbsolutePath();
@@ -72,7 +73,7 @@ public abstract class RepoUtils {
 			throw new RepositoryException(e);
 		}
 	}
-	
+
 	public static void atomicReplace(final Path source, final Path target) {
 		LOG.debug("Replacing path {} with path {} atomically", target, source);
 		Path deleteMe = source.getParent().resolve(".delete-me-repo-" + UUID.randomUUID());
@@ -101,7 +102,8 @@ public abstract class RepoUtils {
 			if (parent == null) {
 				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), null, null);
 			} else {
-				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), parent.getRoot().normalize().toAbsolutePath(), parent.getClass());
+				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(),
+						parent.getRoot().normalize().toAbsolutePath(), parent.getClass());
 			}
 			LOG.debug("createTempRepository: new metadata={}", newMetadata);
 			newMetadata.store();

@@ -28,7 +28,8 @@ public class CloneActionTest {
 
 	@Test
 	public void testCloneRPMRepository() throws Exception {
-		final Path sourceRoot = repositoryRoot.resolve("testCloneRPMRepository").resolve("source").normalize().toAbsolutePath();
+		final Path sourceRoot = repositoryRoot.resolve("testCloneRPMRepository").resolve("source").normalize()
+				.toAbsolutePath();
 		final Path targetRoot = sourceRoot.resolve("../target").normalize().toAbsolutePath();
 		final RPMRepository sourceRepo = new RPMRepository(sourceRoot);
 		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), sourceRoot.toFile());
@@ -36,7 +37,8 @@ public class CloneActionTest {
 		assertTrue(sourceRepo.getRoot().toFile().exists());
 		assertTrue(sourceRepo.getRoot().resolve(TestUtils.JRRD1_FILENAME).toFile().exists());
 
-		final CloneAction command = new CloneAction(new Options(), Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
+		final CloneAction command = new CloneAction(new Options(),
+				Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
 		command.run();
 
 		// make sure the source repo is still the same
@@ -52,7 +54,8 @@ public class CloneActionTest {
 
 	@Test
 	public void testCloneRPMRepositoryWithParent() throws Exception {
-		final Path parentRoot = repositoryRoot.resolve("testCloneRPMRepositoryWithParent").resolve("parent").normalize().toAbsolutePath();
+		final Path parentRoot = repositoryRoot.resolve("testCloneRPMRepositoryWithParent").resolve("parent").normalize()
+				.toAbsolutePath();
 		final Path sourceRoot = parentRoot.resolve("../source").normalize().toAbsolutePath();
 		final Path targetRoot = sourceRoot.resolve("../target").normalize().toAbsolutePath();
 
@@ -71,7 +74,8 @@ public class CloneActionTest {
 		assertTrue(sourceRepo.getRoot().resolve(TestUtils.JRRD2_FILENAME).toFile().exists());
 		assertTrue(sourceRepo.hasParent());
 
-		final CloneAction command = new CloneAction(new Options(), Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
+		final CloneAction command = new CloneAction(new Options(),
+				Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
 		command.run();
 
 		// make sure the source repo is still the same

@@ -87,7 +87,8 @@ public abstract class GPGUtils {
 	// 0xff, or about 2 million iterations. I'll use 0xc0 as a
 	// default -- about 130,000 iterations.
 
-	public final static PGPKeyRingGenerator generateKeyRingGenerator(final String id, final String pass, final int s2kcount) throws Exception {
+	public final static PGPKeyRingGenerator generateKeyRingGenerator(final String id, final String pass,
+			final int s2kcount) throws Exception {
 		// This object generates individual key-pairs.
 		RSAKeyPairGenerator kpg = new RSAKeyPairGenerator();
 
@@ -212,8 +213,9 @@ public abstract class GPGUtils {
 	}
 
 	public static GPGInfo fromKeyRing(final Path keyRing, final String keyId, final String password) {
-		try(final FileInputStream fis = new FileInputStream(keyRing.toFile());) {
-			final PGPSecretKeyRingCollection secretKeyRingCollection = new PGPSecretKeyRingCollection(fis, new JcaKeyFingerprintCalculator());
+		try (final FileInputStream fis = new FileInputStream(keyRing.toFile());) {
+			final PGPSecretKeyRingCollection secretKeyRingCollection = new PGPSecretKeyRingCollection(fis,
+					new JcaKeyFingerprintCalculator());
 			final Iterator<PGPSecretKeyRing> keyRings = secretKeyRingCollection.getKeyRings(keyId, true, true);
 			if (keyRings.hasNext()) {
 				final PGPSecretKeyRing secretKeyRing = keyRings.next();
@@ -222,7 +224,8 @@ public abstract class GPGUtils {
 				while (publicKeyIterator.hasNext()) {
 					publicKeys.add(publicKeyIterator.next());
 				}
-				final Constructor<PGPPublicKeyRing> constructor = PGPPublicKeyRing.class.getDeclaredConstructor(List.class);
+				final Constructor<PGPPublicKeyRing> constructor = PGPPublicKeyRing.class
+						.getDeclaredConstructor(List.class);
 				constructor.setAccessible(true);
 				final PGPPublicKeyRing publicKeyRing = constructor.newInstance(publicKeys);
 				return new GPGInfo(keyId, password, publicKeyRing, secretKeyRing);

@@ -37,7 +37,7 @@ public class IndexActionTest {
 		final Action action = new IndexAction(new Options(), Arrays.asList("--type", "rpm", sourceRoot.toString()));
 		action.run();
 
-        TestUtils.assertFileExists(repodata.resolve("repomd.xml"));
+		TestUtils.assertFileExists(repodata.resolve("repomd.xml"));
 
 		final RPMRepository sourceRepo = new RPMRepository(sourceRoot);
 		assertTrue(sourceRepo.isValid());
@@ -60,7 +60,7 @@ public class IndexActionTest {
 		final Action action = new IndexAction(options, Arrays.asList("--type", "rpm", sourceRoot.toString()));
 		action.run();
 
-        TestUtils.assertFileExists(repodata.resolve("repomd.xml"));
+		TestUtils.assertFileExists(repodata.resolve("repomd.xml"));
 
 		final RPMRepository sourceRepo = new RPMRepository(sourceRoot);
 		assertTrue(sourceRepo.isValid());

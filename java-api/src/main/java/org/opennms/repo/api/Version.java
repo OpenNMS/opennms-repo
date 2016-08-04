@@ -1,11 +1,13 @@
 package org.opennms.repo.api;
 
 public interface Version extends Comparable<Version> {
-    public int getEpoch();
-    public String getVersion();
-    public String getRelease();
+	public int getEpoch();
 
-    public boolean isValid();
+	public String getVersion();
 
-    String toStringWithoutEpoch();
+	public String getRelease();
+
+	public boolean isValid();
+
+	String toStringWithoutEpoch();
 }

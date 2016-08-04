@@ -25,13 +25,14 @@ import org.slf4j.LoggerFactory;
 public class IndexAction implements Action {
 	private static final Logger LOG = LoggerFactory.getLogger(IndexAction.class);
 
-	@Option(name="--type", aliases = {"-t"}, required=false, usage="the repository type (rpm, deb) to index", metaVar="<type>")
-    public String m_type;
+	@Option(name = "--type", aliases = {
+			"-t" }, required = false, usage = "the repository type (rpm, deb) to index", metaVar = "<type>")
+	public String m_type;
 
-    @Argument
-    public List<String> m_arguments = new ArrayList<>();
+	@Argument
+	public List<String> m_arguments = new ArrayList<>();
 
-    private final Path m_repoPath;
+	private final Path m_repoPath;
 	private final Options m_options;
 
 	public IndexAction() {
@@ -88,7 +89,8 @@ public class IndexAction implements Action {
 		}
 
 		if (m_options.isGPGConfigured()) {
-			final GPGInfo gpginfo = GPGUtils.fromKeyRing(m_options.getKeyRing(), m_options.getKeyId(), m_options.getPassword());
+			final GPGInfo gpginfo = GPGUtils.fromKeyRing(m_options.getKeyRing(), m_options.getKeyId(),
+					m_options.getPassword());
 			repo.index(gpginfo);
 		} else {
 			repo.index();

@@ -18,11 +18,11 @@ public class Options {
 	public String getPassword() {
 		return m_password;
 	}
-	
+
 	public void setPassword(final String password) {
 		m_password = password;
 	}
-	
+
 	public Path getKeyRing() {
 		return m_keyRing;
 	}
@@ -37,7 +37,8 @@ public class Options {
 
 	@Override
 	public String toString() {
-		return "Options [keyId=" + m_keyId + ", password=" + (m_password == null? "not-set":"set") + ", keyRing=" + m_keyRing + "]";
+		return "Options [keyId=" + m_keyId + ", password=" + (m_password == null ? "not-set" : "set") + ", keyRing="
+				+ m_keyRing + "]";
 	}
-	
+
 }
