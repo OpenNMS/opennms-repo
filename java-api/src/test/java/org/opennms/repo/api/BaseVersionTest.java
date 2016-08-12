@@ -44,8 +44,8 @@ public class BaseVersionTest {
 		b = new BaseVersion(1, "0.9");
 		assertEquals(0, a.compareTo(a));
 		assertEquals(0, b.compareTo(b));
-		assertEquals(1, a.compareTo(b));
-		assertEquals(-1, b.compareTo(a));
+		assertEquals(-1, a.compareTo(b));
+		assertEquals(1, b.compareTo(a));
 
 		a = new BaseVersion("1.0");
 		b = new BaseVersion("1.0.0");
@@ -64,6 +64,10 @@ public class BaseVersionTest {
 		b = new BaseVersion("1.0", "alpha4");
 		assertEquals(1, a.compareTo(b));
 		assertEquals(-1, b.compareTo(a));
+
+		a = new BaseVersion(0, "2.0.3", "1");
+		b = new BaseVersion(1, "2.0.1", "1");
+		assertEquals(-1, a.compareTo(b));
 	}
 
 	@Test

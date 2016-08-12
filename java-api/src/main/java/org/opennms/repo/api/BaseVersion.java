@@ -84,7 +84,7 @@ public class BaseVersion implements Version, Comparable<Version> {
 			if (this == that) {
 				return 0;
 			}
-			int ret = that.getEpoch() - this.getEpoch();
+			int ret = this.getEpoch() - that.getEpoch();
 			if (ret == 0) {
 				ret = s_comparator.compare(this.getVersion(), that.getVersion());
 			}
