@@ -80,7 +80,6 @@ public class RPMRepository extends AbstractRepository {
 
 	@Override
 	public boolean index(final GPGInfo gpginfo) throws RepositoryIndexException {
-		LOG.info("index(): {}", this);
 		final Path root = getRoot();
 		ensureRootExists();
 
@@ -94,14 +93,14 @@ public class RPMRepository extends AbstractRepository {
 		refresh();
 
 		if (!isDirty()) {
-			LOG.info("RPM repository not changed: {}", this);
+			LOG.info("{} is unchanged.", this);
 			return false;
 		}
 
 		ensureRootExists();
 		generateDeltas();
 
-		LOG.info("Indexing RPM repository: {}", this);
+		LOG.info("Indexing {}", this);
 		final CreaterepoCommand command = new CreaterepoCommand(root);
 		command.run();
 		final Path repomdfile = root.resolve("repodata").resolve("repomd.xml");
@@ -150,9 +149,9 @@ public class RPMRepository extends AbstractRepository {
 
 	public void generateDeltas() throws RepositoryException {
 		final Path root = getRoot();
-		LOG.info("Generating deltas for RPM repository: {}", this);
+		LOG.info("Generating deltas for {}", this);
 		RPMUtils.generateDeltas(root.toFile());
-		LOG.info("Finished generating deltas for RPM repository: {}", this);
+		LOG.debug("Finished generating deltas for {}", this);
 	}
 
 	protected boolean isDirty() {
@@ -191,5 +190,10 @@ public class RPMRepository extends AbstractRepository {
 	public Repository cloneInto(final Path to) {
 		RepoUtils.cloneDirectory(getRoot(), to);
 		return new RPMRepository(to, this);
+	}
+
+	@Override
+	protected String getRepositoryTypeName() {
+		return "RPM";
 	}
 }

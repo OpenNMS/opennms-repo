@@ -15,14 +15,54 @@ import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.RepositoryException;
 
 public abstract class TestUtils {
-	public static final Path JRRD1_PATH = Paths.get("target/test-classes/jrrd-1.1.0-1.x86_64.rpm");
-	public static final String JRRD1_FILENAME = JRRD1_PATH.getFileName().toString();
+	// A = jicmp, B = jicmp6
+	public static final Path A1_I386_PATH = Paths.get("target/test-classes/jicmp-1.4.1-1.i386.rpm");
+	public static final String A1_I386_FILENAME = A1_I386_PATH.getFileName().toString();
 
-	public static final Path JRRD2_PATH = Paths.get("target/test-classes/jrrd-1.1.0-2.el7.centos.x86_64.rpm");
-	public static final String JRRD2_FILENAME = JRRD2_PATH.getFileName().toString();
+	public static final Path A1_X64_PATH = Paths.get("target/test-classes/jicmp-1.4.1-1.x86_64.rpm");
+	public static final String A1_X64_FILENAME = A1_X64_PATH.getFileName().toString();
 
-	public static final Path JRRD3_PATH = Paths.get("target/test-classes/jrrd-1.1.0-3.el7.centos.x86_64.rpm");
-	public static final String JRRD3_FILENAME = JRRD3_PATH.getFileName().toString();
+	public static final Path A2_I386_PATH = Paths.get("target/test-classes/jicmp-1.4.5-2.i386.rpm");
+	public static final String A2_I386_FILENAME = A2_I386_PATH.getFileName().toString();
+
+	public static final Path A2_X64_PATH = Paths.get("target/test-classes/jicmp-1.4.5-2.x86_64.rpm");
+	public static final String A2_X64_FILENAME = A2_X64_PATH.getFileName().toString();
+
+	public static final Path A3_I386_PATH = Paths.get("target/test-classes/jicmp-2.0.0-0.1.i386.rpm");
+	public static final String A3_I386_FILENAME = A3_I386_PATH.getFileName().toString();
+
+	public static final Path A3_X64_PATH = Paths.get("target/test-classes/jicmp-2.0.0-0.1.x86_64.rpm");
+	public static final String A3_X64_FILENAME = A3_X64_PATH.getFileName().toString();
+
+	public static final Path A4_I386_PATH = Paths.get("target/test-classes/jicmp-2.0.0-0.5.i386.rpm");
+	public static final String A4_I386_FILENAME = A4_I386_PATH.getFileName().toString();
+
+	public static final Path A4_X64_PATH = Paths.get("target/test-classes/jicmp-2.0.0-0.5.x86_64.rpm");
+	public static final String A4_X64_FILENAME = A4_X64_PATH.getFileName().toString();
+
+	public static final Path B1_I386_PATH = Paths.get("target/test-classes/jicmp6-1.2.1-1.i386.rpm");
+	public static final String B1_I386_FILENAME = B1_I386_PATH.getFileName().toString();
+
+	public static final Path B1_X64_PATH = Paths.get("target/test-classes/jicmp6-1.2.1-1.x86_64.rpm");
+	public static final String B1_X64_FILENAME = B1_X64_PATH.getFileName().toString();
+
+	public static final Path B2_I386_PATH = Paths.get("target/test-classes/jicmp6-1.2.4-1.i386.rpm");
+	public static final String B2_I386_FILENAME = B2_I386_PATH.getFileName().toString();
+
+	public static final Path B2_X64_PATH = Paths.get("target/test-classes/jicmp6-1.2.4-1.x86_64.rpm");
+	public static final String B2_X64_FILENAME = B2_X64_PATH.getFileName().toString();
+
+	public static final Path B3_I386_PATH = Paths.get("target/test-classes/jicmp6-2.0.0-0.2.i386.rpm");
+	public static final String B3_I386_FILENAME = B3_I386_PATH.getFileName().toString();
+
+	public static final Path B3_X64_PATH = Paths.get("target/test-classes/jicmp6-2.0.0-0.2.x86_64.rpm");
+	public static final String B3_X64_FILENAME = B3_X64_PATH.getFileName().toString();
+
+	public static final Path B4_I386_PATH = Paths.get("target/test-classes/jicmp6-2.0.0-0.5.i386.rpm");
+	public static final String B4_I386_FILENAME = B4_I386_PATH.getFileName().toString();
+
+	public static final Path B4_X64_PATH = Paths.get("target/test-classes/jicmp6-2.0.0-0.5.x86_64.rpm");
+	public static final String B4_X64_FILENAME = B4_X64_PATH.getFileName().toString();
 
 	private TestUtils() {
 	}

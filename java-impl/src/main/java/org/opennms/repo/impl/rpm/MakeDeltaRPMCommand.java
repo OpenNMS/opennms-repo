@@ -70,8 +70,7 @@ public class MakeDeltaRPMCommand extends Command {
 			exec.addArgument(m_toRPM.getPath().toString());
 			exec.addArgument(outputDeltaRPM.toString());
 
-			LOG.debug("makedeltarpm {} {} {}", Util.relativize(m_fromRPM.getPath()), Util.relativize(m_toRPM.getPath()),
-					outputDeltaRPM);
+			LOG.debug("makedeltarpm {} {} {}", Util.relativize(m_fromRPM.getPath()), Util.relativize(m_toRPM.getPath()), outputDeltaRPM);
 
 			exec.setSubstitutionMap(this.getSubstitutionMap());
 			final Process p = CommandLauncherFactory.createVMLauncher().exec(exec, getEnvironment());

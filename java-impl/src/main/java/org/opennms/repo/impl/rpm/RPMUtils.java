@@ -61,6 +61,12 @@ public abstract class RPMUtils {
 		assert (rpmFromFile != null);
 		assert (rpmToFile != null);
 
+		if (!rpmFromFile.exists()) {
+			throw new IllegalArgumentException("File does not exist: " + rpmFromFile);
+		}
+		if (!rpmToFile.exists()) {
+			throw new IllegalArgumentException("File does not exist: " + rpmToFile);
+		}
 		final RPMPackage rpmFrom = RPMUtils.getPackage(rpmFromFile);
 		final RPMPackage rpmTo = RPMUtils.getPackage(rpmToFile);
 		final MakeDeltaRPMCommand command;
@@ -69,20 +75,22 @@ public abstract class RPMUtils {
 		} else {
 			command = new MakeDeltaRPMCommand(rpmTo, rpmFrom, rpmOutFile == null ? null : rpmOutFile.toPath());
 		}
+		LOG.debug("makedelta command = {}", command);
 		command.run();
 		final File outputFile = command.getOutputRPMPath().toFile();
 		if (outputFile == null || !outputFile.exists()) {
+			LOG.debug("STDOUT: {}", command.getOutput());
+			LOG.debug("STDERR: {}", command.getErrorOutput());
 			throw new IllegalStateException("makedeltarpm has not created a delta!");
 		}
 		return outputFile;
 	}
 
-	public static void generateDeltas(final File root) {
+	public static SortedSet<RPMPackage> getPackages(final Path root) {
 		final SortedSet<RPMPackage> rpms = new TreeSet<RPMPackage>();
-		final File deltaDir = new File(root, "drpms");
 
 		try {
-			Files.walk(root.toPath().normalize().toAbsolutePath()).forEach(path -> {
+			Files.walk(root.normalize().toAbsolutePath()).forEach(path -> {
 				if (path.toFile().isFile()) {
 					if (path.toString().endsWith(".rpm")) {
 						LOG.debug("found RPM: {}", path);
@@ -95,6 +103,14 @@ public abstract class RPMUtils {
 		} catch (final Exception e) {
 			throw new RepositoryException("Unable to walk " + root + " for delta RPM generation.", e);
 		}
+		return rpms;
+	}
+
+	public static void generateDeltas(final File root) {
+		final Path rootPath = root.toPath();
+		final File deltaDir = new File(root, "drpms");
+
+		final SortedSet<RPMPackage> rpms = getPackages(rootPath);
 
 		LOG.debug("RPMs: {}", rpms);
 		RPMPackage previous = null;
@@ -130,10 +146,14 @@ public abstract class RPMUtils {
 					}
 				}
 				if (generate) {
-					LOG.trace("generating {}", deltaName);
-					RPMUtils.generateDelta(previous.getFile(), rpm.getFile(), deltaRPMFile);
+					LOG.info("- generating {}", Util.relativize(deltaRPMFile.toPath()));
+					try {
+						RPMUtils.generateDelta(previous.getFile(), rpm.getFile(), deltaRPMFile);
+					} catch (final Exception e) {
+						LOG.error("Failed to generate delta RPM {}", deltaRPMFile, e);
+					}
 				} else {
-					LOG.trace("NOT generating {}", deltaName);
+					LOG.trace("- NOT generating {}", deltaName);
 				}
 			}
 			previous = rpm;
@@ -145,11 +165,25 @@ public abstract class RPMUtils {
 	}
 
 	public static String getDeltaFileName(final RPMPackage fromRPM, final RPMPackage toRPM) {
+		if (!fromRPM.getArchitecture().equals(toRPM.getArchitecture())) {
+			throw new IllegalArgumentException("RPMs are not the same architecture!");
+		}
+
+		final RPMPackage first;
+		final RPMPackage second;
+		if (fromRPM.isLowerThan(toRPM)) {
+			first = fromRPM;
+			second = toRPM;
+		} else {
+			first = toRPM;
+			second = fromRPM;
+		}
+
 		final StringBuilder sb = new StringBuilder();
-		sb.append(fromRPM.getName()).append("-");
-		sb.append(fromRPM.getVersion().toStringWithoutEpoch()).append("_");
-		sb.append(toRPM.getVersion().toStringWithoutEpoch()).append(".");
-		sb.append(fromRPM.getArchitectureString()).append(".drpm");
+		sb.append(first.getName()).append("-");
+		sb.append(first.getVersion().toStringWithoutEpoch()).append("_");
+		sb.append(second.getVersion().toStringWithoutEpoch()).append(".");
+		sb.append(first.getArchitectureString()).append(".drpm");
 		return sb.toString();
 	}
 }

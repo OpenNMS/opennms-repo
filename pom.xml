@@ -57,6 +57,7 @@
     <junitVersion>4.12</junitVersion>
     <logbackVersion>1.1.3</logbackVersion>
     <mockitoVersion>1.10.19</mockitoVersion>
+    <prettytimeVersion>3.2.7.Final</prettytimeVersion>
     <reflectionsVersion>0.9.10</reflectionsVersion>
     <slf4jVersion>1.7.12</slf4jVersion>
   </properties>
@@ -102,6 +103,11 @@
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcpg-jdk15on</artifactId>
         <version>${bouncyCastleVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ocpsoft.prettytime</groupId>
+        <artifactId>prettytime</artifactId>
+        <version>${prettytimeVersion}</version>
       </dependency>
       <dependency>
         <groupId>org.reflections</groupId>

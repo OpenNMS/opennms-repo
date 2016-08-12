@@ -240,4 +240,9 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		}
 		return -1;
 	}
+
+	@Override
+	protected String getRepositoryTypeName() {
+		return "RPM container";
+	}
 }

@@ -3,6 +3,7 @@
 *.json
 *.old
 *.yml
+.DS_Store
 .classpath
 .project
 .settings

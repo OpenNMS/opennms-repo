@@ -31,7 +31,7 @@ public class IndexActionTest {
 		final Path sourceRoot = repositoryRoot.resolve("testIndexRPMRepositoryWithoutGPG").normalize().toAbsolutePath();
 		final Path repodata = sourceRoot.resolve("repodata");
 
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), sourceRoot.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), sourceRoot.toFile());
 		TestUtils.assertFileDoesNotExist(repodata);
 
 		final Action action = new IndexAction(new Options(), Arrays.asList("--type", "rpm", sourceRoot.toString()));
@@ -50,7 +50,7 @@ public class IndexActionTest {
 
 		final Path ringPath = Files.createTempFile("secring-", ".gpg");
 		m_gpginfo.savePrivateKeyring(ringPath);
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), sourceRoot.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), sourceRoot.toFile());
 		TestUtils.assertFileDoesNotExist(repodata);
 
 		final Options options = new Options();

@@ -5,16 +5,19 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.ocpsoft.prettytime.PrettyTime;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryMetadata;
+import org.opennms.repo.api.Util;
 import org.opennms.repo.impl.GPGUtils;
 import org.opennms.repo.impl.Options;
 import org.opennms.repo.impl.rpm.RPMMetaRepository;
@@ -24,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 public class IndexAction implements Action {
 	private static final Logger LOG = LoggerFactory.getLogger(IndexAction.class);
+	private static final PrettyTime s_prettyTime = new PrettyTime();
 
 	@Option(name = "--type", aliases = {
 			"-t" }, required = false, usage = "the repository type (rpm, deb) to index", metaVar = "<type>")
@@ -68,6 +72,8 @@ public class IndexAction implements Action {
 
 	@Override
 	public void run() throws ActionException {
+		final Date start = new Date();
+
 		final Repository repo;
 
 		if (m_type != null) {
@@ -88,14 +94,20 @@ public class IndexAction implements Action {
 			repo = metadata.getRepositoryInstance();
 		}
 
+		boolean changed = false;
 		if (m_options.isGPGConfigured()) {
-			final GPGInfo gpginfo = GPGUtils.fromKeyRing(m_options.getKeyRing(), m_options.getKeyId(),
-					m_options.getPassword());
-			repo.index(gpginfo);
+			final GPGInfo gpginfo = GPGUtils.fromKeyRing(m_options.getKeyRing(), m_options.getKeyId(), m_options.getPassword());
+			changed = repo.index(gpginfo);
 		} else {
-			repo.index();
+			changed = repo.index();
 		}
 		repo.refresh();
+
+		if (changed) {
+			LOG.info("Index of repository {} completed in {}", Util.relativize(m_repoPath), s_prettyTime.format(start));
+		} else {
+			LOG.info("Index of repository {} was not necessary.", Util.relativize(m_repoPath));
+		}
 	}
 
 	@Override

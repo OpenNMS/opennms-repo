@@ -186,7 +186,7 @@ public abstract class AbstractRepository implements Repository {
 
 	@Override
 	public void refresh() {
-		LOG.info("Refreshing repository {}", this);
+		LOG.info("Refreshing {}", this);
 		final Map<String, RepositoryPackage> existing = new HashMap<>();
 		for (final RepositoryPackage p : getPackages()) {
 			final RepositoryPackage existingPackage = existing.get(p.getName());
@@ -198,7 +198,7 @@ public abstract class AbstractRepository implements Repository {
 				existing.put(p.getName(), p);
 			}
 		}
-		LOG.debug("Repository {} packages: {}", this, existing);
+		LOG.debug("{} packages: {}", this, existing);
 		m_packageCache = existing;
 		updateMetadata();
 	}
@@ -227,13 +227,18 @@ public abstract class AbstractRepository implements Repository {
 
 	@Override
 	public String toString() {
+		return getRepositoryTypeName() + " repository '" + getName() + "' at " + Util.relativize(getRoot());
+		/*
 		return getClass().getSimpleName() + "@" + System.identityHashCode(this) + ":" + getName() + "(parent="
 				+ hasParent() + "):" + getRoot();
+				*/
 	}
 
 	public void updateMetadata() {
 		m_metadata.store();
 	}
+
+	protected abstract String getRepositoryTypeName();
 
 	@Override
 	public <T extends Repository> T as(final Class<T> repository) {

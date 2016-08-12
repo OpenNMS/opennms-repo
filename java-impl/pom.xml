@@ -90,6 +90,10 @@
       <artifactId>bcpg-jdk15on</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.ocpsoft.prettytime</groupId>
+      <artifactId>prettytime</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
     </dependency>

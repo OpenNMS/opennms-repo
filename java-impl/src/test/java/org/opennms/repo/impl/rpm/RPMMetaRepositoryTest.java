@@ -69,19 +69,19 @@ public class RPMMetaRepositoryTest {
 		assertFalse(repo.isValid());
 
 		final Path outputPath = Paths.get(repositoryPath).resolve("common").resolve("amd64");
-		final File jrrd1File = new File(outputPath.toFile(), TestUtils.JRRD1_FILENAME);
-		final File jrrd2File = new File(outputPath.toFile(), TestUtils.JRRD2_FILENAME);
-		final File jrrd3File = new File(outputPath.toFile(), TestUtils.JRRD3_FILENAME);
+		final File packageA1File = new File(outputPath.toFile(), TestUtils.A1_X64_FILENAME);
+		final File packageA2File = new File(outputPath.toFile(), TestUtils.A2_X64_FILENAME);
+		final File packageA3File = new File(outputPath.toFile(), TestUtils.A3_X64_FILENAME);
 
-		repo.addPackages(RPMUtils.getPackage(TestUtils.JRRD1_PATH), RPMUtils.getPackage(TestUtils.JRRD2_PATH),
-				RPMUtils.getPackage(TestUtils.JRRD3_PATH));
+		repo.addPackages(RPMUtils.getPackage(TestUtils.A1_X64_PATH), RPMUtils.getPackage(TestUtils.A2_X64_PATH),
+				RPMUtils.getPackage(TestUtils.A3_X64_PATH));
 		repo.index(m_gpginfo);
 
 		TestUtils.assertFileExists(outputPath.resolve("..").resolve("drpms")
-				.resolve(RPMUtils.getDeltaFileName(jrrd1File, jrrd2File)).normalize().toString());
-		TestUtils.assertFileExists(jrrd1File.getAbsolutePath());
-		TestUtils.assertFileExists(jrrd2File.getAbsolutePath());
-		TestUtils.assertFileExists(jrrd3File.getAbsolutePath());
+				.resolve(RPMUtils.getDeltaFileName(packageA1File, packageA2File)).normalize().toString());
+		TestUtils.assertFileExists(packageA1File.getAbsolutePath());
+		TestUtils.assertFileExists(packageA2File.getAbsolutePath());
+		TestUtils.assertFileExists(packageA3File.getAbsolutePath());
 	}
 
 	@Test
@@ -91,19 +91,19 @@ public class RPMMetaRepositoryTest {
 		assertFalse(repo.isValid());
 
 		final Path outputPath = Paths.get(repositoryPath).resolve("rhel5").resolve("amd64");
-		final File jrrd1File = new File(outputPath.toFile(), TestUtils.JRRD1_FILENAME);
-		final File jrrd2File = new File(outputPath.toFile(), TestUtils.JRRD2_FILENAME);
-		final File jrrd3File = new File(outputPath.toFile(), TestUtils.JRRD3_FILENAME);
+		final File packageA1File = new File(outputPath.toFile(), TestUtils.A1_X64_FILENAME);
+		final File packageA2File = new File(outputPath.toFile(), TestUtils.A2_X64_FILENAME);
+		final File packageA3File = new File(outputPath.toFile(), TestUtils.A3_X64_FILENAME);
 
-		repo.addPackages("rhel5", RPMUtils.getPackage(TestUtils.JRRD1_PATH), RPMUtils.getPackage(TestUtils.JRRD2_PATH),
-				RPMUtils.getPackage(TestUtils.JRRD3_PATH));
+		repo.addPackages("rhel5", RPMUtils.getPackage(TestUtils.A1_X64_PATH), RPMUtils.getPackage(TestUtils.A2_X64_PATH),
+				RPMUtils.getPackage(TestUtils.A3_X64_PATH));
 		repo.index(m_gpginfo);
 
 		TestUtils.assertFileExists(outputPath.resolve("..").resolve("drpms")
-				.resolve(RPMUtils.getDeltaFileName(jrrd1File, jrrd2File)).normalize().toString());
-		TestUtils.assertFileExists(jrrd1File.getAbsolutePath());
-		TestUtils.assertFileExists(jrrd2File.getAbsolutePath());
-		TestUtils.assertFileExists(jrrd3File.getAbsolutePath());
+				.resolve(RPMUtils.getDeltaFileName(packageA1File, packageA2File)).normalize().toString());
+		TestUtils.assertFileExists(packageA1File.getAbsolutePath());
+		TestUtils.assertFileExists(packageA2File.getAbsolutePath());
+		TestUtils.assertFileExists(packageA3File.getAbsolutePath());
 	}
 
 	@Test
@@ -115,17 +115,17 @@ public class RPMMetaRepositoryTest {
 		final Path repositoryDir = Paths.get(repositoryPath).resolve("common").resolve("amd64");
 		Files.createDirectories(Paths.get(repositoryPath));
 		final File repositoryFile = repositoryDir.toFile();
-		final File jrrd1File = new File(repositoryFile, TestUtils.JRRD1_FILENAME);
-		final File jrrd2File = new File(repositoryFile, TestUtils.JRRD2_FILENAME);
-		final File jrrd3File = new File(repositoryFile, TestUtils.JRRD3_FILENAME);
+		final File packageA1File = new File(repositoryFile, TestUtils.A1_X64_FILENAME);
+		final File packageA2File = new File(repositoryFile, TestUtils.A2_X64_FILENAME);
+		final File packageA3File = new File(repositoryFile, TestUtils.A3_X64_FILENAME);
 
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), repositoryFile);
-		FileUtils.copyFileToDirectory(TestUtils.JRRD2_PATH.toFile(), repositoryFile);
-		FileUtils.copyFileToDirectory(TestUtils.JRRD3_PATH.toFile(), repositoryFile);
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), repositoryFile);
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), repositoryFile);
+		FileUtils.copyFileToDirectory(TestUtils.A3_X64_PATH.toFile(), repositoryFile);
 
-		TestUtils.assertFileExists(jrrd1File.getPath());
-		TestUtils.assertFileExists(jrrd2File.getPath());
-		TestUtils.assertFileExists(jrrd3File.getPath());
+		TestUtils.assertFileExists(packageA1File.getPath());
+		TestUtils.assertFileExists(packageA2File.getPath());
+		TestUtils.assertFileExists(packageA3File.getPath());
 
 		repo.index(m_gpginfo);
 
@@ -133,8 +133,8 @@ public class RPMMetaRepositoryTest {
 		TestUtils.assertFileExists(repositoryPath + "/common/repodata/repomd.xml");
 		TestUtils.assertFileExists(repositoryPath + "/common/repodata/repomd.xml.asc");
 		TestUtils.assertFileExists(repositoryPath + "/common/repodata/repomd.xml.key");
-		TestUtils.assertFileExists(repositoryPath + "/common/drpms/" + RPMUtils.getDeltaFileName(jrrd1File, jrrd2File));
-		TestUtils.assertFileExists(repositoryPath + "/common/drpms/" + RPMUtils.getDeltaFileName(jrrd2File, jrrd3File));
+		TestUtils.assertFileExists(repositoryPath + "/common/drpms/" + RPMUtils.getDeltaFileName(packageA1File, packageA2File));
+		TestUtils.assertFileExists(repositoryPath + "/common/drpms/" + RPMUtils.getDeltaFileName(packageA2File, packageA3File));
 
 		final List<String> lines = new ArrayList<>();
 		Files.walk(Paths.get(repositoryPath).resolve("common").resolve("repodata")).forEach(path -> {
@@ -176,15 +176,15 @@ public class RPMMetaRepositoryTest {
 
 		assertTrue(it.hasNext());
 		Version v = it.next();
-		assertEquals(new RPMVersion(0, "1.1.0", "1"), v);
+		assertEquals(new RPMVersion(0, "1.4.1", "1"), v);
 
 		assertTrue(it.hasNext());
 		v = it.next();
-		assertEquals(new RPMVersion(0, "1.1.0", "2.el7.centos"), v);
+		assertEquals(new RPMVersion(0, "1.4.5", "2"), v);
 
 		assertTrue(it.hasNext());
 		v = it.next();
-		assertEquals(new RPMVersion(0, "1.1.0", "3.el7.centos"), v);
+		assertEquals(new RPMVersion(0, "2.0.0", "0.1"), v);
 	}
 
 	@Test
@@ -197,17 +197,17 @@ public class RPMMetaRepositoryTest {
 		final Path archPath = commonPath.resolve("amd64");
 		Files.createDirectories(archPath);
 		Files.createDirectories(Paths.get(repositoryPath));
-		final File jrrd1File = new File(archPath.toFile(), TestUtils.JRRD1_FILENAME);
-		final File jrrd2File = new File(archPath.toFile(), TestUtils.JRRD2_FILENAME);
-		final File jrrd3File = new File(archPath.toFile(), TestUtils.JRRD3_FILENAME);
+		final File packageA1File = new File(archPath.toFile(), TestUtils.A1_X64_FILENAME);
+		final File packageA2File = new File(archPath.toFile(), TestUtils.A2_X64_FILENAME);
+		final File packageA3File = new File(archPath.toFile(), TestUtils.A3_X64_FILENAME);
 
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), archPath.toFile());
-		FileUtils.copyFileToDirectory(TestUtils.JRRD2_PATH.toFile(), archPath.toFile());
-		FileUtils.copyFileToDirectory(TestUtils.JRRD3_PATH.toFile(), archPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), archPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), archPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A3_X64_PATH.toFile(), archPath.toFile());
 
-		TestUtils.assertFileExists(jrrd1File.getPath());
-		TestUtils.assertFileExists(jrrd2File.getPath());
-		TestUtils.assertFileExists(jrrd3File.getPath());
+		TestUtils.assertFileExists(packageA1File.getPath());
+		TestUtils.assertFileExists(packageA2File.getPath());
+		TestUtils.assertFileExists(packageA3File.getPath());
 
 		repo.index(m_gpginfo);
 
@@ -217,13 +217,13 @@ public class RPMMetaRepositoryTest {
 		TestUtils.assertFileExists(repodata.resolve("repomd.xml"));
 		TestUtils.assertFileExists(repodata.resolve("repomd.xml.asc"));
 		TestUtils.assertFileExists(repodata.resolve("repomd.xml.key"));
-		TestUtils.assertFileExists(drpms.resolve(RPMUtils.getDeltaFileName(jrrd1File, jrrd2File)));
-		TestUtils.assertFileExists(drpms.resolve(RPMUtils.getDeltaFileName(jrrd2File, jrrd3File)));
+		TestUtils.assertFileExists(drpms.resolve(RPMUtils.getDeltaFileName(packageA1File, packageA2File)));
+		TestUtils.assertFileExists(drpms.resolve(RPMUtils.getDeltaFileName(packageA2File, packageA3File)));
 
 		final Map<Path, FileTime> fileTimes = new HashMap<>();
 		final Path[] repositoryPaths = new Path[] { repodata.resolve("repomd.xml"), repodata.resolve("repomd.xml.asc"),
-				repodata.resolve("repomd.xml.key"), drpms.resolve(RPMUtils.getDeltaFileName(jrrd1File, jrrd2File)),
-				drpms.resolve(RPMUtils.getDeltaFileName(jrrd2File, jrrd3File)) };
+				repodata.resolve("repomd.xml.key"), drpms.resolve(RPMUtils.getDeltaFileName(packageA1File, packageA2File)),
+				drpms.resolve(RPMUtils.getDeltaFileName(packageA2File, packageA3File)) };
 
 		for (final Path p : repositoryPaths) {
 			fileTimes.put(p, Util.getFileTime(p));
@@ -247,23 +247,23 @@ public class RPMMetaRepositoryTest {
 		final Path targetRepositoryCommon = Paths.get(targetRepositoryPath).resolve("common");
 		Files.createDirectories(sourceRepositoryCommon.resolve("amd64"));
 		Files.createDirectories(targetRepositoryCommon.resolve("amd64"));
-		final File jrrd1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(),
-				TestUtils.JRRD1_FILENAME);
-		final File jrrd2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(),
-				TestUtils.JRRD2_FILENAME);
-		final Path jrrd2TargetFile = targetRepositoryCommon.resolve("amd64").resolve(TestUtils.JRRD2_FILENAME);
+		final File packageA1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(),
+				TestUtils.A1_X64_FILENAME);
+		final File packageA2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(),
+				TestUtils.A2_X64_FILENAME);
+		final Path packageA2TargetFile = targetRepositoryCommon.resolve("amd64").resolve(TestUtils.A2_X64_FILENAME);
 
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(),
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(),
 				new File(targetRepositoryCommon.toFile(), "amd64"));
-		FileUtils.copyFileToDirectory(TestUtils.JRRD2_PATH.toFile(),
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(),
 				new File(sourceRepositoryCommon.toFile(), "amd64"));
 
-		TestUtils.assertFileExists(jrrd1TargetFile.getAbsolutePath());
-		TestUtils.assertFileExists(jrrd2SourceFile.getAbsolutePath());
-		TestUtils.assertFileDoesNotExist(jrrd2TargetFile);
+		TestUtils.assertFileExists(packageA1TargetFile.getAbsolutePath());
+		TestUtils.assertFileExists(packageA2SourceFile.getAbsolutePath());
+		TestUtils.assertFileDoesNotExist(packageA2TargetFile);
 
 		targetRepo.addPackages(sourceRepo);
-		TestUtils.assertFileExists(jrrd2TargetFile);
+		TestUtils.assertFileExists(packageA2TargetFile);
 	}
 
 	@Test
@@ -277,23 +277,23 @@ public class RPMMetaRepositoryTest {
 		final Path targetRepositoryCommon = Paths.get(targetRepositoryPath).resolve("rhel5");
 		Files.createDirectories(sourceRepositoryCommon.resolve("amd64"));
 		Files.createDirectories(targetRepositoryCommon.resolve("amd64"));
-		final File jrrd1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(),
-				TestUtils.JRRD1_FILENAME);
-		final File jrrd2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(),
-				TestUtils.JRRD2_FILENAME);
-		final Path jrrd2TargetFile = targetRepositoryCommon.resolve("amd64").resolve(TestUtils.JRRD2_FILENAME);
+		final File packageA1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(),
+				TestUtils.A1_X64_FILENAME);
+		final File packageA2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(),
+				TestUtils.A2_X64_FILENAME);
+		final Path packageA2TargetFile = targetRepositoryCommon.resolve("amd64").resolve(TestUtils.A2_X64_FILENAME);
 
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(),
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(),
 				new File(targetRepositoryCommon.toFile(), "amd64"));
-		FileUtils.copyFileToDirectory(TestUtils.JRRD2_PATH.toFile(),
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(),
 				new File(sourceRepositoryCommon.toFile(), "amd64"));
 
-		TestUtils.assertFileExists(jrrd1TargetFile.getAbsolutePath());
-		TestUtils.assertFileExists(jrrd2SourceFile.getAbsolutePath());
-		TestUtils.assertFileDoesNotExist(jrrd2TargetFile);
+		TestUtils.assertFileExists(packageA1TargetFile.getAbsolutePath());
+		TestUtils.assertFileExists(packageA2SourceFile.getAbsolutePath());
+		TestUtils.assertFileDoesNotExist(packageA2TargetFile);
 
 		targetRepo.addPackages("rhel5", sourceRepo);
-		TestUtils.assertFileExists(jrrd2TargetFile);
+		TestUtils.assertFileExists(packageA2TargetFile);
 	}
 
 	@Test
@@ -309,19 +309,19 @@ public class RPMMetaRepositoryTest {
 		final Path targetArchPath = targetRepositoryCommonPath.resolve("amd64");
 		Files.createDirectories(sourceArchPath);
 		Files.createDirectories(targetArchPath);
-		final File jrrdSourceFile = new File(sourceArchPath.toFile(), TestUtils.JRRD1_FILENAME);
-		final File jrrdTargetFile = new File(targetArchPath.toFile(), TestUtils.JRRD2_FILENAME);
-		final String jrrd1TargetFile = targetArchPath.resolve(TestUtils.JRRD1_FILENAME).toString();
+		final File packageASourceFile = new File(sourceArchPath.toFile(), TestUtils.A1_X64_FILENAME);
+		final File packageATargetFile = new File(targetArchPath.toFile(), TestUtils.A2_X64_FILENAME);
+		final String packageA1TargetFile = targetArchPath.resolve(TestUtils.A1_X64_FILENAME).toString();
 
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), sourceArchPath.toFile());
-		FileUtils.copyFileToDirectory(TestUtils.JRRD2_PATH.toFile(), targetArchPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), sourceArchPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), targetArchPath.toFile());
 
-		TestUtils.assertFileExists(jrrdSourceFile.getAbsolutePath());
-		TestUtils.assertFileExists(jrrdTargetFile.getAbsolutePath());
-		TestUtils.assertFileDoesNotExist(jrrd1TargetFile);
+		TestUtils.assertFileExists(packageASourceFile.getAbsolutePath());
+		TestUtils.assertFileExists(packageATargetFile.getAbsolutePath());
+		TestUtils.assertFileDoesNotExist(packageA1TargetFile);
 
 		targetRepo.addPackages(sourceRepo);
-		TestUtils.assertFileDoesNotExist(jrrd1TargetFile);
+		TestUtils.assertFileDoesNotExist(packageA1TargetFile);
 	}
 
 	@Test
@@ -337,17 +337,17 @@ public class RPMMetaRepositoryTest {
 		Files.createDirectories(sourceArchPath);
 		Files.createDirectories(targetArchPath);
 
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), targetArchPath.toFile());
-		FileUtils.copyFileToDirectory(TestUtils.JRRD2_PATH.toFile(), sourceArchPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), targetArchPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), sourceArchPath.toFile());
 
 		Repository sourceRepo = new RPMMetaRepository(Paths.get(sourceRepositoryPath));
 		Repository targetRepo = new RPMMetaRepository(Paths.get(targetRepositoryPath), sourceRepo);
 
-		final String jrrd2TargetPath = targetArchPath.resolve(TestUtils.JRRD2_FILENAME).toString();
-		TestUtils.assertFileDoesNotExist(jrrd2TargetPath);
+		final String packageA2TargetPath = targetArchPath.resolve(TestUtils.A2_X64_FILENAME).toString();
+		TestUtils.assertFileDoesNotExist(packageA2TargetPath);
 
 		targetRepo.index(m_gpginfo);
-		TestUtils.assertFileExists(jrrd2TargetPath);
+		TestUtils.assertFileExists(packageA2TargetPath);
 	}
 
 	@Test
@@ -360,27 +360,27 @@ public class RPMMetaRepositoryTest {
 		Files.createDirectories(sourceArchPath);
 		Files.createDirectories(targetArchPath);
 
-		FileUtils.copyFileToDirectory(TestUtils.JRRD1_PATH.toFile(), targetArchPath.toFile());
-		FileUtils.copyFileToDirectory(TestUtils.JRRD2_PATH.toFile(), sourceArchPath.toFile());
-		FileUtils.copyFileToDirectory(TestUtils.JRRD3_PATH.toFile(), sourceArchPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), targetArchPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), sourceArchPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A3_X64_PATH.toFile(), sourceArchPath.toFile());
 
 		Repository sourceRepo = new RPMMetaRepository(sourceRepositoryPath);
 		Repository targetRepo = new RPMMetaRepository(targetRepositoryPath);
 		sourceRepo.index(m_gpginfo);
 		targetRepo.index(m_gpginfo);
 
-		final Path jrrd1TargetPath = targetArchPath.resolve(TestUtils.JRRD1_FILENAME);
-		final Path jrrd2TargetPath = targetArchPath.resolve(TestUtils.JRRD2_FILENAME);
-		final Path jrrd3TargetPath = targetArchPath.resolve(TestUtils.JRRD3_FILENAME);
-		TestUtils.assertFileExists(jrrd1TargetPath);
-		TestUtils.assertFileDoesNotExist(jrrd2TargetPath);
-		TestUtils.assertFileDoesNotExist(jrrd3TargetPath);
+		final Path packageA1TargetPath = targetArchPath.resolve(TestUtils.A1_X64_FILENAME);
+		final Path packageA2TargetPath = targetArchPath.resolve(TestUtils.A2_X64_FILENAME);
+		final Path packageA3TargetPath = targetArchPath.resolve(TestUtils.A3_X64_FILENAME);
+		TestUtils.assertFileExists(packageA1TargetPath);
+		TestUtils.assertFileDoesNotExist(packageA2TargetPath);
+		TestUtils.assertFileDoesNotExist(packageA3TargetPath);
 
 		sourceRepo.cloneInto(targetRepositoryPath);
 		targetRepo.index(m_gpginfo);
 
-		TestUtils.assertFileDoesNotExist(jrrd1TargetPath);
-		TestUtils.assertFileExists(jrrd2TargetPath);
-		TestUtils.assertFileExists(jrrd3TargetPath);
+		TestUtils.assertFileDoesNotExist(packageA1TargetPath);
+		TestUtils.assertFileExists(packageA2TargetPath);
+		TestUtils.assertFileExists(packageA3TargetPath);
 	}
 }
