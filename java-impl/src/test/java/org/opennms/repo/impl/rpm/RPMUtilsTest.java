@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
@@ -118,21 +119,36 @@ public class RPMUtilsTest {
 	}
 
 	@Test
-	public void testGenerateDeltaRPMName() throws Exception {
-		String deltaRPM = RPMUtils.getDeltaFileName(TestUtils.A1_I386_PATH.toFile(), TestUtils.A2_I386_PATH.toFile());
-		assertEquals("jicmp-1.4.1-1_1.4.5-2.i386.drpm", deltaRPM);
+	public void testGetDeltasForPackages() throws Exception {
+		final SortedSet<RPMPackage> packages = RPMUtils.getPackages(Paths.get("target/test-classes"));
+		assertEquals(16, packages.size());
+		final List<DeltaRPM> deltas = new ArrayList<>(RPMUtils.getDeltas(packages));
+		assertEquals(12, deltas.size());
+		
+		assertEquals("jicmp-1.4.1-1_2.0.0-0.5.i386.drpm", deltas.get(0).getFileName());
+		assertEquals("jicmp-1.4.1-1_2.0.0-0.5.x86_64.drpm", deltas.get(1).getFileName());
+		assertEquals("jicmp-1.4.5-2_2.0.0-0.5.i386.drpm", deltas.get(2).getFileName());
+		assertEquals("jicmp-1.4.5-2_2.0.0-0.5.x86_64.drpm", deltas.get(3).getFileName());
+		assertEquals("jicmp-2.0.0-0.1_2.0.0-0.5.i386.drpm", deltas.get(4).getFileName());
+		assertEquals("jicmp-2.0.0-0.1_2.0.0-0.5.x86_64.drpm", deltas.get(5).getFileName());
+		assertEquals("jicmp6-1.2.1-1_2.0.0-0.5.i386.drpm", deltas.get(6).getFileName());
+		assertEquals("jicmp6-1.2.1-1_2.0.0-0.5.x86_64.drpm", deltas.get(7).getFileName());
+		assertEquals("jicmp6-1.2.4-1_2.0.0-0.5.i386.drpm", deltas.get(8).getFileName());
+		assertEquals("jicmp6-1.2.4-1_2.0.0-0.5.x86_64.drpm", deltas.get(9).getFileName());
+		assertEquals("jicmp6-2.0.0-0.2_2.0.0-0.5.i386.drpm", deltas.get(10).getFileName());
+		assertEquals("jicmp6-2.0.0-0.2_2.0.0-0.5.x86_64.drpm", deltas.get(11).getFileName());
+	}
 
-		deltaRPM = RPMUtils.getDeltaFileName(RPMUtils.getPackage(TestUtils.A1_I386_PATH.toFile()), RPMUtils.getPackage(TestUtils.A2_I386_PATH.toFile()));
-		assertEquals("jicmp-1.4.1-1_1.4.5-2.i386.drpm", deltaRPM);
+	@Test
+	public void testGenerateDeltaRPMName() throws Exception {
+		DeltaRPM drpm = new DeltaRPM(RPMUtils.getPackage(TestUtils.A1_I386_PATH.toFile()), RPMUtils.getPackage(TestUtils.A2_I386_PATH.toFile()));
+		assertEquals("jicmp-1.4.1-1_1.4.5-2.i386.drpm", drpm.getFileName());
 	}
 
 	@Test
 	public void testGenerateDeltaRPMNameOutOfOrder() throws Exception {
-		String deltaRPM = RPMUtils.getDeltaFileName(TestUtils.A2_I386_PATH.toFile(), TestUtils.A1_I386_PATH.toFile());
-		assertEquals("jicmp-1.4.1-1_1.4.5-2.i386.drpm", deltaRPM);
-
-		deltaRPM = RPMUtils.getDeltaFileName(RPMUtils.getPackage(TestUtils.A2_I386_PATH.toFile()), RPMUtils.getPackage(TestUtils.A1_I386_PATH.toFile()));
-		assertEquals("jicmp-1.4.1-1_1.4.5-2.i386.drpm", deltaRPM);
+		DeltaRPM drpm = new DeltaRPM(RPMUtils.getPackage(TestUtils.A2_I386_PATH.toFile()), RPMUtils.getPackage(TestUtils.A1_I386_PATH.toFile()));
+		assertEquals("jicmp-1.4.1-1_1.4.5-2.i386.drpm", drpm.getFileName());
 	}
 
 	@Test
@@ -141,9 +157,7 @@ public class RPMUtilsTest {
 		assertNotNull(deltaRPM);
 		assertEquals("jicmp-1.4.1-1_1.4.5-2.i386.drpm", deltaRPM.getName());
 		assertTrue(deltaRPM.length() > 0);
-		assertEquals(
-				TestUtils.A1_I386_PATH.toFile().getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"),
-				deltaRPM.toPath().getParent());
+		assertEquals(TestUtils.A1_I386_PATH.toFile().getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"), deltaRPM.toPath().getParent());
 	}
 
 	@Test
@@ -179,16 +193,21 @@ public class RPMUtilsTest {
 
 		RPMUtils.generateDeltas(tempPath.toFile());
 
-		final String delta12Name = RPMUtils.getDeltaFileName(packageA1File, packageA2File);
-		final Path drpm12Path = tempPath.resolve("drpms").resolve(delta12Name);
-		assertTrue(drpm12Path + " should exist", drpm12Path.toFile().exists());
+		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
+		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
+		final RPMPackage packageA3 = RPMUtils.getPackage(packageA3File);
 
-		final String delta23Name = RPMUtils.getDeltaFileName(packageA2File, packageA3File);
-		final Path drpm23Path = tempPath.resolve("drpms").resolve(delta23Name);
+		final DeltaRPM drpm12 = new DeltaRPM(packageA1, packageA2);
+		final DeltaRPM drpm13 = new DeltaRPM(packageA1, packageA3);
+		final DeltaRPM drpm23 = new DeltaRPM(packageA2, packageA3);
+
+		final Path drpm12Path = drpm12.getFilePath(tempPath.resolve("drpms"));
+		assertFalse(drpm12Path + " should not exist", drpm12Path.toFile().exists());
+
+		final Path drpm23Path = drpm23.getFilePath(tempPath.resolve("drpms"));
 		assertTrue(drpm23Path + " should exist", drpm23Path.toFile().exists());
 
-		final String delta13Name = RPMUtils.getDeltaFileName(packageA1File, packageA3File);
-		final Path drpm13Path = tempPath.resolve("drpms").resolve(delta13Name);
-		assertFalse(drpm13Path + " should NOT exist", drpm13Path.toFile().exists());
+		final Path drpm13Path = drpm13.getFilePath(tempPath.resolve("drpms"));
+		assertTrue(drpm13Path + " should exist", drpm13Path.toFile().exists());
 	}
 }

@@ -3,8 +3,11 @@ package org.opennms.repo.impl.rpm;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -108,82 +111,79 @@ public abstract class RPMUtils {
 
 	public static void generateDeltas(final File root) {
 		final Path rootPath = root.toPath();
-		final File deltaDir = new File(root, "drpms");
+		final Path deltaPath = rootPath.resolve("drpms");
 
 		final SortedSet<RPMPackage> rpms = getPackages(rootPath);
-
 		LOG.debug("RPMs: {}", rpms);
-		RPMPackage previous = null;
-		for (final RPMPackage rpm : rpms) {
-			if (previous != null && previous.getName().equals(rpm.getName())) {
-				LOG.trace("Same package: '{}' and '{}'", previous, rpm);
-				final String deltaName = RPMUtils.getDeltaFileName(previous, rpm);
-				final File deltaRPMFile = new File(deltaDir, deltaName);
-				boolean generate = false;
-				if (!deltaRPMFile.exists()) {
+
+		final Collection<DeltaRPM> deltas = getDeltas(rpms);
+		LOG.debug("Deltas: {}", deltas);
+
+		for (final DeltaRPM drpm : deltas) {
+			final Path drpmPath = drpm.getFilePath(deltaPath);
+			boolean generate = false;
+
+			if (!drpmPath.toFile().exists()) {
+				generate = true;
+				LOG.trace("drpm does not exist: {}", Util.relativize(drpmPath));
+			} else {
+				try {
+					final long drpmTime = Util.getFileTime(drpmPath).toMillis();
+					final long fromTime = Util.getFileTime(drpm.getFromRPM().getPath()).toMillis();
+					final long toTime = Util.getFileTime(drpm.getToRPM().getPath()).toMillis();
+
+					// if the DRPM is older than the source RPMs, re-generate it
+					generate = drpmTime < fromTime || drpmTime < toTime;
+				} catch (final Exception e) {
+					LOG.debug("Failed to read attributes from files.  Generating anyways.", e);
 					generate = true;
-					LOG.trace("drpm does not exist: {}", deltaName);
-				} else {
-					try {
-						final BasicFileAttributes drpmAttr = Files.readAttributes(deltaRPMFile.toPath(),
-								BasicFileAttributes.class);
-						final BasicFileAttributes previousAttr = Files.readAttributes(previous.getPath(),
-								BasicFileAttributes.class);
-						final BasicFileAttributes rpmAttr = Files.readAttributes(rpm.getPath(),
-								BasicFileAttributes.class);
-						if (drpmAttr.creationTime().compareTo(previousAttr.creationTime()) == -1) {
-							LOG.debug("drpm {} is older than {}", deltaName, previous);
-							generate = true;
-						} else if (drpmAttr.creationTime().compareTo(rpmAttr.creationTime()) == -1) {
-							LOG.debug("drpm {} is older than {}", deltaName, rpm);
-							generate = true;
-						} else {
-							LOG.debug("drpm {} is up-to-date", deltaName);
-						}
-					} catch (final Exception e) {
-						LOG.debug("Failed to read attributes from files.  Generating anyways.", e);
-						generate = true;
-					}
-				}
-				if (generate) {
-					LOG.info("- generating {}", Util.relativize(deltaRPMFile.toPath()));
-					try {
-						RPMUtils.generateDelta(previous.getFile(), rpm.getFile(), deltaRPMFile);
-					} catch (final Exception e) {
-						LOG.error("Failed to generate delta RPM {}", deltaRPMFile, e);
-					}
-				} else {
-					LOG.trace("- NOT generating {}", deltaName);
 				}
 			}
-			previous = rpm;
+			if (generate) {
+				LOG.info("- generating {}", Util.relativize(drpmPath));
+				try {
+					RPMUtils.generateDelta(drpm.getFromRPM().getFile(), drpm.getToRPM().getFile(), drpmPath.toFile());
+				} catch (final Exception e) {
+					LOG.error("Failed to generate delta RPM {}", drpm, e);
+				}
+			} else {
+				LOG.trace("- NOT generating {}", drpm);
+			}
 		}
 	}
 
 	public static String getDeltaFileName(final File fromRPMFile, final File toRPMFile) {
-		return getDeltaFileName(RPMUtils.getPackage(fromRPMFile), RPMUtils.getPackage(toRPMFile));
+		return new DeltaRPM(RPMUtils.getPackage(fromRPMFile), RPMUtils.getPackage(toRPMFile)).getFileName();
 	}
 
-	public static String getDeltaFileName(final RPMPackage fromRPM, final RPMPackage toRPM) {
-		if (!fromRPM.getArchitecture().equals(toRPM.getArchitecture())) {
-			throw new IllegalArgumentException("RPMs are not the same architecture!");
+	public static Collection<DeltaRPM> getDeltas(final Collection<RPMPackage> packageCollection) {
+		LOG.debug("Getting deltas for package collection: {}", packageCollection);
+
+		final SortedSet<RPMPackage> packages = new TreeSet<RPMPackage>(packageCollection);
+		final List<DeltaRPM> drpms = new ArrayList<>();
+
+		// first, calculate the "newest" version of each packageName.arch tuple
+		final Map<String, RPMPackage> newest = getNewest(packages);
+		
+		// then, iterate over the packages and for each "old" package, create
+		// a DeltaRPM from it to the newest
+		for (final RPMPackage p : packages) {
+			final RPMPackage newestPackage = newest.get(p.getNameKey());
+
+			// don't delta a package to itself, you'll go blind ;)
+			if (!p.equals(newestPackage)) {
+				drpms.add(new DeltaRPM(p, newestPackage));
+			}
 		}
 
-		final RPMPackage first;
-		final RPMPackage second;
-		if (fromRPM.isLowerThan(toRPM)) {
-			first = fromRPM;
-			second = toRPM;
-		} else {
-			first = toRPM;
-			second = fromRPM;
-		}
+		return drpms;
+	}
 
-		final StringBuilder sb = new StringBuilder();
-		sb.append(first.getName()).append("-");
-		sb.append(first.getVersion().toStringWithoutEpoch()).append("_");
-		sb.append(second.getVersion().toStringWithoutEpoch()).append(".");
-		sb.append(first.getArchitectureString()).append(".drpm");
-		return sb.toString();
+	public static Map<String, RPMPackage> getNewest(final SortedSet<RPMPackage> packages) {
+		final Map<String,RPMPackage> newest = new HashMap<>();
+		for (final RPMPackage p : packages) {
+			newest.put(p.getNameKey(), p);
+		}
+		return newest;
 	}
 }

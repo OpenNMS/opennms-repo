@@ -75,7 +75,12 @@ public class RPMRepositoryTest {
 				RPMUtils.getPackage(TestUtils.A2_X64_PATH.toFile()), RPMUtils.getPackage(TestUtils.A3_X64_PATH.toFile()));
 		repo.index(m_gpginfo);
 
-		TestUtils.assertFileExists(repositoryPath + "/drpms/" + RPMUtils.getDeltaFileName(packageA1File, packageA2File));
+		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
+		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
+		final RPMPackage packageA3 = RPMUtils.getPackage(packageA3File);
+
+		TestUtils.assertFileExists(repositoryPath + "/drpms/" + new DeltaRPM(packageA1, packageA3).getFileName());
+		TestUtils.assertFileExists(repositoryPath + "/drpms/" + new DeltaRPM(packageA2, packageA3).getFileName());
 		TestUtils.assertFileExists(packageA1File.getAbsolutePath());
 		TestUtils.assertFileExists(packageA2File.getAbsolutePath());
 		TestUtils.assertFileExists(packageA3File.getAbsolutePath());
@@ -104,12 +109,16 @@ public class RPMRepositoryTest {
 		final GPGInfo gpginfo = TestUtils.generateGPGInfo();
 		repo.index(gpginfo);
 
+		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
+		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
+		final RPMPackage packageA3 = RPMUtils.getPackage(packageA3File);
+
 		TestUtils.assertFileExists(repositoryPath + "/repodata");
 		TestUtils.assertFileExists(repositoryPath + "/repodata/repomd.xml");
 		TestUtils.assertFileExists(repositoryPath + "/repodata/repomd.xml.asc");
 		TestUtils.assertFileExists(repositoryPath + "/repodata/repomd.xml.key");
-		TestUtils.assertFileExists(repositoryPath + "/drpms/" + RPMUtils.getDeltaFileName(packageA1File, packageA2File));
-		TestUtils.assertFileExists(repositoryPath + "/drpms/" + RPMUtils.getDeltaFileName(packageA2File, packageA3File));
+		TestUtils.assertFileExists(repositoryPath + "/drpms/" + new DeltaRPM(packageA1, packageA3).getFileName());
+		TestUtils.assertFileExists(repositoryPath + "/drpms/" + new DeltaRPM(packageA2, packageA3).getFileName());
 
 		final List<String> lines = new ArrayList<>();
 		Files.walk(Paths.get(repositoryPath).resolve("repodata")).forEach(path -> {
@@ -185,19 +194,30 @@ public class RPMRepositoryTest {
 		final GPGInfo gpginfo = TestUtils.generateGPGInfo();
 		repo.index(gpginfo);
 
+		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
+		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
+		final RPMPackage packageA3 = RPMUtils.getPackage(packageA3File);
+
+		final DeltaRPM deltaA13 = new DeltaRPM(packageA1, packageA3);
+		final DeltaRPM deltaA23 = new DeltaRPM(packageA2, packageA3);
+
 		TestUtils.assertFileExists(repositoryPath + "/repodata/repomd.xml");
 		TestUtils.assertFileExists(repositoryPath + "/repodata/repomd.xml.asc");
 		TestUtils.assertFileExists(repositoryPath + "/repodata/repomd.xml.key");
-		TestUtils.assertFileExists(repositoryPath + "/drpms/" + RPMUtils.getDeltaFileName(packageA1File, packageA2File));
-		TestUtils.assertFileExists(repositoryPath + "/drpms/" + RPMUtils.getDeltaFileName(packageA2File, packageA3File));
+		TestUtils.assertFileExists(repositoryPath + "/drpms/" + deltaA13.getFileName());
+		TestUtils.assertFileExists(repositoryPath + "/drpms/" + deltaA23.getFileName());
 
 		final Path repodata = Paths.get(repositoryPath).resolve("repodata");
 		final Path drpms = Paths.get(repositoryPath).resolve("drpms");
 
 		final Map<Path, FileTime> fileTimes = new HashMap<>();
-		final Path[] repositoryPaths = new Path[] { repodata.resolve("repomd.xml"), repodata.resolve("repomd.xml.asc"),
-				repodata.resolve("repomd.xml.key"), drpms.resolve(RPMUtils.getDeltaFileName(packageA1File, packageA2File)),
-				drpms.resolve(RPMUtils.getDeltaFileName(packageA2File, packageA3File)) };
+		final Path[] repositoryPaths = new Path[] {
+			repodata.resolve("repomd.xml"),
+			repodata.resolve("repomd.xml.asc"),
+			repodata.resolve("repomd.xml.key"),
+			deltaA13.getFilePath(drpms),
+			deltaA23.getFilePath(drpms)
+		};
 
 		for (final Path p : repositoryPaths) {
 			fileTimes.put(p, Util.getFileTime(p));

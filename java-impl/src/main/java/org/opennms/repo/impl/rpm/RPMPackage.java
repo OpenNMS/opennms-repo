@@ -104,6 +104,10 @@ public class RPMPackage implements org.opennms.repo.api.RepositoryPackage {
 		}
 	}
 
+	public String getNameKey() {
+		return m_name + "." + m_architecture;
+	}
+
 	@Override
 	public String toString() {
 		return m_name + "-" + m_version.toString() + "." + getArchitectureString() + ".rpm";

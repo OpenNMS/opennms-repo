@@ -88,7 +88,9 @@ public class MakeDeltaRPMCommand extends Command {
 
 	Path getOutputRPMPath() {
 		if (m_outputRPM == null) {
-			final String deltaRPMName = RPMUtils.getDeltaFileName(m_fromRPM, m_toRPM);
+			final RPMPackage fromRPM = m_fromRPM;
+			final RPMPackage toRPM = m_toRPM;
+			final String deltaRPMName = new DeltaRPM(fromRPM, toRPM).getFileName();
 			return m_fromRPM.getPath().getParent().normalize().toAbsolutePath().resolve("drpms").resolve(deltaRPMName);
 		}
 		return m_outputRPM;
