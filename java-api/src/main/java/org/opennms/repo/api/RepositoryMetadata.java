@@ -16,7 +16,6 @@ public class RepositoryMetadata {
 	public static final String METADATA_KEY_NAME = "name";
 	public static final String METADATA_KEY_TYPE = "type";
 	public static final String METADATA_KEY_PARENT = "parent";
-	public static final String METADATA_KEY_PARENT_TYPE = "parentType";
 	public static final String METADATA_KEY_LAST_INDEXED = "lastIndexed";
 
 	private static final Logger LOG = LoggerFactory.getLogger(RepositoryMetadata.class);
@@ -27,8 +26,8 @@ public class RepositoryMetadata {
 	private String m_name;
 	private long m_lastIndexed = -1;
 
-	protected RepositoryMetadata(final Path root, final Class<? extends Repository> type, final Path parentRoot,
-			final Class<? extends Repository> parentType, final String name, final Long lastIndexed) {
+	protected RepositoryMetadata(final Path root, final Class<? extends Repository> type, final Path parentRoot, final Class<? extends Repository> parentType, final String name,
+			final Long lastIndexed) {
 		m_root = root.normalize().toAbsolutePath();
 		m_type = type;
 		if (parentRoot != null && parentType != null) {
@@ -39,27 +38,6 @@ public class RepositoryMetadata {
 		m_name = name;
 		m_lastIndexed = lastIndexed == null ? -1 : lastIndexed;
 	}
-
-	/*
-	 * private RepositoryMetadata initializeParent(final Path root) { Path
-	 * parentPath = null; String parentType = null; try { final
-	 * Map<String,String> metadata = Util.readMetadata(root); if
-	 * (metadata.containsKey(METADATA_KEY_PARENT) &&
-	 * metadata.containsKey(METADATA_KEY_PARENT_TYPE)) { final String
-	 * parentString = metadata.get(METADATA_KEY_PARENT); parentPath =
-	 * root.resolve(parentString).normalize().toAbsolutePath(); parentType =
-	 * metadata.get(METADATA_KEY_PARENT_TYPE);
-	 * LOG.debug("initializeParent: root={}, parent={}, parentType={}", root,
-	 * parentPath, parentType); final Class<? extends Repository> type =
-	 * Class.forName(parentType).asSubclass(Repository.class); return
-	 * RepositoryMetadata.getInstance(parentPath, type); } } catch (final
-	 * IOException e) { LOG.warn("Failed to read repository metadata from {}",
-	 * root); throw new RepositoryException(e); } catch (final
-	 * ClassNotFoundException e) {
-	 * LOG.warn("Failed to instantiate parent repository class {} in path {}",
-	 * parentType, parentPath); throw new RepositoryException(e); } return null;
-	 * }
-	 */
 
 	public Path getRoot() {
 		return m_root;
@@ -109,9 +87,7 @@ public class RepositoryMetadata {
 
 			// update parent info
 			if (m_parent != null) {
-				self.put(METADATA_KEY_PARENT,
-						m_root.relativize(m_parent.getRoot().normalize().toAbsolutePath()).toString());
-				self.put(METADATA_KEY_PARENT_TYPE, m_parent.getType().getName());
+				self.put(METADATA_KEY_PARENT, m_root.relativize(m_parent.getRoot().normalize().toAbsolutePath()).toString());
 			}
 
 			boolean dirty = false;
@@ -144,24 +120,21 @@ public class RepositoryMetadata {
 		try {
 			if (hasParent()) {
 				LOG.debug("has parent {}", this);
-				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class,
-						Repository.class);
+				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class, Repository.class);
 				return constructor.newInstance(getRoot(), m_parent.getRepositoryInstance());
 			} else {
 				LOG.debug("no parent {}", this);
 				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class);
 				return constructor.newInstance(getRoot());
 			}
-		} catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
-				| IllegalArgumentException | InvocationTargetException e) {
+		} catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			throw new RepositoryException(e);
 		}
 	}
 
 	@Override
 	public String toString() {
-		return "RepositoryMetadata[name=" + getName() + ",type=" + getType().getSimpleName() + ",lastIndexed="
-				+ m_lastIndexed + ",parent=" + hasParent() + "]";
+		return "RepositoryMetadata[name=" + getName() + ",type=" + getType().getSimpleName() + ",lastIndexed=" + m_lastIndexed + ",parent=" + hasParent() + "]";
 	}
 
 	@Override
@@ -190,8 +163,7 @@ public class RepositoryMetadata {
 		return RepositoryMetadata.getInstance(path, type, null, null);
 	}
 
-	public static RepositoryMetadata getInstance(final Path path, final Class<? extends Repository> type,
-			final Path parentPath, final Class<? extends Repository> parentType) {
+	public static RepositoryMetadata getInstance(final Path path, final Class<? extends Repository> type, final Path parentPath, final Class<? extends Repository> parentType) {
 		Class<? extends Repository> repoType = type;
 
 		Path detectedParentPath = parentPath;
@@ -207,9 +179,7 @@ public class RepositoryMetadata {
 					repoType = Class.forName(typeValue).asSubclass(Repository.class);
 				}
 			} catch (final ClassNotFoundException e) {
-				LOG.warn(
-						"Repository metadata for {} does not have an existing type, and no type was passed for initialization.",
-						path);
+				LOG.warn("Repository metadata for {} does not have an existing type, and no type was passed for initialization.", path);
 				throw new RepositoryException(e);
 			}
 
@@ -223,14 +193,15 @@ public class RepositoryMetadata {
 
 			// use the parent type from the .metadata file, if found
 			try {
-				if (parentRepoType == null && metadata.containsKey(METADATA_KEY_PARENT_TYPE)) {
-					final String typeValue = metadata.get(METADATA_KEY_PARENT_TYPE);
-					parentRepoType = Class.forName(typeValue).asSubclass(Repository.class);
+				if (detectedParentPath != null && detectedParentPath.toFile().exists() && detectedParentPath.toFile().isDirectory()) {
+					final Map<String,String> parentMetadata = Util.readMetadata(detectedParentPath);
+					if (parentRepoType == null && parentMetadata.containsKey(METADATA_KEY_TYPE)) {
+						final String typeValue = parentMetadata.get(METADATA_KEY_TYPE);
+						parentRepoType = Class.forName(typeValue).asSubclass(Repository.class);
+					}
 				}
 			} catch (final ClassNotFoundException e) {
-				LOG.warn(
-						"Repository metadata for {} does not have an existing parent type, and no parent type was passed for initialization.",
-						path);
+				LOG.warn("Repository metadata for {} does not have an existing parent type, and no parent type was passed for initialization.", path);
 				throw new RepositoryException(e);
 			}
 
@@ -243,8 +214,7 @@ public class RepositoryMetadata {
 				if (name == null) {
 					name = path.getFileName().toString();
 				}
-				return new RepositoryMetadata(path.normalize().toAbsolutePath(), repoType, detectedParentPath,
-						parentRepoType, name, lastIndexed);
+				return new RepositoryMetadata(path.normalize().toAbsolutePath(), repoType, detectedParentPath, parentRepoType, name, lastIndexed);
 			}
 		} catch (final IOException e) {
 			LOG.warn("Failed to get instance of metadata for repository at {}", path);
