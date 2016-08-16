@@ -97,8 +97,7 @@ public class GPGUtilsTest {
 	public void testExportPublicKey() throws Exception {
 		final Path keyfile = Paths.get("target/GPGUtilsTest.testExportPublicKey.asc");
 		try (final StringBufferInputStream is = new StringBufferInputStream(OPENNMS_PUBKEY)) {
-			final PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(is),
-					new JcaKeyFingerprintCalculator());
+			final PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(is), new JcaKeyFingerprintCalculator());
 			GPGUtils.exportKeyRing(keyfile, pgpPub);
 		}
 		assertTrue(keyfile.toFile().exists());

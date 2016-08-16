@@ -33,8 +33,7 @@ public class GPGInfo {
 	private final PGPPublicKeyRingCollection m_publicKeyRing;
 	private final PGPSecretKeyRingCollection m_privateKeyRing;
 
-	public GPGInfo(final String keyId, final String passphrase, final PGPSecretKey secretKey)
-			throws IOException, PGPException {
+	public GPGInfo(final String keyId, final String passphrase, final PGPSecretKey secretKey) throws IOException, PGPException {
 		m_keyId = keyId;
 		m_passphrase = passphrase;
 		m_secretKey = secretKey;
@@ -54,8 +53,7 @@ public class GPGInfo {
 		m_privateKeyRing = null;
 	}
 
-	public GPGInfo(final String keyId, final String passphrase, final PGPPublicKeyRing publicRing,
-			final PGPSecretKeyRing secretRing) {
+	public GPGInfo(final String keyId, final String passphrase, final PGPPublicKeyRing publicRing, final PGPSecretKeyRing secretRing) {
 		try {
 			m_keyId = keyId;
 			m_passphrase = passphrase;
@@ -134,8 +132,7 @@ public class GPGInfo {
 	}
 
 	public void savePublicKeyring(final Path path) {
-		try (final FileOutputStream fos = new FileOutputStream(path.toFile());
-				final BufferedOutputStream bos = new BufferedOutputStream(fos);) {
+		try (final FileOutputStream fos = new FileOutputStream(path.toFile()); final BufferedOutputStream bos = new BufferedOutputStream(fos);) {
 			m_publicKeyRing.encode(bos);
 		} catch (final Exception e) {
 			throw new RepositoryException("Failed to save public keyring to " + path, e);
@@ -143,29 +140,25 @@ public class GPGInfo {
 	}
 
 	public void savePrivateKeyring(final Path path) {
-		try (final FileOutputStream fos = new FileOutputStream(path.toFile());
-				final BufferedOutputStream bos = new BufferedOutputStream(fos);) {
+		try (final FileOutputStream fos = new FileOutputStream(path.toFile()); final BufferedOutputStream bos = new BufferedOutputStream(fos);) {
 			m_privateKeyRing.encode(bos);
 		} catch (final Exception e) {
 			throw new RepositoryException("Failed to save private keyring to " + path, e);
 		}
 	}
 
-	private static PGPPrivateKey extractPrivateKey(final PGPSecretKey secretKey, final String passphrase)
-			throws PGPException {
+	private static PGPPrivateKey extractPrivateKey(final PGPSecretKey secretKey, final String passphrase) throws PGPException {
 		if (secretKey == null) {
 			return null;
 		}
 		// final PBESecretKeyDecryptor decryptor = new
 		// JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passphrase.toCharArray());
-		final PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider())
-				.build(passphrase.toCharArray());
+		final PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passphrase.toCharArray());
 		return secretKey.extractPrivateKey(decryptor);
 	}
 
 	private PGPPublicKeyRingCollection createKeyring(final PGPPublicKey publicKey) throws IOException, PGPException {
-		final PGPPublicKeyRing kr = new PGPPublicKeyRing(publicKey.getPublicKeyPacket().getEncoded(),
-				new JcaKeyFingerprintCalculator());
+		final PGPPublicKeyRing kr = new PGPPublicKeyRing(publicKey.getPublicKeyPacket().getEncoded(), new JcaKeyFingerprintCalculator());
 		return new PGPPublicKeyRingCollection(Arrays.asList(kr));
 	}
 }

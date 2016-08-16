@@ -46,8 +46,7 @@ class PGPExampleUtil {
 	 * @throws PGPException
 	 * @throws NoSuchProviderException
 	 */
-	static PGPPrivateKey findSecretKey(PGPSecretKeyRingCollection pgpSec, long keyID, char[] pass)
-			throws PGPException, NoSuchProviderException {
+	static PGPPrivateKey findSecretKey(PGPSecretKeyRingCollection pgpSec, long keyID, char[] pass) throws PGPException, NoSuchProviderException {
 		PGPSecretKey pgpSecKey = pgpSec.getSecretKey(keyID);
 
 		if (pgpSecKey == null) {
@@ -75,8 +74,7 @@ class PGPExampleUtil {
 	 * @throws PGPException
 	 */
 	static PGPPublicKey readPublicKey(InputStream input) throws IOException, PGPException {
-		PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(input),
-				new JcaKeyFingerprintCalculator());
+		PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(input), new JcaKeyFingerprintCalculator());
 
 		//
 		// we just loop through the collection till we find a key suitable for
@@ -121,8 +119,7 @@ class PGPExampleUtil {
 	 *             if there is an issue parsing the input stream.
 	 */
 	static PGPSecretKey readSecretKey(InputStream input) throws IOException, PGPException {
-		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(input),
-				new JcaKeyFingerprintCalculator());
+		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(input), new JcaKeyFingerprintCalculator());
 
 		//
 		// we just loop through the collection till we find a key suitable for

@@ -91,8 +91,7 @@ public class RPMCommand extends Command {
 
 	public List<String> getErrorOutput() {
 		if (m_errorOutput == null) {
-			throw new IllegalStateException(
-					"You can't read the error output if you have not executed the command yet!");
+			throw new IllegalStateException("You can't read the error output if you have not executed the command yet!");
 		}
 		return m_errorOutput;
 	}

@@ -112,8 +112,8 @@ public class RPMUtilsTest {
 				new RPMVersion("2.0.0", "0.5"), // i386
 				new RPMVersion("2.0.0", "0.5") // x64
 		};
-		
-		for (int i=0; i < 16; i++) {
+
+		for (int i = 0; i < 16; i++) {
 			assertEquals(expected[i], versions.get(i));
 		}
 	}
@@ -124,7 +124,7 @@ public class RPMUtilsTest {
 		assertEquals(16, packages.size());
 		final List<DeltaRPM> deltas = new ArrayList<>(RPMUtils.getDeltas(packages));
 		assertEquals(12, deltas.size());
-		
+
 		assertEquals("jicmp-1.4.1-1_2.0.0-0.5.i386.drpm", deltas.get(0).getFileName());
 		assertEquals("jicmp-1.4.1-1_2.0.0-0.5.x86_64.drpm", deltas.get(1).getFileName());
 		assertEquals("jicmp-1.4.5-2_2.0.0-0.5.i386.drpm", deltas.get(2).getFileName());
@@ -168,9 +168,7 @@ public class RPMUtilsTest {
 		assertNotNull(deltaRPM);
 		assertEquals("jicmp-1.4.1-1_2.0.0-0.1.i386.drpm", deltaRPM.getName());
 		assertTrue(deltaRPM.length() > 0);
-		assertEquals(
-				TestUtils.A1_I386_PATH.toFile().getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"),
-				deltaRPM.toPath().getParent());
+		assertEquals(TestUtils.A1_I386_PATH.toFile().getParentFile().toPath().normalize().toAbsolutePath().resolve("drpms"), deltaRPM.toPath().getParent());
 	}
 
 	@Test

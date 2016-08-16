@@ -21,8 +21,7 @@ public class ActionException extends RepositoryException {
 		super(message, cause);
 	}
 
-	public ActionException(final String message, final Throwable cause, final boolean enableSuppression,
-			final boolean writableStackTrace) {
+	public ActionException(final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
 	}
 

@@ -36,19 +36,16 @@ public class MakeDeltaRPMCommand extends Command {
 		this(fromRPM, toRPM, null);
 	}
 
-	public MakeDeltaRPMCommand(final Path fromRPM, final Path toRPM, final Path outputDeltaRPM)
-			throws RepositoryException {
+	public MakeDeltaRPMCommand(final Path fromRPM, final Path toRPM, final Path outputDeltaRPM) throws RepositoryException {
 		this(RPMUtils.getPackage(fromRPM.toFile()), RPMUtils.getPackage(toRPM.toFile()), outputDeltaRPM);
 	}
 
-	public MakeDeltaRPMCommand(final RPMPackage fromRPM, final RPMPackage toRPM, final Path outputDeltaRPM)
-			throws RepositoryException {
+	public MakeDeltaRPMCommand(final RPMPackage fromRPM, final RPMPackage toRPM, final Path outputDeltaRPM) throws RepositoryException {
 		super("makedeltarpm");
 		m_fromRPM = fromRPM;
 		m_toRPM = toRPM;
 		if (!m_fromRPM.getName().equals(m_toRPM.getName())) {
-			throw new IllegalArgumentException(
-					"RPM packages do not match!  We can't make a delta RPM from unrelated packages.");
+			throw new IllegalArgumentException("RPM packages do not match!  We can't make a delta RPM from unrelated packages.");
 		}
 		m_outputRPM = outputDeltaRPM;
 	}
@@ -105,8 +102,7 @@ public class MakeDeltaRPMCommand extends Command {
 
 	public List<String> getErrorOutput() {
 		if (m_errorOutput == null) {
-			throw new IllegalStateException(
-					"You can't read the error output if you have not executed the command yet!");
+			throw new IllegalStateException("You can't read the error output if you have not executed the command yet!");
 		}
 		return m_errorOutput;
 	}

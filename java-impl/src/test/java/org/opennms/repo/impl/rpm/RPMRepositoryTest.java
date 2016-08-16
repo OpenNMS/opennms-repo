@@ -74,7 +74,8 @@ public class RPMRepositoryTest {
 		repo.addPackages(
 				RPMUtils.getPackage(TestUtils.A1_X64_PATH.toFile()),
 				RPMUtils.getPackage(TestUtils.A2_X64_PATH.toFile()),
-				RPMUtils.getPackage(TestUtils.A3_X64_PATH.toFile()));
+				RPMUtils.getPackage(TestUtils.A3_X64_PATH.toFile())
+		);
 		repo.index(m_gpginfo);
 
 		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
@@ -136,8 +137,7 @@ public class RPMRepositoryTest {
 		});
 
 		final Pattern packagesPattern = Pattern.compile(".*packages=\"(\\d+)\".*");
-		final Pattern versionPattern = Pattern
-				.compile("\\s*<version epoch=\"(\\d+)\" ver=\"([^\"]*)\" rel=\"([^\\\"]*)\"/>\\s*");
+		final Pattern versionPattern = Pattern.compile("\\s*<version epoch=\"(\\d+)\" ver=\"([^\"]*)\" rel=\"([^\\\"]*)\"/>\\s*");
 		assertTrue("There should be data in *-filelists.xml.gz", lines.size() > 0);
 		int packages = 0;
 		final Set<Version> versions = new TreeSet<>();
@@ -212,11 +212,11 @@ public class RPMRepositoryTest {
 
 		final Map<Path, FileTime> fileTimes = new HashMap<>();
 		final Path[] repositoryPaths = new Path[] {
-			repodata.resolve("repomd.xml"),
-			repodata.resolve("repomd.xml.asc"),
-			repodata.resolve("repomd.xml.key"),
-			deltaA13.getFilePath(drpms),
-			deltaA23.getFilePath(drpms)
+				repodata.resolve("repomd.xml"),
+				repodata.resolve("repomd.xml.asc"),
+				repodata.resolve("repomd.xml.key"),
+				deltaA13.getFilePath(drpms),
+				deltaA23.getFilePath(drpms)
 		};
 
 		for (final Path p : repositoryPaths) {
@@ -227,8 +227,7 @@ public class RPMRepositoryTest {
 		repo.index(m_gpginfo);
 
 		for (final Path p : repositoryPaths) {
-			assertEquals(p + " time should not have changed after a reindex", fileTimes.get(p).toMillis(),
-					Util.getFileTime(p).toMillis());
+			assertEquals(p + " time should not have changed after a reindex", fileTimes.get(p).toMillis(), Util.getFileTime(p).toMillis());
 		}
 	}
 
@@ -245,8 +244,7 @@ public class RPMRepositoryTest {
 		Files.createDirectories(Paths.get(targetRepositoryPath));
 		final File packageA1TargetFile = new File(new File(targetRepositoryDir, "amd64"), TestUtils.A1_X64_FILENAME);
 		final File packageA2SourceFile = new File(new File(sourceRepositoryDir, "amd64"), TestUtils.A2_X64_FILENAME);
-		final String packageA2TargetFile = targetRepositoryDir + File.separator + "amd64" + File.separator
-				+ TestUtils.A2_X64_FILENAME;
+		final String packageA2TargetFile = targetRepositoryDir + File.separator + "amd64" + File.separator + TestUtils.A2_X64_FILENAME;
 
 		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), new File(targetRepositoryDir, "amd64"));
 		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), new File(sourceRepositoryDir, "amd64"));
@@ -329,7 +327,8 @@ public class RPMRepositoryTest {
 		Repository sourceRepoB = new RPMRepository(Paths.get(sourceRepositoryBPath));
 		Repository targetRepo = new RPMRepository(Paths.get(targetRepositoryPath), Util.newSortedSet(sourceRepoA, sourceRepoB));
 
-		// indexing should not have copied any RPMs, but it *should* have created DRPMs
+		// indexing should not have copied any RPMs, but it *should* have
+		// created DRPMs
 		targetRepo.index(m_gpginfo);
 
 		final Path packageA1TargetPath = Paths.get(targetRepositoryPath).resolve("amd64").resolve(TestUtils.A1_X64_FILENAME);
@@ -370,7 +369,7 @@ public class RPMRepositoryTest {
 
 		final RPMRepository repo = new RPMRepository(repositoryPath);
 		repo.index(m_gpginfo);
-		
+
 		TestUtils.assertFileDoesNotExist(drpmPath.resolve(a1a2delta));
 		TestUtils.assertFileDoesNotExist(drpmPath.resolve(a2a3delta));
 		TestUtils.assertFileExists(drpmPath.resolve(a3a4delta));

@@ -128,7 +128,6 @@ public class BaseVersion implements Version, Comparable<Version> {
 			return false;
 		}
 		final BaseVersion that = (BaseVersion) obj;
-		return Objects.equals(this.getEpoch(), that.getEpoch()) && Objects.equals(this.getVersion(), that.getVersion())
-				&& Objects.equals(this.getRelease(), that.getRelease());
+		return Objects.equals(this.getEpoch(), that.getEpoch()) && Objects.equals(this.getVersion(), that.getVersion()) && Objects.equals(this.getRelease(), that.getRelease());
 	}
 }

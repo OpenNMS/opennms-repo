@@ -62,9 +62,7 @@ public class CreaterepoCommand extends Command {
 		final Process p = CommandLauncherFactory.createVMLauncher().exec(cl, getEnvironment());
 
 		LOG.trace("CreaterepoCommand.init(): process created: {}", p);
-		try (final InputStream s = p.getInputStream();
-				final Reader r = new InputStreamReader(s);
-				final BufferedReader br = new BufferedReader(r);) {
+		try (final InputStream s = p.getInputStream(); final Reader r = new InputStreamReader(s); final BufferedReader br = new BufferedReader(r);) {
 			LOG.trace("s={}, r={}, br={}", s, r, br);
 			String line = null;
 			do {
@@ -124,8 +122,7 @@ public class CreaterepoCommand extends Command {
 
 	public List<String> getErrorOutput() {
 		if (m_errorOutput == null) {
-			throw new IllegalStateException(
-					"You can't read the error output if you have not executed the command yet!");
+			throw new IllegalStateException("You can't read the error output if you have not executed the command yet!");
 		}
 		return m_errorOutput;
 	}

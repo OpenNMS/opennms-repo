@@ -43,8 +43,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		if (!getRoot().toFile().exists()) {
 			return false;
 		}
-		return getRoot().resolve("common").resolve("repodata").resolve("repomd.xml").toFile().exists()
-				&& getRoot().resolve(REPO_METADATA_FILENAME).toFile().exists();
+		return getRoot().resolve("common").resolve("repodata").resolve("repomd.xml").toFile().exists() && getRoot().resolve(REPO_METADATA_FILENAME).toFile().exists();
 	}
 
 	protected void ensureCommonRepositoryExists(final GPGInfo gpginfo) {
@@ -207,8 +206,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		} else if (repository instanceof RPMRepository) {
 			from = repository;
 		} else {
-			throw new RepositoryException(
-					"Repository must be an RPM meta repository with a matching subrepo, or an RPM repository!");
+			throw new RepositoryException("Repository must be an RPM meta repository with a matching subrepo, or an RPM repository!");
 		}
 		// LOG.debug("from = {}, to = {}", from, to);
 		to.addPackages(from);

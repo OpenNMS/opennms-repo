@@ -23,17 +23,13 @@ import ch.qos.logback.classic.LoggerContext;
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-	@Option(name = "--keyring", aliases = {
-			"-r" }, required = false, usage = "PGP/GPG keyring file to use for signing", metaVar = "</path/to/secring.gpg>")
-	public String m_keyRing = System.getProperty("user.home") + File.separator + ".gnupg" + File.separator
-			+ "secring.gpg";
+	@Option(name = "--keyring", aliases = { "-r" }, required = false, usage = "PGP/GPG keyring file to use for signing", metaVar = "</path/to/secring.gpg>")
+	public String m_keyRing = System.getProperty("user.home") + File.separator + ".gnupg" + File.separator + "secring.gpg";
 
-	@Option(name = "--key", aliases = {
-			"-k" }, required = false, usage = "PGP/GPG key ID to use for signing", metaVar = "<gpg-key>")
+	@Option(name = "--key", aliases = { "-k" }, required = false, usage = "PGP/GPG key ID to use for signing", metaVar = "<gpg-key>")
 	public String m_keyId = "opennms@opennms.org";
 
-	@Option(name = "--password", aliases = {
-			"-p" }, required = false, usage = "PGP/GPG password to use for signing", metaVar = "<gpg-password>")
+	@Option(name = "--password", aliases = { "-p" }, required = false, usage = "PGP/GPG password to use for signing", metaVar = "<gpg-password>")
 	public String m_password;
 
 	@Option(name = "--debug", aliases = { "-d" }, required = false, usage = "enable debug logging")
@@ -155,8 +151,7 @@ public class Main {
 	}
 
 	private void printUsage(final String errorMessage) {
-		System.err.println(
-				"Usage: opennms-repo [-k <gpg-key>] [-p <gpg-password>] [-r </path/to/secring.gpg>] <action> [arguments]");
+		System.err.println("Usage: opennms-repo [-k <gpg-key>] [-p <gpg-password>] [-r </path/to/secring.gpg>] <action> [arguments]");
 		if (errorMessage != null) {
 			System.err.println("ERROR: " + errorMessage);
 		}

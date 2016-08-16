@@ -37,8 +37,7 @@ public class Options {
 
 	@Override
 	public String toString() {
-		return "Options [keyId=" + m_keyId + ", password=" + (m_password == null ? "not-set" : "set") + ", keyRing="
-				+ m_keyRing + "]";
+		return "Options [keyId=" + m_keyId + ", password=" + (m_password == null ? "not-set" : "set") + ", keyRing=" + m_keyRing + "]";
 	}
 
 }

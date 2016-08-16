@@ -50,6 +50,7 @@ public interface Repository extends Comparable<Repository> {
 
 	/**
 	 * Generate/update indexes for the repository without signing them.
+	 * 
 	 * @return whether or not an index was necessary
 	 */
 	public boolean index() throws RepositoryIndexException;

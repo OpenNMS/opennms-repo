@@ -64,6 +64,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class GPGUtils {
+	private static final int KEY_PAIR_GENERATOR_BITS = 2048;
 	private static final Logger LOG = LoggerFactory.getLogger(GPGUtils.class);
 	static {
 		Security.addProvider(new BouncyCastleProvider());
@@ -87,20 +88,23 @@ public abstract class GPGUtils {
 	// 0xff, or about 2 million iterations. I'll use 0xc0 as a
 	// default -- about 130,000 iterations.
 
-	public final static PGPKeyRingGenerator generateKeyRingGenerator(final String id, final String pass,
-			final int s2kcount) throws Exception {
+	public final static PGPKeyRingGenerator generateKeyRingGenerator(final String id, final String pass, final int s2kcount) throws Exception {
+		final Date now = new Date();
+		final SecureRandom secureRandom = new SecureRandom();
+
 		// This object generates individual key-pairs.
 		RSAKeyPairGenerator kpg = new RSAKeyPairGenerator();
 
 		// Boilerplate RSA parameters, no need to change anything
 		// except for the RSA key-size (2048). You can use whatever
 		// key-size makes sense for you -- 4096, etc.
-		kpg.init(new RSAKeyGenerationParameters(BigInteger.valueOf(0x10001), new SecureRandom(), 2048, 12));
+		final RSAKeyGenerationParameters rsaKeyGenerationParameters = new RSAKeyGenerationParameters(BigInteger.valueOf(0x10001), secureRandom, 2048, 12);
+		kpg.init(rsaKeyGenerationParameters);
 
 		// First create the master (signing) key with the generator.
-		PGPKeyPair rsakp_sign = new BcPGPKeyPair(PGPPublicKey.RSA_SIGN, kpg.generateKeyPair(), new Date());
+		PGPKeyPair rsakp_sign = new BcPGPKeyPair(PGPPublicKey.RSA_SIGN, kpg.generateKeyPair(), now);
 		// Then an encryption subkey.
-		PGPKeyPair rsakp_enc = new BcPGPKeyPair(PGPPublicKey.RSA_ENCRYPT, kpg.generateKeyPair(), new Date());
+		PGPKeyPair rsakp_enc = new BcPGPKeyPair(PGPPublicKey.RSA_ENCRYPT, kpg.generateKeyPair(), now);
 
 		// Add a self-signature on the id
 		PGPSignatureSubpacketGenerator signhashgen = new PGPSignatureSubpacketGenerator();
@@ -110,10 +114,12 @@ public abstract class GPGUtils {
 		signhashgen.setKeyFlags(false, KeyFlags.SIGN_DATA | KeyFlags.CERTIFY_OTHER);
 		// 2) Set preferences for secondary crypto algorithms to use
 		// when sending messages to this key.
-		signhashgen.setPreferredSymmetricAlgorithms(false, new int[] { SymmetricKeyAlgorithmTags.AES_256,
-				SymmetricKeyAlgorithmTags.AES_192, SymmetricKeyAlgorithmTags.AES_128 });
-		signhashgen.setPreferredHashAlgorithms(false, new int[] { HashAlgorithmTags.SHA256, HashAlgorithmTags.SHA1,
-				HashAlgorithmTags.SHA384, HashAlgorithmTags.SHA512, HashAlgorithmTags.SHA224, });
+		final int[] symmetricAlgorithms = new int[] { SymmetricKeyAlgorithmTags.AES_256, SymmetricKeyAlgorithmTags.AES_192, SymmetricKeyAlgorithmTags.AES_128 };
+		final int[] hashAlgorithms = new int[] { HashAlgorithmTags.SHA256, HashAlgorithmTags.SHA1, HashAlgorithmTags.SHA384, HashAlgorithmTags.SHA512, HashAlgorithmTags.SHA224 };
+
+		signhashgen.setPreferredSymmetricAlgorithms(false, symmetricAlgorithms);
+		signhashgen.setPreferredHashAlgorithms(false, hashAlgorithms);
+
 		// 3) Request senders add additional checksums to the
 		// message (useful when verifying unsigned messages.)
 		signhashgen.setFeature(false, Features.FEATURE_MODIFICATION_DETECTION);
@@ -129,46 +135,39 @@ public abstract class GPGUtils {
 
 		// bcpg 1.48 exposes this API that includes s2kcount. Earlier
 		// versions use a default of 0x60.
-		PBESecretKeyEncryptor pske = (new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc,
-				s2kcount)).build(pass.toCharArray());
+		PBESecretKeyEncryptor pske = (new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc, s2kcount)).build(pass.toCharArray());
 
 		// Finally, create the keyring itself. The constructor
 		// takes parameters that allow it to generate the self
 		// signature.
-		PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsakp_sign, id,
-				sha1Calc, signhashgen.generate(), null,
-				new BcPGPContentSignerBuilder(rsakp_sign.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1), pske);
+		final BcPGPContentSignerBuilder keySignerBuilder = new BcPGPContentSignerBuilder(rsakp_sign.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1);
+		final PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsakp_sign, id, sha1Calc, signhashgen.generate(), null, keySignerBuilder, pske);
 
 		// Add our encryption subkey, together with its signature.
 		keyRingGen.addSubKey(rsakp_enc, enchashgen.generate(), null);
 		return keyRingGen;
 	}
 
-	public static PGPSecretKey generateKey(final String keyId, final String passphrase)
-			throws IOException, InterruptedException {
+	public static PGPSecretKey generateKey(final String keyId, final String passphrase) throws IOException, InterruptedException {
 		LOG.info("Generating key for id: {}", keyId);
+		final Date now = new Date();
 
 		try {
 			final KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-			kpg.initialize(2048);
-			final PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build()
-					.get(HashAlgorithmTags.SHA1);
-			final PGPKeyPair keyPair = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, kpg.generateKeyPair(), new Date());
-			final PGPSecretKey secretKey = new PGPSecretKey(PGPSignature.DEFAULT_CERTIFICATION, keyPair, keyId,
-					sha1Calc, null, null,
-					new JcaPGPContentSignerBuilder(keyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1),
-					new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.CAST5, sha1Calc).setProvider("BC")
-							.build(passphrase.toCharArray()));
+			kpg.initialize(KEY_PAIR_GENERATOR_BITS);
+			final PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+			final PGPKeyPair keyPair = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, kpg.generateKeyPair(), now);
+			final JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(keyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1);
+			final PBESecretKeyEncryptor secretKeyEncryptor = new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.CAST5, sha1Calc).setProvider("BC").build(passphrase.toCharArray());
+			final PGPSecretKey secretKey = new PGPSecretKey(PGPSignature.DEFAULT_CERTIFICATION, keyPair, keyId, sha1Calc, null, null, certificationSignerBuilder, secretKeyEncryptor);
 			return secretKey;
 		} catch (final NoSuchAlgorithmException | NoSuchProviderException | PGPException e) {
 			throw new RepositoryException(e);
 		}
 	}
 
-	public static void detach_sign(final Path inputFile, final Path outputFile, final GPGInfo gpginfo,
-			final boolean sha256) throws IOException, InterruptedException {
-		LOG.info("Detach-signing {} with key {} into {}", Util.relativize(inputFile), gpginfo.getKey(),
-				Util.relativize(outputFile));
+	public static void detach_sign(final Path inputFile, final Path outputFile, final GPGInfo gpginfo, final boolean sha256) throws IOException, InterruptedException {
+		LOG.info("Detach-signing {} with key {} into {}", Util.relativize(inputFile), gpginfo.getKey(), Util.relativize(outputFile));
 
 		Files.createDirectories(outputFile.getParent());
 		FileUtils.touch(outputFile.toFile());
@@ -183,9 +182,8 @@ public abstract class GPGUtils {
 			LOG.trace("secretKey: {}", secretKey);
 			final PGPPrivateKey privateKey = gpginfo.getPrivateKey();
 			LOG.trace("privateKey: {}", privateKey);
-			final PGPSignatureGenerator generator = new PGPSignatureGenerator(
-					new JcaPGPContentSignerBuilder(publicKey.getAlgorithm(), sha256 ? PGPUtil.SHA256 : PGPUtil.SHA1)
-							.setProvider("BC"));
+			final JcaPGPContentSignerBuilder contentSigner = new JcaPGPContentSignerBuilder(publicKey.getAlgorithm(), sha256 ? PGPUtil.SHA256 : PGPUtil.SHA1).setProvider("BC");
+			final PGPSignatureGenerator generator = new PGPSignatureGenerator(contentSigner);
 			LOG.trace("generator: {}", generator);
 
 			generator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
@@ -205,17 +203,18 @@ public abstract class GPGUtils {
 		}
 	}
 
-	public static void exportKeyRing(final Path outputFile, final PGPPublicKeyRingCollection keyRing)
-			throws IOException {
-		try (final FileWriter fw = new FileWriter(outputFile.toFile()); final PemWriter writer = new PemWriter(fw);) {
-			writer.writeObject(new PemObject("PGP PUBLIC KEY BLOCK", keyRing.getEncoded()));
+	public static void exportKeyRing(final Path outputFile, final PGPPublicKeyRingCollection keyRing) throws IOException {
+		try (final FileWriter fw = new FileWriter(outputFile.toFile());
+				final PemWriter writer = new PemWriter(fw);) {
+			final PemObject pemObject = new PemObject("PGP PUBLIC KEY BLOCK", keyRing.getEncoded());
+			writer.writeObject(pemObject);
 		}
 	}
 
 	public static GPGInfo fromKeyRing(final Path keyRing, final String keyId, final String password) {
 		try (final FileInputStream fis = new FileInputStream(keyRing.toFile());) {
-			final PGPSecretKeyRingCollection secretKeyRingCollection = new PGPSecretKeyRingCollection(fis,
-					new JcaKeyFingerprintCalculator());
+			final JcaKeyFingerprintCalculator fingerPrintCalculator = new JcaKeyFingerprintCalculator();
+			final PGPSecretKeyRingCollection secretKeyRingCollection = new PGPSecretKeyRingCollection(fis, fingerPrintCalculator);
 			final Iterator<PGPSecretKeyRing> keyRings = secretKeyRingCollection.getKeyRings(keyId, true, true);
 			if (keyRings.hasNext()) {
 				final PGPSecretKeyRing secretKeyRing = keyRings.next();
@@ -224,8 +223,7 @@ public abstract class GPGUtils {
 				while (publicKeyIterator.hasNext()) {
 					publicKeys.add(publicKeyIterator.next());
 				}
-				final Constructor<PGPPublicKeyRing> constructor = PGPPublicKeyRing.class
-						.getDeclaredConstructor(List.class);
+				final Constructor<PGPPublicKeyRing> constructor = PGPPublicKeyRing.class.getDeclaredConstructor(List.class);
 				constructor.setAccessible(true);
 				final PGPPublicKeyRing publicKeyRing = constructor.newInstance(publicKeys);
 				return new GPGInfo(keyId, password, publicKeyRing, secretKeyRing);
@@ -235,13 +233,4 @@ public abstract class GPGUtils {
 			throw new RepositoryException(e);
 		}
 	}
-
-	/*
-	 * public static void exportKey(final Path outputFile, final PGPPublicKey
-	 * publicKey) throws IOException { try(final FileWriter fw = new
-	 * FileWriter(outputFile.toFile()); final PemWriter writer = new
-	 * PemWriter(fw);) { writer.writeObject(new
-	 * PemObject("PGP PUBLIC KEY BLOCK", publicKey.getEncoded())); } }
-	 */
-
 }

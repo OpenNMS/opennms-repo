@@ -19,8 +19,7 @@ public class RepositoryIndexException extends RepositoryException {
 		super(message, cause);
 	}
 
-	public RepositoryIndexException(final String message, final Throwable cause, final boolean enableSuppression,
-			final boolean writableStackTrace) {
+	public RepositoryIndexException(final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
 	}
 }

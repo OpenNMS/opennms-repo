@@ -213,7 +213,7 @@ public class RepositoryMetadata {
 				for (final Path detected : detectedParentPaths) {
 					final File detectedFile = detected.toFile();
 					if (detectedFile.exists() && detectedFile.isDirectory()) {
-						final Map<String,String> parentMetadata = Util.readMetadata(detected);
+						final Map<String, String> parentMetadata = Util.readMetadata(detected);
 						if (parentRepoType == null && parentMetadata.containsKey(METADATA_KEY_TYPE)) {
 							final String typeValue = parentMetadata.get(METADATA_KEY_TYPE);
 							parentRepoType = Class.forName(typeValue).asSubclass(Repository.class);

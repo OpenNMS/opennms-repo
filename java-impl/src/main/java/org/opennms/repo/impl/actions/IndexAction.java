@@ -29,8 +29,7 @@ public class IndexAction implements Action {
 	private static final Logger LOG = LoggerFactory.getLogger(IndexAction.class);
 	private static final PrettyTime s_prettyTime = new PrettyTime();
 
-	@Option(name = "--type", aliases = {
-			"-t" }, required = false, usage = "the repository type (rpm, deb) to index", metaVar = "<type>")
+	@Option(name = "--type", aliases = { "-t" }, required = false, usage = "the repository type (rpm, deb) to index", metaVar = "<type>")
 	public String m_type;
 
 	@Argument

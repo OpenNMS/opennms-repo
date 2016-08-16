@@ -164,7 +164,7 @@ public abstract class RPMUtils {
 
 		// first, calculate the "newest" version of each packageName.arch tuple
 		final Map<String, RPMPackage> newest = getNewest(packages);
-		
+
 		// then, iterate over the packages and for each "old" package, create
 		// a DeltaRPM from it to the newest
 		for (final RPMPackage p : packages) {
@@ -180,7 +180,7 @@ public abstract class RPMUtils {
 	}
 
 	public static Map<String, RPMPackage> getNewest(final SortedSet<RPMPackage> packages) {
-		final Map<String,RPMPackage> newest = new HashMap<>();
+		final Map<String, RPMPackage> newest = new HashMap<>();
 		for (final RPMPackage p : packages) {
 			newest.put(p.getNameKey(), p);
 		}

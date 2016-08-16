@@ -23,8 +23,7 @@ public class RPMPackage implements org.opennms.repo.api.RepositoryPackage {
 		m_path = path;
 	}
 
-	public RPMPackage(final String name, final int epoch, final String version, final String release,
-			final Architecture arch, final Path path) {
+	public RPMPackage(final String name, final int epoch, final String version, final String release, final Architecture arch, final Path path) {
 		this(name, new RPMVersion(epoch, version, release), arch, path);
 	}
 
@@ -88,8 +87,7 @@ public class RPMPackage implements org.opennms.repo.api.RepositoryPackage {
 			return false;
 		}
 		final RPMPackage that = (RPMPackage) obj;
-		return Objects.equals(this.m_name, that.m_name) && Objects.equals(m_version, that.m_version)
-				&& Objects.equals(m_architecture, that.m_architecture)
+		return Objects.equals(this.m_name, that.m_name) && Objects.equals(m_version, that.m_version) && Objects.equals(m_architecture, that.m_architecture)
 				&& Objects.equals(m_path.toAbsolutePath(), that.m_path.toAbsolutePath());
 	}
 

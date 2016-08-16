@@ -122,12 +122,12 @@ public abstract class Util {
 			props.store(fw, "Repository Metadata");
 		}
 	}
-	
+
 	public static <T> SortedSet<T> newSortedSet(final Collection<T> items) {
 		final SortedSet<T> sorted = new TreeSet<>(items);
 		return sorted;
 	}
-	
+
 	@SafeVarargs
 	public static <T> SortedSet<T> newSortedSet(final T... items) {
 		final SortedSet<T> sorted = new TreeSet<>();

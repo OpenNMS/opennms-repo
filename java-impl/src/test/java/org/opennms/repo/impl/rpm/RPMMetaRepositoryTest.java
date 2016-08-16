@@ -150,9 +150,7 @@ public class RPMMetaRepositoryTest {
 		final List<String> lines = new ArrayList<>();
 		Files.walk(Paths.get(repositoryPath).resolve("common").resolve("repodata")).forEach(path -> {
 			if (path.toString().contains("-filelists.xml")) {
-				try (final FileInputStream fis = new FileInputStream(path.toFile());
-						final GZIPInputStream gis = new GZIPInputStream(fis);
-						final InputStreamReader isr = new InputStreamReader(gis)) {
+				try (final FileInputStream fis = new FileInputStream(path.toFile()); final GZIPInputStream gis = new GZIPInputStream(fis); final InputStreamReader isr = new InputStreamReader(gis)) {
 					lines.addAll(IOUtils.readLines(gis, Charset.defaultCharset()));
 				} catch (final IOException e) {
 					LOG.debug("faild to read from {}", path, e);
@@ -162,8 +160,7 @@ public class RPMMetaRepositoryTest {
 		});
 
 		final Pattern packagesPattern = Pattern.compile(".*packages=\"(\\d+)\".*");
-		final Pattern versionPattern = Pattern
-				.compile("\\s*<version epoch=\"(\\d+)\" ver=\"([^\"]*)\" rel=\"([^\\\"]*)\"/>\\s*");
+		final Pattern versionPattern = Pattern.compile("\\s*<version epoch=\"(\\d+)\" ver=\"([^\"]*)\" rel=\"([^\\\"]*)\"/>\\s*");
 		assertTrue("There should be data in *-filelists.xml.gz", lines.size() > 0);
 		int packages = 0;
 		final Set<Version> versions = new TreeSet<>();
@@ -240,11 +237,11 @@ public class RPMMetaRepositoryTest {
 
 		final Map<Path, FileTime> fileTimes = new HashMap<>();
 		final Path[] repositoryPaths = new Path[] {
-			repodata.resolve("repomd.xml"),
-			repodata.resolve("repomd.xml.asc"),
-			repodata.resolve("repomd.xml.key"),
-			drpms.resolve(delta13.getFileName()),
-			drpms.resolve(delta23.getFileName())
+				repodata.resolve("repomd.xml"),
+				repodata.resolve("repomd.xml.asc"),
+				repodata.resolve("repomd.xml.key"),
+				drpms.resolve(delta13.getFileName()),
+				drpms.resolve(delta23.getFileName())
 		};
 
 		for (final Path p : repositoryPaths) {
@@ -269,16 +266,12 @@ public class RPMMetaRepositoryTest {
 		final Path targetRepositoryCommon = Paths.get(targetRepositoryPath).resolve("common");
 		Files.createDirectories(sourceRepositoryCommon.resolve("amd64"));
 		Files.createDirectories(targetRepositoryCommon.resolve("amd64"));
-		final File packageA1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(),
-				TestUtils.A1_X64_FILENAME);
-		final File packageA2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(),
-				TestUtils.A2_X64_FILENAME);
+		final File packageA1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(), TestUtils.A1_X64_FILENAME);
+		final File packageA2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(), TestUtils.A2_X64_FILENAME);
 		final Path packageA2TargetFile = targetRepositoryCommon.resolve("amd64").resolve(TestUtils.A2_X64_FILENAME);
 
-		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(),
-				new File(targetRepositoryCommon.toFile(), "amd64"));
-		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(),
-				new File(sourceRepositoryCommon.toFile(), "amd64"));
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), new File(targetRepositoryCommon.toFile(), "amd64"));
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), new File(sourceRepositoryCommon.toFile(), "amd64"));
 
 		TestUtils.assertFileExists(packageA1TargetFile.toPath());
 		TestUtils.assertFileExists(packageA2SourceFile.toPath());
@@ -299,16 +292,12 @@ public class RPMMetaRepositoryTest {
 		final Path targetRepositoryCommon = Paths.get(targetRepositoryPath).resolve("rhel5");
 		Files.createDirectories(sourceRepositoryCommon.resolve("amd64"));
 		Files.createDirectories(targetRepositoryCommon.resolve("amd64"));
-		final File packageA1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(),
-				TestUtils.A1_X64_FILENAME);
-		final File packageA2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(),
-				TestUtils.A2_X64_FILENAME);
+		final File packageA1TargetFile = new File(targetRepositoryCommon.resolve("amd64").toFile(), TestUtils.A1_X64_FILENAME);
+		final File packageA2SourceFile = new File(sourceRepositoryCommon.resolve("amd64").toFile(), TestUtils.A2_X64_FILENAME);
 		final Path packageA2TargetFile = targetRepositoryCommon.resolve("amd64").resolve(TestUtils.A2_X64_FILENAME);
 
-		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(),
-				new File(targetRepositoryCommon.toFile(), "amd64"));
-		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(),
-				new File(sourceRepositoryCommon.toFile(), "amd64"));
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), new File(targetRepositoryCommon.toFile(), "amd64"));
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), new File(sourceRepositoryCommon.toFile(), "amd64"));
 
 		TestUtils.assertFileExists(packageA1TargetFile.toPath());
 		TestUtils.assertFileExists(packageA2SourceFile.toPath());

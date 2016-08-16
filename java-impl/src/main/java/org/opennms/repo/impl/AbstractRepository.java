@@ -160,7 +160,7 @@ public abstract class AbstractRepository implements Repository {
 				}
 
 				if (existingPackage != null) {
-					final DeltaRPM drpm = new DeltaRPM((RPMPackage)pack, (RPMPackage)existingPackage);
+					final DeltaRPM drpm = new DeltaRPM((RPMPackage) pack, (RPMPackage) existingPackage);
 					final Path drpmPath = getRoot().resolve("drpms");
 					final File drpmFile = drpm.getFilePath(drpmPath).toFile();
 					if (drpmFile.exists()) {
@@ -247,10 +247,6 @@ public abstract class AbstractRepository implements Repository {
 	@Override
 	public String toString() {
 		return getRepositoryTypeName() + " repository '" + getName() + "' at " + Util.relativize(getRoot());
-		/*
-		return getClass().getSimpleName() + "@" + System.identityHashCode(this) + ":" + getName() + "(parent="
-				+ hasParent() + "):" + getRoot();
-				*/
 	}
 
 	public void updateMetadata() {
