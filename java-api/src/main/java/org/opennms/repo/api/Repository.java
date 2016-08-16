@@ -49,6 +49,11 @@ public interface Repository extends Comparable<Repository> {
 	public boolean isValid();
 
 	/**
+	 * "Normalize" the repository, moving packages into their ideal locations.
+	 */
+	public void normalize();
+
+	/**
 	 * Generate/update indexes for the repository without signing them.
 	 * 
 	 * @return whether or not an index was necessary
@@ -60,6 +65,8 @@ public interface Repository extends Comparable<Repository> {
 	 * 
 	 * @param gpginfo
 	 *            the GPG key and identity info
+	 * 
+	 * @return whether or not an index was necessary
 	 */
 	public boolean index(final GPGInfo gpginfo) throws RepositoryIndexException;
 

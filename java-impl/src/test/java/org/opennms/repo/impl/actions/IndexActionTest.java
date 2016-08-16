@@ -49,6 +49,7 @@ public class IndexActionTest {
 		final Path repodata = sourceRoot.resolve("repodata");
 
 		final Path ringPath = Files.createTempFile("secring-", ".gpg");
+		ringPath.toFile().deleteOnExit();
 		m_gpginfo.savePrivateKeyring(ringPath);
 		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), sourceRoot.toFile());
 		TestUtils.assertFileDoesNotExist(repodata);

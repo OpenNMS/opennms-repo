@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Collection;
@@ -132,17 +133,40 @@ public abstract class AbstractRepository implements Repository {
 		addPackages(fromPackages.toArray(EMPTY_REPOSITORY_PACKAGE_ARRAY));
 	}
 
+	/**
+	 * Given a package, return the ideal path for that package.
+	 * @param pack the package
+	 * @return the normalized/ideal path to the package (including filename)
+	 */
+	protected abstract Path getIdealPath(final RepositoryPackage pack);
+
+	@Override
+	public void normalize() throws RepositoryException {
+		refresh();
+		getPackages().parallelStream().forEach(pack -> {
+			final Path existingPath = pack.getPath().normalize().toAbsolutePath();
+			final Path idealPath = getIdealPath(pack);
+			if (!existingPath.equals(idealPath)) {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug("normalize: moving {} to {}", Util.relativize(existingPath), Util.relativize(idealPath));
+				}
+				try {
+					Files.createDirectories(idealPath.getParent());
+					Files.move(existingPath, idealPath, StandardCopyOption.REPLACE_EXISTING);
+				} catch (final IOException e) {
+					throw new RepositoryException("Failed to move " + existingPath + " to " + idealPath);
+				}
+			}
+		});
+	}
+
 	@Override
 	public void addPackages(final RepositoryPackage... packages) {
 		LOG.debug("addPackages: {}", Arrays.asList(packages));
 		refresh();
 		for (final RepositoryPackage pack : packages) {
 			try {
-				Path targetDirectory = this.getRoot().resolve("rpms").resolve(pack.getCollationName());
-				if (pack.getArchitecture() != null) {
-					targetDirectory = targetDirectory.resolve(pack.getArchitecture().toString().toLowerCase());
-				}
-				final Path targetPath = targetDirectory.resolve(pack.getFile().getName());
+				final Path targetPath = getIdealPath(pack);
 				final Path relativeTargetPath = Util.relativize(targetPath);
 				final RepositoryPackage existingPackage = getPackage(pack.getName());
 				if (existingPackage == null || existingPackage.isLowerThan(pack)) {
@@ -206,19 +230,16 @@ public abstract class AbstractRepository implements Repository {
 	@Override
 	public void refresh() {
 		LOG.info("Refreshing {}", this);
-		final Map<String, RepositoryPackage> existing = new HashMap<>();
-		for (final RepositoryPackage p : getPackages()) {
-			final RepositoryPackage existingPackage = existing.get(p.getName());
-			if (existingPackage != null) {
-				if (existingPackage.isLowerThan(p)) {
-					existing.put(p.getName(), p);
-				}
-			} else {
-				existing.put(p.getName(), p);
+		final Map<String, RepositoryPackage> existingPackagesByName = new HashMap<>();
+		getPackages().stream().forEach(pack -> {
+			final String name = pack.getName();
+			final RepositoryPackage newestPackage = existingPackagesByName.get(name);
+			if (newestPackage == null || newestPackage.isLowerThan(pack)) {
+				existingPackagesByName.put(name, pack);
 			}
-		}
-		LOG.debug("{} packages: {}", this, existing);
-		m_packageCache = existing;
+		});
+		LOG.debug("{} packages: {}", this, existingPackagesByName);
+		m_packageCache = existingPackagesByName;
 		updateMetadata();
 	}
 

@@ -75,7 +75,7 @@ public class RPMRepositoryTest {
 				RPMUtils.getPackage(TestUtils.A1_X64_PATH.toFile()),
 				RPMUtils.getPackage(TestUtils.A2_X64_PATH.toFile()),
 				RPMUtils.getPackage(TestUtils.A3_X64_PATH.toFile())
-		);
+				);
 		repo.index(m_gpginfo);
 
 		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
@@ -375,6 +375,50 @@ public class RPMRepositoryTest {
 		TestUtils.assertFileDoesNotExist(drpmPath.resolve(a1a2delta));
 		TestUtils.assertFileDoesNotExist(drpmPath.resolve(a2a3delta));
 		TestUtils.assertFileExists(drpmPath.resolve(a3a4delta));
+	}
+
+	@Test
+	public void testNormalize() throws Exception {
+		final Path repositoryPath = Paths.get("target/repositories/RPMRepositoryTest.testNormalize");
+		Files.createDirectories(repositoryPath);
+
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), repositoryPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), repositoryPath.toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A3_X64_PATH.toFile(), repositoryPath.toFile());
+
+		final Repository repo = new RPMRepository(repositoryPath);
+
+		final Path archPath = repositoryPath.resolve("rpms").resolve("jicmp").resolve("amd64");
+		final Path drpmPath = repositoryPath.resolve("drpms");
+
+		final Path a1path = archPath.resolve(TestUtils.A1_X64_FILENAME);
+		final Path a2path = archPath.resolve(TestUtils.A2_X64_FILENAME);
+		final Path a3path = archPath.resolve(TestUtils.A3_X64_FILENAME);
+		final Path drpm12path = drpmPath.resolve(RPMUtils.getDeltaFileName(TestUtils.A1_X64_PATH.toFile(), TestUtils.A2_X64_PATH.toFile()));
+		final Path drpm13path = drpmPath.resolve(RPMUtils.getDeltaFileName(TestUtils.A1_X64_PATH.toFile(), TestUtils.A3_X64_PATH.toFile()));
+		final Path drpm23path = drpmPath.resolve(RPMUtils.getDeltaFileName(TestUtils.A2_X64_PATH.toFile(), TestUtils.A3_X64_PATH.toFile()));
+
+		TestUtils.assertFileDoesNotExist(a1path);
+		TestUtils.assertFileDoesNotExist(a2path);
+		TestUtils.assertFileDoesNotExist(a3path);
+		TestUtils.assertFileDoesNotExist(drpm12path);
+		TestUtils.assertFileDoesNotExist(drpm13path);
+		TestUtils.assertFileDoesNotExist(drpm23path);
+
+		repo.normalize();
+
+		TestUtils.assertFileExists(a1path);
+		TestUtils.assertFileExists(a2path);
+		TestUtils.assertFileExists(a3path);
+		TestUtils.assertFileDoesNotExist(drpm12path);
+		TestUtils.assertFileDoesNotExist(drpm13path);
+		TestUtils.assertFileDoesNotExist(drpm23path);
+
+		repo.index(m_gpginfo);
+
+		TestUtils.assertFileDoesNotExist(drpm12path);
+		TestUtils.assertFileExists(drpm13path);
+		TestUtils.assertFileExists(drpm23path);
 	}
 
 	@Test

@@ -29,6 +29,9 @@ public abstract class RPMUtils {
 	}
 
 	public static RPMPackage getPackage(final Path rpmPath) {
+		if (!rpmPath.toFile().exists()) {
+			throw new IllegalArgumentException("Unable to query RPM information for nonexistent file: " + rpmPath);
+		}
 		final RPMCommand command = new RPMCommand(rpmPath).query("%{name}|%{epoch}|%{version}|%{release}|%{arch}");
 		command.run();
 		final List<String> output = command.getOutput();

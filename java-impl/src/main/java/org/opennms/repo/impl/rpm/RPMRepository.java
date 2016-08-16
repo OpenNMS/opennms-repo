@@ -83,6 +83,15 @@ public class RPMRepository extends AbstractRepository {
 	}
 
 	@Override
+	protected Path getIdealPath(final RepositoryPackage pack) {
+		Path targetDirectory = this.getRoot().normalize().toAbsolutePath().resolve("rpms").resolve(pack.getCollationName());
+		if (pack.getArchitecture() != null) {
+			targetDirectory = targetDirectory.resolve(pack.getArchitecture().toString().toLowerCase());
+		}
+		return targetDirectory.resolve(pack.getPath().getFileName());
+	}
+
+	@Override
 	public boolean index(final GPGInfo gpginfo) throws RepositoryIndexException {
 		final Path root = getRoot();
 		ensureRootExists();
@@ -188,9 +197,9 @@ public class RPMRepository extends AbstractRepository {
 					final RPMVersion to = new RPMVersion(toEpoch == null ? 0 : Integer.valueOf(toEpoch), toVersion, toRevision);
 
 					final RepositoryPackage latest = getPackage(name);
-					LOG.debug("package: {}, from={}, to={}, latest={}", name, from, to, latest.getVersion());
+					LOG.debug("package: {}, from={}, to={}, latest={}", name, from, to, latest == null? null : latest.getVersion());
 
-					if (!latest.getVersion().equals(to)) {
+					if (latest == null || !latest.getVersion().equals(to)) {
 						LOG.debug("Removing stale DRPM: {}", drpmName);
 						try {
 							FileUtils.forceDelete(path.toFile());
