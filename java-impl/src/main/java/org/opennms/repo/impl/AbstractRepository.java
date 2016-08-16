@@ -1,5 +1,6 @@
 package org.opennms.repo.impl;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,6 +22,9 @@ import org.opennms.repo.api.RepositoryIndexException;
 import org.opennms.repo.api.RepositoryMetadata;
 import org.opennms.repo.api.RepositoryPackage;
 import org.opennms.repo.api.Util;
+import org.opennms.repo.impl.rpm.DeltaRPM;
+import org.opennms.repo.impl.rpm.RPMPackage;
+import org.opennms.repo.impl.rpm.RPMUtils;
 import org.opennms.repo.impl.rpm.RepoSetComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,6 +157,19 @@ public abstract class AbstractRepository implements Repository {
 					m_metadata.resetLastIndexed();
 				} else {
 					LOG.debug("NOT copying {} to {} ({} is newer)", pack, relativeTargetPath, existingPackage);
+				}
+
+				if (existingPackage != null) {
+					final DeltaRPM drpm = new DeltaRPM((RPMPackage)pack, (RPMPackage)existingPackage);
+					final Path drpmPath = getRoot().resolve("drpms");
+					final File drpmFile = drpm.getFilePath(drpmPath).toFile();
+					if (drpmFile.exists()) {
+						LOG.debug("Delta RPM for {} -> {} already exists.", pack, existingPackage);
+					} else {
+						LOG.debug("Delta RPM for {} -> {} does NOT already exist.", pack, existingPackage);
+						RPMUtils.generateDelta(pack.getFile(), pack.getFile(), drpmFile);
+						m_metadata.resetLastIndexed();
+					}
 				}
 			} catch (final IOException e) {
 				throw new RepositoryException(e);

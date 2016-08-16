@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
@@ -28,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 public class RPMRepository extends AbstractRepository {
 	private static final Logger LOG = LoggerFactory.getLogger(RPMRepository.class);
+	private static final Pattern DRPM = Pattern.compile("^(.*?)-(?:(\\d+)\\:)?([^-]+)-([^_]+)_(?:(\\d+)\\:)?([^-]+)-([^_]+)\\.([^\\.]+)\\.drpm$");
 
 	public RPMRepository(final Path path) {
 		super(path);
@@ -64,8 +67,7 @@ public class RPMRepository extends AbstractRepository {
 		if (!getRoot().toFile().exists()) {
 			return false;
 		}
-		return getRoot().resolve("repodata").resolve("repomd.xml").toFile().exists()
-				&& getRoot().resolve(REPO_METADATA_FILENAME).toFile().exists();
+		return getRoot().resolve("repodata").resolve("repomd.xml").toFile().exists() && getRoot().resolve(REPO_METADATA_FILENAME).toFile().exists();
 	}
 
 	private void ensureRootExists() {
@@ -102,6 +104,7 @@ public class RPMRepository extends AbstractRepository {
 
 		ensureRootExists();
 		generateDeltas();
+		cleanUpDeltas();
 
 		LOG.info("Indexing {}", this);
 		final CreaterepoCommand command = new CreaterepoCommand(root);
@@ -155,6 +158,55 @@ public class RPMRepository extends AbstractRepository {
 		LOG.info("Generating deltas for {}", this);
 		RPMUtils.generateDeltas(root.toFile());
 		LOG.debug("Finished generating deltas for {}", this);
+	}
+
+	public void cleanUpDeltas() throws RepositoryException {
+		refresh();
+		final Path drpmPath = getRoot().resolve("drpms");
+		if (!drpmPath.toFile().exists()) {
+			return;
+		}
+		try {
+			Files.walk(drpmPath).forEach(path -> {
+				if (path.toFile().isDirectory()) {
+					return;
+				}
+				final String drpmName = path.getFileName().toString();
+				final Matcher m = DRPM.matcher(drpmName);
+				if (m.matches()) {
+					// LOG.debug("matches: {}", path);
+					final String name = m.group(1);
+					final String fromEpoch = m.group(2);
+					final String fromVersion = m.group(3);
+					final String fromRevision = m.group(4);
+					final String toEpoch = m.group(5);
+					final String toVersion = m.group(6);
+					final String toRevision = m.group(7);
+					// final String arch = m.group(8);
+
+					final RPMVersion from = new RPMVersion(fromEpoch == null ? 0 : Integer.valueOf(fromEpoch), fromVersion, fromRevision);
+					final RPMVersion to = new RPMVersion(toEpoch == null ? 0 : Integer.valueOf(toEpoch), toVersion, toRevision);
+
+					final RepositoryPackage latest = getPackage(name);
+					LOG.debug("package: {}, from={}, to={}, latest={}", name, from, to, latest.getVersion());
+
+					if (!latest.getVersion().equals(to)) {
+						LOG.debug("Removing stale DRPM: {}", drpmName);
+						try {
+							FileUtils.forceDelete(path.toFile());
+						} catch (final IOException e) {
+							LOG.warn("Failed to delete {}", path, e);
+						}
+					} else {
+						LOG.debug("Keeping DRPM: {}", drpmName);
+					}
+				} else {
+					LOG.warn("Unknown file in DRPM directory: {}", path);
+				}
+			});
+		} catch (final Exception e) {
+			throw new RepositoryException(e);
+		}
 	}
 
 	protected boolean isDirty() {
