@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -33,8 +34,8 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		super(root);
 	}
 
-	public RPMMetaRepository(final Path root, final Repository parent) {
-		super(root, parent);
+	public RPMMetaRepository(final Path root, final SortedSet<Repository> parents) {
+		super(root, parents);
 	}
 
 	@Override
@@ -52,9 +53,9 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 			LOG.debug("Common sub-repository already exists.");
 		} else {
 			LOG.debug("Common sub-repository does not exist in {}.  Initializing.", this);
-			final RPMRepository parentSubRepository = getSubRepositoryParent("common");
-			final RPMRepository commonRepository = new RPMRepository(commonPath, parentSubRepository);
-			LOG.debug("parent={}, common={}", parentSubRepository, commonRepository);
+			final SortedSet<Repository> parentSubRepositories = getSubRepositoryParents("common");
+			final RPMRepository commonRepository = new RPMRepository(commonPath, parentSubRepositories);
+			LOG.debug("parent={}, common={}", parentSubRepositories, commonRepository);
 			commonRepository.index(gpginfo);
 		}
 	}
@@ -64,8 +65,9 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		LOG.debug("index");
 		ensureCommonRepositoryExists(gpginfo);
 		if (hasParent()) {
-			RPMMetaRepository parent = getParent().as(RPMMetaRepository.class);
-			parent.ensureCommonRepositoryExists(gpginfo);
+			getParents().stream().forEach(parent -> {
+				parent.as(RPMMetaRepository.class).ensureCommonRepositoryExists(gpginfo);
+			});
 		}
 		boolean changed = false;
 		for (final Repository repo : getSubRepositories()) {
@@ -107,10 +109,9 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 			return m_subRepositories.get(subRepoName);
 		}
 		final Path repositoryPath = getRoot().resolve(subRepoName);
-		if (create || !repositoryPath.toFile().exists()
-				|| repositoryPath.resolve(REPO_METADATA_FILENAME).toFile().exists()) {
-			final RPMRepository parentRepo = getSubRepositoryParent(subRepoName);
-			final RPMRepository repo = new RPMRepository(repositoryPath, parentRepo);
+		if (create || !repositoryPath.toFile().exists() || repositoryPath.resolve(REPO_METADATA_FILENAME).toFile().exists()) {
+			final SortedSet<Repository> parentRepos = getSubRepositoryParents(subRepoName);
+			final RPMRepository repo = new RPMRepository(repositoryPath, parentRepos);
 			LOG.debug("getSubRepository: found {}", repo);
 			if (repo.isValid() || create) {
 				m_subRepositories.put(repo.getName(), repo);
@@ -120,11 +121,13 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		return null;
 	}
 
-	private RPMRepository getSubRepositoryParent(final String subRepoName) {
-		if (getParent() == null) {
-			return null;
+	private SortedSet<Repository> getSubRepositoryParents(final String subRepoName) {
+		if (getParents() == null || getParents().size() == 0) {
+			return Collections.emptySortedSet();
 		}
-		return getParent().as(RPMMetaRepository.class).getSubRepository(subRepoName, false);
+		return new TreeSet<>(getParents().stream().map(parent -> {
+			return parent.as(RPMMetaRepository.class).getSubRepository(subRepoName, false);
+		}).collect(Collectors.toList()));
 	}
 
 	@Override
@@ -140,7 +143,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	public Collection<Repository> getSubRepositories() {
 		try {
 			ensureCommonRepositoryExists(null);
-			final RPMMetaRepository parent = getParent() == null ? null : getParent().as(RPMMetaRepository.class);
+			final SortedSet<Repository> parents = getParents();
 			return Files.list(getRoot()).filter(path -> {
 				return path.toFile().isDirectory() && path.resolve(REPO_METADATA_FILENAME).toFile().exists();
 			}).map(path -> {
@@ -159,9 +162,10 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 					// fall through to recreating the sub-repository just
 					// to be sure we get a parent, if possible
 				}
-				final RPMRepository parentSubRepository = parent == null ? null
-						: parent.getSubRepository(repoName, false);
-				final RPMRepository repo = new RPMRepository(path, parentSubRepository);
+				final SortedSet<Repository> subParents = new TreeSet<>(parents.stream().map(parent -> {
+					return parent.as(RPMMetaRepository.class).getSubRepository(repoName, false);
+				}).collect(Collectors.toList()));
+				final RPMRepository repo = new RPMRepository(path, subParents);
 				m_subRepositories.put(repoName, repo);
 				return repo;
 			}).collect(Collectors.toList());
@@ -227,7 +231,9 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	public Repository cloneInto(final Path to) {
 		final Path from = getRoot().normalize().toAbsolutePath();
 		RepoUtils.cloneDirectory(from, to);
-		return new RPMMetaRepository(to, this);
+		final SortedSet<Repository> repos = new TreeSet<>();
+		repos.add(this);
+		return new RPMMetaRepository(to, repos);
 	}
 
 	@Override

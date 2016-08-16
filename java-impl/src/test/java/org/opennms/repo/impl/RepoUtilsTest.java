@@ -70,14 +70,13 @@ public class RepoUtilsTest {
 		parentRepo.index();
 
 		final Path sourceRepoPath = Paths.get(repositoryPath).resolve("source");
-		final Repository sourceRepo = new RPMRepository(sourceRepoPath, parentRepo);
+		final Repository sourceRepo = new RPMRepository(sourceRepoPath, Util.newSortedSet(parentRepo));
 		sourceRepo.index();
 
 		final Repository tempRepo = RepoUtils.createTempRepository(sourceRepo);
 		assertNotNull(tempRepo);
 		assertTrue(tempRepo.isValid());
 		assertTrue(tempRepo.hasParent());
-		assertEquals(tempRepo.getParent().getRoot().normalize().toAbsolutePath(),
-				parentRepoPath.normalize().toAbsolutePath());
+		assertEquals(tempRepo.getParents().iterator().next().getRoot().normalize().toAbsolutePath(), parentRepoPath.normalize().toAbsolutePath());
 	}
 }

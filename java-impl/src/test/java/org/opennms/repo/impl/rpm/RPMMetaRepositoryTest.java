@@ -363,7 +363,7 @@ public class RPMMetaRepositoryTest {
 		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), sourceArchPath.toFile());
 
 		Repository sourceRepo = new RPMMetaRepository(Paths.get(sourceRepositoryPath));
-		Repository targetRepo = new RPMMetaRepository(Paths.get(targetRepositoryPath), sourceRepo);
+		Repository targetRepo = new RPMMetaRepository(Paths.get(targetRepositoryPath), Util.newSortedSet(sourceRepo));
 
 		final String packageA2TargetPath = targetArchPath.resolve(TestUtils.A2_X64_FILENAME).toString();
 		TestUtils.assertFileDoesNotExist(packageA2TargetPath);

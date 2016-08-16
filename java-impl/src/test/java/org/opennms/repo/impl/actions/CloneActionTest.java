@@ -68,7 +68,7 @@ public class CloneActionTest {
 		assertTrue(parentRepo.getRoot().resolve(TestUtils.A1_X64_FILENAME).toFile().exists());
 		assertFalse(parentRepo.hasParent());
 
-		final RPMRepository sourceRepo = new RPMRepository(sourceRoot, parentRepo);
+		final RPMRepository sourceRepo = new RPMRepository(sourceRoot, Util.newSortedSet(parentRepo));
 		sourceRepo.index(m_gpginfo);
 		assertTrue(sourceRepo.getRoot().toFile().exists());
 		assertTrue(sourceRepo.getRoot().resolve(TestUtils.A2_X64_FILENAME).toFile().exists());
@@ -85,7 +85,7 @@ public class CloneActionTest {
 		final RPMRepository targetRepo = new RPMRepository(targetRoot);
 		assertNotNull(targetRepo);
 		assertTrue("target repo should have parent", targetRepo.hasParent());
-		assertEquals("target repo parent should match source", parentRepo, targetRepo.getParent());
+		assertEquals("target repo parent should match source", parentRepo, targetRepo.getParents().first());
 		assertTrue(targetRepo.getRoot().toFile().exists());
 		assertTrue(targetRepo.getRoot().resolve(TestUtils.A2_X64_FILENAME).toFile().exists());
 	}

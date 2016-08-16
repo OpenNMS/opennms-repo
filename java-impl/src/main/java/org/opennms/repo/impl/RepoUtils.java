@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.SortedSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -94,16 +95,17 @@ public abstract class RepoUtils {
 	public static Repository createTempRepository(final Repository repo) {
 		try {
 			final Path tempPath = Files.createTempDirectory(repo.getRoot().getParent(), ".temp-repo-");
-			final Repository parent = repo.getParent();
-			LOG.debug("createTempRepository: {} -> {} (parent={})", repo, tempPath, parent);
+			final SortedSet<Repository> parents = repo.getParents();
+			LOG.debug("createTempRepository: {} -> {} (parents={})", repo, tempPath, parents);
 
 			RepoUtils.cloneDirectory(repo.getRoot(), tempPath);
 			final RepositoryMetadata newMetadata;
-			if (parent == null) {
+			if (parents == null || parents.size() == 0) {
 				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), null, null);
 			} else {
-				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(),
-						parent.getRoot().normalize().toAbsolutePath(), parent.getClass());
+				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), parents.stream().map(parent -> {
+					return parent.getRoot();
+				}).collect(Collectors.toList()), parents.first().getClass());
 			}
 			LOG.debug("createTempRepository: new metadata={}", newMetadata);
 			newMetadata.store();

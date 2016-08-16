@@ -299,7 +299,7 @@ public class RPMRepositoryTest {
 		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), new File(sourceRepositoryDir, "amd64"));
 
 		Repository sourceRepo = new RPMRepository(Paths.get(sourceRepositoryPath));
-		Repository targetRepo = new RPMRepository(Paths.get(targetRepositoryPath), sourceRepo);
+		Repository targetRepo = new RPMRepository(Paths.get(targetRepositoryPath), Util.newSortedSet(sourceRepo));
 
 		final String packageA2TargetPath = targetRepositoryDir + File.separator + "amd64" + File.separator
 				+ TestUtils.A2_X64_FILENAME;

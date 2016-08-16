@@ -9,6 +9,8 @@ import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
@@ -31,8 +33,8 @@ public class RPMRepository extends AbstractRepository {
 		super(path);
 	}
 
-	public RPMRepository(final Path path, final Repository parent) {
-		super(path, parent);
+	public RPMRepository(final Path path, final SortedSet<Repository> parents) {
+		super(path, parents);
 	}
 
 	@Override
@@ -83,9 +85,10 @@ public class RPMRepository extends AbstractRepository {
 		final Path root = getRoot();
 		ensureRootExists();
 
-		final Repository parentRepository = getParent();
-		if (parentRepository != null) {
-			addPackages(parentRepository);
+		if (hasParent()) {
+			for (final Repository repo : getParents()) {
+				addPackages(repo);
+			}
 		} else {
 			LOG.trace("No parent {}", this);
 		}
@@ -189,7 +192,9 @@ public class RPMRepository extends AbstractRepository {
 	@Override
 	public Repository cloneInto(final Path to) {
 		RepoUtils.cloneDirectory(getRoot(), to);
-		return new RPMRepository(to, this);
+		final SortedSet<Repository> repos = new TreeSet<>();
+		repos.add(this);
+		return new RPMRepository(to, repos);
 	}
 
 	@Override

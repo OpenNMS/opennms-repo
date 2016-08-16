@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.opennms.repo.api.Repository;
@@ -18,16 +21,18 @@ import org.opennms.repo.api.RepositoryIndexException;
 import org.opennms.repo.api.RepositoryMetadata;
 import org.opennms.repo.api.RepositoryPackage;
 import org.opennms.repo.api.Util;
+import org.opennms.repo.impl.rpm.RepoSetComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRepository implements Repository {
 	private static final RepositoryPackage[] EMPTY_REPOSITORY_PACKAGE_ARRAY = new RepositoryPackage[0];
+	private static final RepoSetComparator REPO_SET_COMPARATOR = new RepoSetComparator();
 
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractRepository.class);
 
 	private final RepositoryMetadata m_metadata;
-	private final Repository m_parent;
+	private final SortedSet<Repository> m_parents;
 
 	private Map<String, RepositoryPackage> m_packageCache = new HashMap<>();
 
@@ -35,28 +40,32 @@ public abstract class AbstractRepository implements Repository {
 		this(path, null);
 	}
 
-	public AbstractRepository(final Path path, final Repository parent) {
-		LOG.debug("Creating repository {}: path={}, parent={}", getClass().getSimpleName(), path, parent);
-		if (parent == null) {
+	public AbstractRepository(final Path path, final SortedSet<Repository> parents) {
+		LOG.debug("Creating repository {}: path={}, parents={}", getClass().getSimpleName(), path, parents);
+		if (parents == null || parents.size() == 0) {
 			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), null, null);
 			LOG.trace("parent is null, using metadata: {}", m_metadata);
 			if (m_metadata.hasParent()) {
-				m_parent = m_metadata.getParentMetadata().getRepositoryInstance();
-				LOG.trace("parent={}", m_parent);
+				m_parents = new TreeSet<>(m_metadata.getParentMetadata().stream().map(parent -> {
+					return parent.getRepositoryInstance();
+				}).collect(Collectors.toList()));
+				LOG.trace("parents={}", m_parents);
 			} else {
 				LOG.trace("no parent from metadata");
-				m_parent = null;
+				m_parents = new TreeSet<>();
 			}
 		} else {
-			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), parent.getRoot(), parent.getClass());
+			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), parents.stream().map(parent -> {
+				return parent.getRoot();
+			}).collect(Collectors.toList()), parents.iterator().next().getClass());
 			LOG.trace("parent is not null, using metadata: {}", m_metadata);
-			m_parent = parent;
+			m_parents = parents;
 		}
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(m_metadata, m_parent);
+		return Objects.hash(m_metadata, m_parents);
 	}
 
 	@Override
@@ -71,7 +80,7 @@ public abstract class AbstractRepository implements Repository {
 			return false;
 		}
 		AbstractRepository other = (AbstractRepository) obj;
-		return Objects.equals(m_metadata, other.m_metadata) && Objects.equals(m_parent, other.m_parent);
+		return Objects.equals(m_metadata, other.m_metadata) && Objects.equals(m_parents, other.m_parents);
 	}
 
 	@Override
@@ -80,13 +89,13 @@ public abstract class AbstractRepository implements Repository {
 	}
 
 	@Override
-	public Repository getParent() {
-		return m_parent;
+	public SortedSet<Repository> getParents() {
+		return m_parents;
 	}
 
 	@Override
 	public boolean hasParent() {
-		return m_parent != null && m_metadata.hasParent();
+		return m_parents != null && m_parents.size() > 0;
 	}
 
 	@Override
@@ -99,13 +108,6 @@ public abstract class AbstractRepository implements Repository {
 		m_metadata.setName(name);
 		m_metadata.store();
 	}
-
-	/*
-	 * public Map<String,String> getMetadata() { return m_metadata; }
-	 * 
-	 * public void setMetadata(final Map<String,String> metadata) { m_metadata =
-	 * metadata; }
-	 */
 
 	@Override
 	public Path relativePath(final RepositoryPackage p) {
@@ -220,7 +222,7 @@ public abstract class AbstractRepository implements Repository {
 	public int compareTo(final Repository o) {
 		int ret = getRoot().compareTo(o.getRoot());
 		if (ret == 0) {
-			ret = m_parent.compareTo(o.getParent());
+			ret = REPO_SET_COMPARATOR.compare(m_parents, o.getParents());
 		}
 		return ret;
 	}

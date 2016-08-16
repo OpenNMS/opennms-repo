@@ -9,8 +9,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -118,5 +121,19 @@ public abstract class Util {
 		try (final FileWriter fw = new FileWriter(path.resolve(Repository.REPO_METADATA_FILENAME).toFile())) {
 			props.store(fw, "Repository Metadata");
 		}
+	}
+	
+	public static <T> SortedSet<T> newSortedSet(final Collection<T> items) {
+		final SortedSet<T> sorted = new TreeSet<>(items);
+		return sorted;
+	}
+	
+	@SafeVarargs
+	public static <T> SortedSet<T> newSortedSet(final T... items) {
+		final SortedSet<T> sorted = new TreeSet<>();
+		for (final T item : items) {
+			sorted.add(item);
+		}
+		return sorted;
 	}
 }

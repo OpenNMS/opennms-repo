@@ -2,6 +2,7 @@ package org.opennms.repo.api;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.SortedSet;
 
 public interface Repository extends Comparable<Repository> {
 	public static final String REPO_METADATA_FILENAME = ".repometa";
@@ -14,11 +15,11 @@ public interface Repository extends Comparable<Repository> {
 	public Path getRoot();
 
 	/**
-	 * Get the repository's parent.
+	 * Get the repository's parents.
 	 * 
-	 * @return the parent {@link Repository}
+	 * @return the parent {@link Repository} objects
 	 */
-	public Repository getParent();
+	public SortedSet<Repository> getParents();
 
 	/**
 	 * Whether or not this repository has a parent.

@@ -1,13 +1,19 @@
 package org.opennms.repo.api;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,28 +21,27 @@ import org.slf4j.LoggerFactory;
 public class RepositoryMetadata {
 	public static final String METADATA_KEY_NAME = "name";
 	public static final String METADATA_KEY_TYPE = "type";
-	public static final String METADATA_KEY_PARENT = "parent";
+	public static final String METADATA_KEY_PARENTS = "parents";
 	public static final String METADATA_KEY_LAST_INDEXED = "lastIndexed";
 
 	private static final Logger LOG = LoggerFactory.getLogger(RepositoryMetadata.class);
 
 	private final Path m_root;
 	private final Class<? extends Repository> m_type;
-	private final RepositoryMetadata m_parent;
+	private Set<RepositoryMetadata> m_parents = new LinkedHashSet<>();
 	private String m_name;
 	private long m_lastIndexed = -1;
 
-	protected RepositoryMetadata(final Path root, final Class<? extends Repository> type, final Path parentRoot, final Class<? extends Repository> parentType, final String name,
-			final Long lastIndexed) {
+	protected RepositoryMetadata(final Path root, final Class<? extends Repository> type, final String name, final Long lastIndexed, final Set<RepositoryMetadata> parents) {
 		m_root = root.normalize().toAbsolutePath();
 		m_type = type;
-		if (parentRoot != null && parentType != null) {
-			m_parent = RepositoryMetadata.getInstance(parentRoot, parentType);
-		} else {
-			m_parent = null;
-		}
 		m_name = name;
 		m_lastIndexed = lastIndexed == null ? -1 : lastIndexed;
+		if (parents == null) {
+			m_parents.clear();
+		} else {
+			m_parents = parents;
+		}
 	}
 
 	public Path getRoot() {
@@ -68,7 +73,7 @@ public class RepositoryMetadata {
 	}
 
 	public boolean hasParent() {
-		return m_parent != null;
+		return m_parents.size() > 0;
 	}
 
 	public void store() {
@@ -86,8 +91,10 @@ public class RepositoryMetadata {
 			self.put(METADATA_KEY_LAST_INDEXED, Long.valueOf(getLastIndexed()).toString());
 
 			// update parent info
-			if (m_parent != null) {
-				self.put(METADATA_KEY_PARENT, m_root.relativize(m_parent.getRoot().normalize().toAbsolutePath()).toString());
+			if (m_parents.size() > 0) {
+				self.put(METADATA_KEY_PARENTS, String.join(",", m_parents.stream().map(parent -> {
+					return parent.getRoot().normalize().toAbsolutePath().toString();
+				}).collect(Collectors.toList())));
 			}
 
 			boolean dirty = false;
@@ -112,16 +119,18 @@ public class RepositoryMetadata {
 		}
 	}
 
-	public RepositoryMetadata getParentMetadata() {
-		return m_parent;
+	public Set<RepositoryMetadata> getParentMetadata() {
+		return m_parents;
 	}
 
 	public Repository getRepositoryInstance() throws RepositoryException {
 		try {
 			if (hasParent()) {
 				LOG.debug("has parent {}", this);
-				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class, Repository.class);
-				return constructor.newInstance(getRoot(), m_parent.getRepositoryInstance());
+				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class, SortedSet.class);
+				return constructor.newInstance(getRoot(), Util.newSortedSet(m_parents.stream().map(repoMetadata -> {
+					return repoMetadata.getRepositoryInstance();
+				}).collect(Collectors.toList())));
 			} else {
 				LOG.debug("no parent {}", this);
 				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class);
@@ -139,7 +148,7 @@ public class RepositoryMetadata {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(m_root, m_type /* , m_name */, m_parent);
+		return Objects.hash(m_root, m_type /* , m_name */, m_parents);
 	}
 
 	@Override
@@ -156,17 +165,23 @@ public class RepositoryMetadata {
 		RepositoryMetadata other = (RepositoryMetadata) obj;
 		return Objects.equals(m_root, other.m_root) && Objects.equals(m_type, other.m_type) &&
 		// Objects.equals(m_name, other.m_name) &&
-				Objects.equals(m_parent, other.m_parent);
+				Objects.equals(m_parents, other.m_parents);
 	}
 
 	public static RepositoryMetadata getInstance(final Path path, final Class<? extends Repository> type) {
 		return RepositoryMetadata.getInstance(path, type, null, null);
 	}
 
-	public static RepositoryMetadata getInstance(final Path path, final Class<? extends Repository> type, final Path parentPath, final Class<? extends Repository> parentType) {
+	public static RepositoryMetadata getInstance(final Path path, final Class<? extends Repository> type, final Collection<Path> parentPaths, final Class<? extends Repository> parentType) {
 		Class<? extends Repository> repoType = type;
 
-		Path detectedParentPath = parentPath;
+		final Collection<Path> detectedParentPaths = new LinkedHashSet<>();
+		if (parentPaths != null && parentPaths.size() > 0) {
+			for (final Path parentPath : parentPaths) {
+				detectedParentPaths.add(parentPath.normalize().toAbsolutePath());
+			}
+		}
+
 		Class<? extends Repository> parentRepoType = parentType;
 		try {
 			final Map<String, String> metadata = Util.readMetadata(path);
@@ -183,21 +198,27 @@ public class RepositoryMetadata {
 				throw new RepositoryException(e);
 			}
 
-			// use the parent path from the .metadata file, if not passed
-			if (detectedParentPath == null && metadata.containsKey(METADATA_KEY_PARENT)) {
-				detectedParentPath = path.resolve(Paths.get(metadata.get(METADATA_KEY_PARENT)));
-			}
-			if (detectedParentPath != null) {
-				detectedParentPath = detectedParentPath.normalize().toAbsolutePath();
+			// use the parent path from the .metadata file, if found
+			if (metadata.containsKey(METADATA_KEY_PARENTS)) {
+				final String parents = metadata.get(METADATA_KEY_PARENTS);
+				if (parents != null) {
+					for (final String parent : parents.split("/,/")) {
+						detectedParentPaths.add(path.resolve(Paths.get(parent)).normalize().toAbsolutePath());
+					}
+				}
 			}
 
-			// use the parent type from the .metadata file, if found
+			// get the parent type from a parent .metadata file, if found
 			try {
-				if (detectedParentPath != null && detectedParentPath.toFile().exists() && detectedParentPath.toFile().isDirectory()) {
-					final Map<String,String> parentMetadata = Util.readMetadata(detectedParentPath);
-					if (parentRepoType == null && parentMetadata.containsKey(METADATA_KEY_TYPE)) {
-						final String typeValue = parentMetadata.get(METADATA_KEY_TYPE);
-						parentRepoType = Class.forName(typeValue).asSubclass(Repository.class);
+				for (final Path detected : detectedParentPaths) {
+					final File detectedFile = detected.toFile();
+					if (detectedFile.exists() && detectedFile.isDirectory()) {
+						final Map<String,String> parentMetadata = Util.readMetadata(detected);
+						if (parentRepoType == null && parentMetadata.containsKey(METADATA_KEY_TYPE)) {
+							final String typeValue = parentMetadata.get(METADATA_KEY_TYPE);
+							parentRepoType = Class.forName(typeValue).asSubclass(Repository.class);
+							break;
+						}
 					}
 				}
 			} catch (final ClassNotFoundException e) {
@@ -214,7 +235,12 @@ public class RepositoryMetadata {
 				if (name == null) {
 					name = path.getFileName().toString();
 				}
-				return new RepositoryMetadata(path.normalize().toAbsolutePath(), repoType, detectedParentPath, parentRepoType, name, lastIndexed);
+
+				final Set<RepositoryMetadata> parentMetadata = new LinkedHashSet<>();
+				for (final Path detected : detectedParentPaths) {
+					parentMetadata.add(RepositoryMetadata.getInstance(detected, parentRepoType));
+				}
+				return new RepositoryMetadata(path.normalize().toAbsolutePath(), repoType, name, lastIndexed, parentMetadata);
 			}
 		} catch (final IOException e) {
 			LOG.warn("Failed to get instance of metadata for repository at {}", path);
