@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import org.bouncycastle.util.Strings;
 import org.opennms.repo.api.RepositoryPackage;
 import org.opennms.repo.api.Version;
 
@@ -52,6 +53,12 @@ public class RPMPackage implements org.opennms.repo.api.RepositoryPackage {
 	@Override
 	public String getName() {
 		return m_name;
+	}
+
+	@Override
+	public String getCollationName() {
+		final String[] split = Strings.split(m_name, '-');
+		return split[0];
 	}
 
 	@Override

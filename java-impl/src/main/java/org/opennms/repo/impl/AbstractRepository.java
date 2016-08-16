@@ -138,9 +138,9 @@ public abstract class AbstractRepository implements Repository {
 		refresh();
 		for (final RepositoryPackage pack : packages) {
 			try {
-				Path targetDirectory = this.getRoot();
+				Path targetDirectory = this.getRoot().resolve("rpms").resolve(pack.getCollationName());
 				if (pack.getArchitecture() != null) {
-					targetDirectory = this.getRoot().resolve(pack.getArchitecture().toString().toLowerCase());
+					targetDirectory = targetDirectory.resolve(pack.getArchitecture().toString().toLowerCase());
 				}
 				final Path targetPath = targetDirectory.resolve(pack.getFile().getName());
 				final Path relativeTargetPath = Util.relativize(targetPath);
