@@ -32,7 +32,7 @@ public abstract class RPMUtils {
 		if (!rpmPath.toFile().exists()) {
 			throw new IllegalArgumentException("Unable to query RPM information for nonexistent file: " + rpmPath);
 		}
-		final RPMCommand command = new RPMCommand(rpmPath).query("%{name}|%{epoch}|%{version}|%{release}|%{arch}");
+		final RPMCommand command = new RPMCommand(rpmPath).query("%{name}|%{epoch}|%{version}|%{release}|%{arch}|%{sourcepackage}");
 		command.run();
 		final List<String> output = command.getOutput();
 		if (output.size() < 1) {
@@ -46,6 +46,7 @@ public abstract class RPMUtils {
 		final String version = entries[2];
 		final String release = entries[3];
 		final String archString = entries[4];
+		final String sourcePakckageString = entries[5];
 
 		final Integer epoch = "(none)".equals(epochString) ? 0 : Integer.valueOf(epochString);
 		Architecture arch = null;
@@ -55,6 +56,9 @@ public abstract class RPMUtils {
 			arch = Architecture.I386;
 		} else if ("noarch".equals(archString)) {
 			arch = Architecture.ALL;
+		}
+		if ("1".equals(sourcePakckageString)) {
+			arch = Architecture.SOURCE;
 		}
 		return new RPMPackage(rpmName, new RPMVersion(epoch, version, release), arch, rpmPath);
 	}

@@ -5,7 +5,7 @@ import java.nio.file.Path;
 
 public interface RepositoryPackage extends Comparable<RepositoryPackage> {
 	public enum Architecture {
-		I386, AMD64, ALL
+		I386, AMD64, ALL, SOURCE
 	}
 
 	public File getFile();
