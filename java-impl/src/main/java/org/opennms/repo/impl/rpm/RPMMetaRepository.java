@@ -6,8 +6,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -46,16 +48,36 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		return getRoot().resolve("common").resolve("repodata").resolve("repomd.xml").toFile().exists() && getRoot().resolve(REPO_METADATA_FILENAME).toFile().exists();
 	}
 
-	protected void ensureCommonRepositoryExists(final GPGInfo gpginfo) {
-		final Path commonPath = getRoot().resolve("common");
-		if (commonPath.toFile().exists() && commonPath.resolve(REPO_METADATA_FILENAME).toFile().exists()) {
-			LOG.debug("Common sub-repository already exists.");
+	protected void ensureSubrepositoryExists(final Path subrepoPath, final GPGInfo gpginfo) {
+		final String subrepoName = subrepoPath.getFileName().toString();
+
+		if (subrepoPath.toFile().exists() && subrepoPath.resolve(REPO_METADATA_FILENAME).toFile().exists()) {
+			LOG.debug("{} sub-repository already exists in {}.", subrepoName, this);
 		} else {
-			LOG.debug("Common sub-repository does not exist in {}.  Initializing.", this);
-			final SortedSet<Repository> parentSubRepositories = getSubRepositoryParents("common");
-			final RPMRepository commonRepository = new RPMRepository(commonPath, parentSubRepositories);
-			LOG.debug("parent={}, common={}", parentSubRepositories, commonRepository);
-			commonRepository.index(gpginfo);
+			LOG.debug("{} sub-repository does not exist in {}.  Initializing.", subrepoName, this);
+			final SortedSet<Repository> parentSubRepositories = getSubRepositoryParents(subrepoName);
+			final RPMRepository subrepo = new RPMRepository(subrepoPath, parentSubRepositories);
+			LOG.debug("parent={}, {}={}", parentSubRepositories, subrepoName, subrepo);
+			subrepo.index(gpginfo);
+		}
+	}
+
+	protected void ensureSubrepositoriesExist(final GPGInfo gpginfo) {
+		try {
+			Files.createDirectories(getRoot());
+			final Set<Path> subrepos = new HashSet<>(Files.list(getRoot()).filter(path -> {
+				return path.toFile().exists() && path.toFile().isDirectory();
+				//return path.toFile().exists() && path.resolve(REPO_METADATA_FILENAME).toFile().exists();
+			}).map(path -> {
+				return path.normalize().toAbsolutePath();
+			}).collect(Collectors.toSet()));
+			subrepos.add(getRoot().resolve("common"));
+			LOG.debug("ensuring sub repositories exist: {}", subrepos);
+			subrepos.parallelStream().forEach(subrepository -> {
+				ensureSubrepositoryExists(subrepository, gpginfo);
+			});
+		} catch (final IOException e) {
+			throw new RepositoryException("Failed to list subrepositories in " + getRoot(), e);
 		}
 	}
 
@@ -66,7 +88,9 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 
 	@Override
 	public void normalize() throws RepositoryException {
-		getSubRepositories(true).parallelStream().forEach(repo -> {
+		final Collection<Repository> subRepositories = getSubRepositories(true);
+		LOG.debug("normalize(): subrepositories={}", subRepositories);
+		subRepositories.parallelStream().forEach(repo -> {
 			repo.normalize();
 		});
 	}
@@ -74,10 +98,10 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	@Override
 	public boolean index(final GPGInfo gpginfo) throws RepositoryIndexException {
 		LOG.debug("index");
-		ensureCommonRepositoryExists(gpginfo);
+		ensureSubrepositoriesExist(gpginfo);
 		if (hasParent()) {
 			getParents().parallelStream().forEach(parent -> {
-				parent.as(RPMMetaRepository.class).ensureCommonRepositoryExists(gpginfo);
+				parent.as(RPMMetaRepository.class).ensureSubrepositoriesExist(gpginfo);
 			});
 		}
 		boolean changed = false;
@@ -157,7 +181,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 
 	private Collection<Repository> getSubRepositories(final Boolean index) {
 		if (index == null || index) {
-			ensureCommonRepositoryExists(null);
+			ensureSubrepositoriesExist(null);
 		}
 		try {
 			final SortedSet<Repository> parents = getParents();

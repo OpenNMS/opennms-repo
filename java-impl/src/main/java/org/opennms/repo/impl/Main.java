@@ -114,7 +114,7 @@ public class Main {
 	private Set<String> getActions() {
 		final Set<String> actions = new TreeSet<>();
 		for (final Class<? extends Action> action : Action.getActions()) {
-			actions.add(action.getSimpleName().replaceAll("Action$", "").toLowerCase());
+			actions.add(Action.getActionName(action));
 		}
 		return actions;
 	}
@@ -130,6 +130,7 @@ public class Main {
 		if (m_password != null) {
 			options.setPassword(m_password);
 		}
+		options.setAction(Action.getActionName(action));
 
 		LOG.debug("Running {}({}, {})", action, options, m_arguments);
 		try {

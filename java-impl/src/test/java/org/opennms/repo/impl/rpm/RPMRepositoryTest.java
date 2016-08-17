@@ -27,6 +27,7 @@ import java.util.zip.GZIPInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.Repository;
@@ -39,12 +40,16 @@ import org.slf4j.LoggerFactory;
 public class RPMRepositoryTest {
 	private static final Logger LOG = LoggerFactory.getLogger(RPMRepositoryTest.class);
 
-	private GPGInfo m_gpginfo;
+	private static GPGInfo s_gpginfo;
+
+	@BeforeClass
+	public static void generateGPG() throws Exception {
+		s_gpginfo = TestUtils.generateGPGInfo();
+	}
 
 	@Before
 	public void setUp() throws Exception {
 		Util.recursiveDelete(Paths.get("target/repositories"));
-		m_gpginfo = TestUtils.generateGPGInfo();
 	}
 
 	@Test
@@ -53,7 +58,7 @@ public class RPMRepositoryTest {
 		Repository repo = new RPMRepository(Paths.get(repositoryPath));
 		assertFalse(repo.isValid());
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 		TestUtils.assertFileExists(repositoryPath + "/repodata");
 		TestUtils.assertFileExists(repositoryPath + "/repodata/repomd.xml");
 		TestUtils.assertFileExists(repositoryPath + "/repodata/repomd.xml.asc");
@@ -76,7 +81,7 @@ public class RPMRepositoryTest {
 				RPMUtils.getPackage(TestUtils.A2_X64_PATH.toFile()),
 				RPMUtils.getPackage(TestUtils.A3_X64_PATH.toFile())
 				);
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
 		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
@@ -110,7 +115,7 @@ public class RPMRepositoryTest {
 		TestUtils.assertFileExists(packageA2File.getPath());
 		TestUtils.assertFileExists(packageA3File.getPath());
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
 		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
@@ -193,7 +198,7 @@ public class RPMRepositoryTest {
 		TestUtils.assertFileExists(packageA2File.getPath());
 		TestUtils.assertFileExists(packageA3File.getPath());
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
 		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
@@ -225,7 +230,7 @@ public class RPMRepositoryTest {
 		}
 
 		repo = new RPMRepository(repositoryPath);
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		for (final Path p : repositoryPaths) {
 			assertEquals(p + " time should not have changed after a reindex", fileTimes.get(p).toMillis(), Util.getFileTime(p).toMillis());
@@ -304,7 +309,7 @@ public class RPMRepositoryTest {
 		final Path packageA2TargetPath = Paths.get(targetRepositoryPath).resolve("rpms").resolve("jicmp").resolve("amd64").resolve(TestUtils.A2_X64_FILENAME);
 		TestUtils.assertFileDoesNotExist(packageA2TargetPath);
 
-		targetRepo.index(m_gpginfo);
+		targetRepo.index(s_gpginfo);
 		TestUtils.assertFileExists(packageA2TargetPath);
 	}
 
@@ -331,7 +336,7 @@ public class RPMRepositoryTest {
 
 		// indexing should not have copied any RPMs, but it *should* have
 		// created DRPMs
-		targetRepo.index(m_gpginfo);
+		targetRepo.index(s_gpginfo);
 
 		final Path packageA1TargetPath = Paths.get(targetRepositoryPath).resolve("amd64").resolve(TestUtils.A1_X64_FILENAME);
 		TestUtils.assertFileDoesNotExist(packageA1TargetPath);
@@ -370,7 +375,7 @@ public class RPMRepositoryTest {
 		RPMUtils.generateDelta(a3File, a4File, drpmPath.resolve(a3a4delta).toFile());
 
 		final RPMRepository repo = new RPMRepository(repositoryPath);
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		TestUtils.assertFileDoesNotExist(drpmPath.resolve(a1a2delta));
 		TestUtils.assertFileDoesNotExist(drpmPath.resolve(a2a3delta));
@@ -414,7 +419,7 @@ public class RPMRepositoryTest {
 		TestUtils.assertFileDoesNotExist(drpm13path);
 		TestUtils.assertFileDoesNotExist(drpm23path);
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		TestUtils.assertFileDoesNotExist(drpm12path);
 		TestUtils.assertFileExists(drpm13path);
@@ -436,8 +441,8 @@ public class RPMRepositoryTest {
 
 		Repository sourceRepo = new RPMRepository(Paths.get(sourceRepositoryPath));
 		Repository targetRepo = new RPMRepository(Paths.get(targetRepositoryPath));
-		sourceRepo.index(m_gpginfo);
-		targetRepo.index(m_gpginfo);
+		sourceRepo.index(s_gpginfo);
+		targetRepo.index(s_gpginfo);
 
 		final String packageA1TargetPath = targetRepositoryDir + File.separator + TestUtils.A1_X64_FILENAME;
 		final String packageA2TargetPath = targetRepositoryDir + File.separator + TestUtils.A2_X64_FILENAME;
@@ -447,7 +452,7 @@ public class RPMRepositoryTest {
 		TestUtils.assertFileDoesNotExist(packageA3TargetPath);
 
 		sourceRepo.cloneInto(Paths.get(targetRepositoryPath));
-		targetRepo.index(m_gpginfo);
+		targetRepo.index(s_gpginfo);
 
 		TestUtils.assertFileDoesNotExist(packageA1TargetPath);
 		TestUtils.assertFileExists(packageA2TargetPath);

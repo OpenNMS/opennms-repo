@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.Util;
@@ -18,12 +19,16 @@ import org.opennms.repo.impl.rpm.RPMRepository;
 
 public class CloneActionTest {
 	private static final Path repositoryRoot = Paths.get("target/commands/clone/repositories");
-	private GPGInfo m_gpginfo;
+	private static GPGInfo s_gpginfo;
+
+	@BeforeClass
+	public static void generateGPG() throws Exception {
+		s_gpginfo = TestUtils.generateGPGInfo();
+	}
 
 	@Before
 	public void setUp() throws Exception {
 		Util.recursiveDelete(Paths.get("target/commands/clone"));
-		m_gpginfo = TestUtils.generateGPGInfo();
 	}
 
 	@Test
@@ -32,11 +37,11 @@ public class CloneActionTest {
 		final Path targetRoot = sourceRoot.resolve("../target").normalize().toAbsolutePath();
 		final RPMRepository sourceRepo = new RPMRepository(sourceRoot);
 		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), sourceRoot.toFile());
-		sourceRepo.index(m_gpginfo);
+		sourceRepo.index(s_gpginfo);
 		assertTrue(sourceRepo.getRoot().toFile().exists());
 		assertTrue(sourceRepo.getRoot().resolve(TestUtils.A1_X64_FILENAME).toFile().exists());
 
-		final CloneAction command = new CloneAction(new Options(), Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
+		final CloneAction command = new CloneAction(new Options("clone"), Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
 		command.run();
 
 		// make sure the source repo is still the same
@@ -66,12 +71,12 @@ public class CloneActionTest {
 		assertFalse(parentRepo.hasParent());
 
 		final RPMRepository sourceRepo = new RPMRepository(sourceRoot, Util.newSortedSet(parentRepo));
-		sourceRepo.index(m_gpginfo);
+		sourceRepo.index(s_gpginfo);
 		assertTrue(sourceRepo.getRoot().toFile().exists());
 		assertTrue(sourceRepo.getRoot().resolve(TestUtils.A2_X64_FILENAME).toFile().exists());
 		assertTrue(sourceRepo.hasParent());
 
-		final CloneAction command = new CloneAction(new Options(), Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
+		final CloneAction command = new CloneAction(new Options("clone"), Arrays.asList(sourceRoot.toString(), targetRoot.toString()));
 		command.run();
 
 		// make sure the source repo is still the same

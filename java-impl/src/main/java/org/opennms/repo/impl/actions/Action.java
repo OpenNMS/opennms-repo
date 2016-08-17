@@ -14,6 +14,10 @@ public interface Action {
 
 	public void printUsage(PrintStream out);
 
+	public static String getActionName(final Class<? extends Action> action) {
+		return action.getSimpleName().replaceAll("Action$", "").toLowerCase();
+	}
+
 	public static Class<? extends Action> getAction(final String action) {
 		final String className = Action.class.getPackage().getName() + "." + WordUtils.capitalize(action) + "Action";
 		try {

@@ -3,9 +3,25 @@ package org.opennms.repo.impl;
 import java.nio.file.Path;
 
 public class Options {
+	private String m_action = "unknown";
 	private String m_keyId;
 	private String m_password;
 	private Path m_keyRing;
+
+	public Options() {
+	}
+
+	public Options(final String action) {
+		m_action = action;
+	}
+
+	public String getAction() {
+		return m_action;
+	}
+
+	public void setAction(final String action) {
+		m_action = action;
+	}
 
 	public String getKeyId() {
 		return m_keyId;
@@ -37,7 +53,7 @@ public class Options {
 
 	@Override
 	public String toString() {
-		return "Options [keyId=" + m_keyId + ", password=" + (m_password == null ? "not-set" : "set") + ", keyRing=" + m_keyRing + "]";
+		return "Options [action=" + m_action + ", keyId=" + m_keyId + ", password=" + (m_password == null ? "not-set" : "set") + ", keyRing=" + m_keyRing + "]";
 	}
 
 }

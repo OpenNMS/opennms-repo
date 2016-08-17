@@ -27,6 +27,7 @@ import java.util.zip.GZIPInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.MetaRepository;
@@ -40,12 +41,16 @@ import org.slf4j.LoggerFactory;
 public class RPMMetaRepositoryTest {
 	private static final Logger LOG = LoggerFactory.getLogger(RPMMetaRepositoryTest.class);
 
-	private GPGInfo m_gpginfo;
+	private static GPGInfo s_gpginfo;
+
+	@BeforeClass
+	public static void generateGPG() throws Exception {
+		s_gpginfo = TestUtils.generateGPGInfo();
+	}
 
 	@Before
 	public void setUp() throws Exception {
 		Util.recursiveDelete(Paths.get("target/repositories"));
-		m_gpginfo = TestUtils.generateGPGInfo();
 	}
 
 	@Test
@@ -55,7 +60,7 @@ public class RPMMetaRepositoryTest {
 		RPMMetaRepository repo = new RPMMetaRepository(Paths.get(repositoryPath));
 		assertFalse(repo.isValid());
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 		TestUtils.assertFileExists(repositoryPath + "/common/repodata");
 		TestUtils.assertFileExists(repositoryPath + "/common/repodata/repomd.xml");
 		TestUtils.assertFileExists(repositoryPath + "/common/repodata/repomd.xml.asc");
@@ -77,7 +82,7 @@ public class RPMMetaRepositoryTest {
 		final RPMPackage packageA2 = RPMUtils.getPackage(TestUtils.A2_X64_PATH);
 		final RPMPackage packageA3 = RPMUtils.getPackage(TestUtils.A3_X64_PATH);
 		repo.addPackages(packageA1, packageA2, packageA3);
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		final DeltaRPM drpm = new DeltaRPM(packageA1, packageA3);
 		final Path drpmPath = Paths.get(repositoryPath).resolve("common").resolve("drpms");
@@ -103,7 +108,7 @@ public class RPMMetaRepositoryTest {
 				RPMUtils.getPackage(TestUtils.A2_X64_PATH),
 				RPMUtils.getPackage(TestUtils.A3_X64_PATH)
 				);
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
 		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
@@ -138,7 +143,7 @@ public class RPMMetaRepositoryTest {
 		TestUtils.assertFileExists(packageA2File.toPath());
 		TestUtils.assertFileExists(packageA3File.toPath());
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		final RPMPackage packageA1 = RPMUtils.getPackage(packageA1File);
 		final RPMPackage packageA2 = RPMUtils.getPackage(packageA2File);
@@ -221,7 +226,7 @@ public class RPMMetaRepositoryTest {
 		TestUtils.assertFileExists(packageA2File.toPath());
 		TestUtils.assertFileExists(packageA3File.toPath());
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		final Path repodata = commonPath.resolve("repodata");
 		final Path drpms = commonPath.resolve("drpms");
@@ -252,7 +257,7 @@ public class RPMMetaRepositoryTest {
 			fileTimes.put(p, Util.getFileTime(p));
 		}
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		for (final Path p : repositoryPaths) {
 			assertEquals(p + " time should not have changed after a reindex", fileTimes.get(p), Util.getFileTime(p));
@@ -369,7 +374,7 @@ public class RPMMetaRepositoryTest {
 		final String packageA2TargetPath = targetArchPath.resolve(TestUtils.A2_X64_FILENAME).toString();
 		TestUtils.assertFileDoesNotExist(packageA2TargetPath);
 
-		targetRepo.index(m_gpginfo);
+		targetRepo.index(s_gpginfo);
 		TestUtils.assertFileExists(packageA2TargetPath);
 	}
 
@@ -440,7 +445,7 @@ public class RPMMetaRepositoryTest {
 		TestUtils.assertFileDoesNotExist(drpmB13path);
 		TestUtils.assertFileDoesNotExist(drpmB23path);
 
-		repo.index(m_gpginfo);
+		repo.index(s_gpginfo);
 
 		TestUtils.assertFileDoesNotExist(drpmA12path);
 		TestUtils.assertFileExists(drpmA13path);
@@ -467,8 +472,8 @@ public class RPMMetaRepositoryTest {
 
 		Repository sourceRepo = new RPMMetaRepository(sourceRepositoryPath);
 		Repository targetRepo = new RPMMetaRepository(targetRepositoryPath);
-		sourceRepo.index(m_gpginfo);
-		targetRepo.index(m_gpginfo);
+		sourceRepo.index(s_gpginfo);
+		targetRepo.index(s_gpginfo);
 
 		final Path packageA1TargetPath = targetArchPath.resolve(TestUtils.A1_X64_FILENAME);
 		final Path packageA2TargetPath = targetArchPath.resolve(TestUtils.A2_X64_FILENAME);
@@ -478,7 +483,7 @@ public class RPMMetaRepositoryTest {
 		TestUtils.assertFileDoesNotExist(packageA3TargetPath);
 
 		sourceRepo.cloneInto(targetRepositoryPath);
-		targetRepo.index(m_gpginfo);
+		targetRepo.index(s_gpginfo);
 
 		TestUtils.assertFileDoesNotExist(packageA1TargetPath);
 		TestUtils.assertFileExists(packageA2TargetPath);

@@ -168,6 +168,10 @@ public class RepositoryMetadata {
 				Objects.equals(m_parents, other.m_parents);
 	}
 
+	public static RepositoryMetadata getInstance(final Path path) {
+		return RepositoryMetadata.getInstance(path, null, null, null);
+	}
+
 	public static RepositoryMetadata getInstance(final Path path, final Class<? extends Repository> type) {
 		return RepositoryMetadata.getInstance(path, type, null, null);
 	}
@@ -207,6 +211,9 @@ public class RepositoryMetadata {
 					}
 				}
 			}
+
+			// make sure we don't end up with ourself in the "parent" list
+			detectedParentPaths.remove(path.normalize().toAbsolutePath());
 
 			// get the parent type from a parent .metadata file, if found
 			try {

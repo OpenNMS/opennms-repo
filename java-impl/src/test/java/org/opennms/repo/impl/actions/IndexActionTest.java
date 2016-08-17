@@ -9,6 +9,7 @@ import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.Util;
@@ -18,12 +19,20 @@ import org.opennms.repo.impl.rpm.RPMRepository;
 
 public class IndexActionTest {
 	private static final Path repositoryRoot = Paths.get("target/commands/index/repositories");
-	private GPGInfo m_gpginfo;
+	private static GPGInfo s_gpginfo;
+	private static Path s_ringPath;
+
+	@BeforeClass
+	public static void generateGPG() throws Exception {
+		s_gpginfo = TestUtils.generateGPGInfo();
+		s_ringPath = Files.createTempFile("secring-", ".gpg");
+		s_ringPath.toFile().deleteOnExit();
+		s_gpginfo.savePrivateKeyring(s_ringPath);
+	}
 
 	@Before
 	public void setUp() throws Exception {
 		Util.recursiveDelete(Paths.get("target/commands/index"));
-		m_gpginfo = TestUtils.generateGPGInfo();
 	}
 
 	@Test
@@ -34,7 +43,7 @@ public class IndexActionTest {
 		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), sourceRoot.toFile());
 		TestUtils.assertFileDoesNotExist(repodata);
 
-		final Action action = new IndexAction(new Options(), Arrays.asList("--type", "rpm", sourceRoot.toString()));
+		final Action action = new IndexAction(new Options("index"), Arrays.asList("--type", "rpm", sourceRoot.toString()));
 		action.run();
 
 		TestUtils.assertFileExists(repodata.resolve("repomd.xml"));
@@ -48,16 +57,13 @@ public class IndexActionTest {
 		final Path sourceRoot = repositoryRoot.resolve("testIndexRPMRepositoryWithoutGPG").normalize().toAbsolutePath();
 		final Path repodata = sourceRoot.resolve("repodata");
 
-		final Path ringPath = Files.createTempFile("secring-", ".gpg");
-		ringPath.toFile().deleteOnExit();
-		m_gpginfo.savePrivateKeyring(ringPath);
 		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), sourceRoot.toFile());
 		TestUtils.assertFileDoesNotExist(repodata);
 
-		final Options options = new Options();
-		options.setKeyId(m_gpginfo.getKey());
-		options.setPassword(m_gpginfo.getPassphrase());
-		options.setKeyRing(ringPath);
+		final Options options = new Options("index");
+		options.setKeyId(s_gpginfo.getKey());
+		options.setPassword(s_gpginfo.getPassphrase());
+		options.setKeyRing(s_ringPath);
 		final Action action = new IndexAction(options, Arrays.asList("--type", "rpm", sourceRoot.toString()));
 		action.run();
 
