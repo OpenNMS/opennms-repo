@@ -4,8 +4,8 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import org.bouncycastle.util.Strings;
 import org.opennms.repo.api.RepositoryPackage;
+import org.opennms.repo.api.Util;
 import org.opennms.repo.api.Version;
 
 public class RPMPackage implements org.opennms.repo.api.RepositoryPackage {
@@ -32,10 +32,10 @@ public class RPMPackage implements org.opennms.repo.api.RepositoryPackage {
 	public int compareTo(final RepositoryPackage o) {
 		int ret = m_name.compareTo(o.getName());
 		if (ret == 0) {
-			ret = m_version.compareTo(o.getVersion());
+			ret = m_architecture.compareTo(o.getArchitecture());
 		}
 		if (ret == 0) {
-			ret = m_architecture.compareTo(o.getArchitecture());
+			ret = m_version.compareTo(o.getVersion());
 		}
 		return ret;
 	}
@@ -56,9 +56,13 @@ public class RPMPackage implements org.opennms.repo.api.RepositoryPackage {
 	}
 
 	@Override
+	public String getUniqueName() {
+		return m_name + "." + m_architecture.toString().toLowerCase();
+	}
+
+	@Override
 	public String getCollationName() {
-		final String[] split = Strings.split(m_name, '-');
-		return split[0];
+		return Util.getCollationName(m_name);
 	}
 
 	@Override

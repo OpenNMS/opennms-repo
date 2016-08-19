@@ -75,9 +75,20 @@ public abstract class RepoUtils {
 		}
 	}
 
-	public static void atomicReplace(final Path source, final Path target) {
-		LOG.debug("Replacing path {} with path {} atomically", target, source);
+	public static void atomicReplace(final Path source, final Path possibleTarget) {
+		LOG.debug("Replacing path {} with path {} atomically", possibleTarget, source);
 		Path deleteMe = source.getParent().resolve(".delete-me-repo-" + UUID.randomUUID());
+
+		final Path target;
+		if (Files.isSymbolicLink(possibleTarget)) {
+			try {
+				target = Files.readSymbolicLink(possibleTarget);
+			} catch (final IOException e) {
+				throw new RepositoryException("Failed to determine if " + possibleTarget + " is a symbolic link.", e);
+			}
+		} else {
+			target = possibleTarget;
+		}
 
 		try {
 			if (target.toFile().exists()) {
@@ -95,6 +106,7 @@ public abstract class RepoUtils {
 	public static Repository createTempRepository(final Repository repo) {
 		try {
 			final Path tempPath = Files.createTempDirectory(repo.getRoot().getParent(), ".temp-repo-");
+			repo.refresh();
 			final SortedSet<Repository> parents = repo.getParents();
 			LOG.debug("createTempRepository: {} -> {} (parents={})", repo, tempPath, parents);
 
@@ -103,7 +115,7 @@ public abstract class RepoUtils {
 			if (parents == null || parents.size() == 0) {
 				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), null, null);
 			} else {
-				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), parents.stream().map(parent -> {
+				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), Util.getStream(parents).map(parent -> {
 					return parent.getRoot();
 				}).collect(Collectors.toList()), parents.first().getClass());
 			}

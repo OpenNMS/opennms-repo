@@ -15,6 +15,7 @@ import java.util.Properties;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import jnr.posix.POSIXFactory;
 
 public abstract class Util {
 	private static final Logger LOG = LoggerFactory.getLogger(Util.class);
+	private static volatile boolean m_enableParallel = true;
 
 	private Util() {
 	}
@@ -135,5 +137,31 @@ public abstract class Util {
 			sorted.add(item);
 		}
 		return sorted;
+	}
+
+	public static void enableParallel() {
+		m_enableParallel = true;
+	}
+
+	public static void disableParallel() {
+		m_enableParallel = false;
+	}
+
+	public static <T> Stream<T> getStream(Collection<T> coll) {
+		if (m_enableParallel) {
+			return coll.parallelStream();
+		} else {
+			return coll.stream();
+		}
+	}
+
+	public static String getCollationName(final String name) {
+		if (name.startsWith("jdk1.")) {
+			// special case, "jdk1.8.0_60"
+			return "jdk";
+		} else {
+			final String[] split = name.split("-");
+			return split[0];
+		}
 	}
 }

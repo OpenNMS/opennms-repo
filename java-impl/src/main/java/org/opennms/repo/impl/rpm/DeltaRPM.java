@@ -2,13 +2,15 @@ package org.opennms.repo.impl.rpm;
 
 import java.nio.file.Path;
 
+import org.opennms.repo.api.Util;
+
 public class DeltaRPM {
 	private RPMPackage m_from;
 	private RPMPackage m_to;
 
 	public DeltaRPM(final RPMPackage a, final RPMPackage b) {
 		if (!a.getArchitecture().equals(b.getArchitecture())) {
-			throw new IllegalArgumentException("RPMs are not the same architecture!");
+			throw new IllegalArgumentException("RPMs are not the same architecture! " + Util.relativize(a.getPath()) + " != " + Util.relativize(b.getPath()));
 		}
 
 		if (a.isLowerThan(b)) {

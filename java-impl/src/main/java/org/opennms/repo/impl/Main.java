@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import javassist.Modifier;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -164,8 +165,11 @@ public class Main {
 		System.err.println("Actions:\n");
 		final Collection<Class<? extends Action>> actions = Action.getActions();
 		for (final Class<? extends Action> action : actions) {
+			if (Modifier.isAbstract(action.getModifiers())) {
+				continue;
+			}
 			try {
-				final String name = action.getSimpleName().replaceAll("Action$", "").toLowerCase();
+				final String name = Action.getActionName(action);
 				final String description = action.newInstance().getDescription();
 
 				System.err.println(name + ": " + description);

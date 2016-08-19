@@ -73,7 +73,7 @@ public class RPMMetaRepositoryTest {
 		Repository repo = new RPMMetaRepository(Paths.get(repositoryPath));
 		assertFalse(repo.isValid());
 
-		final Path outputPath = Paths.get(repositoryPath).resolve("common").resolve("rpms").resolve("jicmp").resolve("amd64");
+		final Path outputPath = Paths.get(repositoryPath).resolve("common").resolve("rpms").resolve("jicmp").resolve("x86_64");
 		final File packageA1File = new File(outputPath.toFile(), TestUtils.A1_X64_FILENAME);
 		final File packageA2File = new File(outputPath.toFile(), TestUtils.A2_X64_FILENAME);
 		final File packageA3File = new File(outputPath.toFile(), TestUtils.A3_X64_FILENAME);
@@ -98,7 +98,7 @@ public class RPMMetaRepositoryTest {
 		MetaRepository repo = new RPMMetaRepository(Paths.get(repositoryPath));
 		assertFalse(repo.isValid());
 
-		final Path outputPath = Paths.get(repositoryPath).resolve("rhel5").resolve("rpms").resolve("jicmp").resolve("amd64");
+		final Path outputPath = Paths.get(repositoryPath).resolve("rhel5").resolve("rpms").resolve("jicmp").resolve("x86_64");
 		final File packageA1File = new File(outputPath.toFile(), TestUtils.A1_X64_FILENAME);
 		final File packageA2File = new File(outputPath.toFile(), TestUtils.A2_X64_FILENAME);
 		final File packageA3File = new File(outputPath.toFile(), TestUtils.A3_X64_FILENAME);
@@ -128,7 +128,7 @@ public class RPMMetaRepositoryTest {
 		Repository repo = new RPMMetaRepository(Paths.get(repositoryPath));
 		assertFalse(repo.isValid());
 
-		final Path repositoryDir = Paths.get(repositoryPath).resolve("common").resolve("amd64");
+		final Path repositoryDir = Paths.get(repositoryPath).resolve("common").resolve("x86_64");
 		Files.createDirectories(Paths.get(repositoryPath));
 		final File repositoryFile = repositoryDir.toFile();
 		final File packageA1File = new File(repositoryFile, TestUtils.A1_X64_FILENAME);
@@ -211,7 +211,7 @@ public class RPMMetaRepositoryTest {
 		assertFalse(repo.isValid());
 
 		final Path commonPath = Paths.get(repositoryPath).resolve("common");
-		final Path archPath = commonPath.resolve("amd64");
+		final Path archPath = commonPath.resolve("x86_64");
 		Files.createDirectories(archPath);
 		Files.createDirectories(Paths.get(repositoryPath));
 		final File packageA1File = new File(archPath.toFile(), TestUtils.A1_X64_FILENAME);
@@ -273,11 +273,11 @@ public class RPMMetaRepositoryTest {
 
 		final Path sourceRepositoryCommon = sourceRepositoryPath.resolve("common");
 		final Path targetRepositoryCommon = targetRepositoryPath.resolve("common");
-		Files.createDirectories(sourceRepositoryCommon.resolve("amd64"));
-		Files.createDirectories(targetRepositoryCommon.resolve("amd64"));
+		Files.createDirectories(sourceRepositoryCommon.resolve("x86_64"));
+		Files.createDirectories(targetRepositoryCommon.resolve("x86_64"));
 
-		final Path targetRepositoryCommonRPMPath = targetRepositoryCommon.resolve("rpms").resolve("jicmp").resolve("amd64");
-		final Path sourceRepositoryCommonRPMPath = sourceRepositoryCommon.resolve("rpms").resolve("jicmp").resolve("amd64");
+		final Path targetRepositoryCommonRPMPath = targetRepositoryCommon.resolve("rpms").resolve("jicmp").resolve("x86_64");
+		final Path sourceRepositoryCommonRPMPath = sourceRepositoryCommon.resolve("rpms").resolve("jicmp").resolve("x86_64");
 
 		final File packageA1TargetFile = new File(targetRepositoryCommonRPMPath.toFile(), TestUtils.A1_X64_FILENAME);
 		final File packageA2SourceFile = new File(sourceRepositoryCommonRPMPath.toFile(), TestUtils.A2_X64_FILENAME);
@@ -304,8 +304,8 @@ public class RPMMetaRepositoryTest {
 		final Path sourceRepositoryCommon = Paths.get(sourceRepositoryPath).resolve("rhel5");
 		final Path targetRepositoryCommon = Paths.get(targetRepositoryPath).resolve("rhel5");
 
-		final Path sourceRepositoryCommonRPMPath = sourceRepositoryCommon.resolve("rpms").resolve("jicmp").resolve("amd64");
-		final Path targetRepositoryCommonRPMPath = targetRepositoryCommon.resolve("rpms").resolve("jicmp").resolve("amd64");
+		final Path sourceRepositoryCommonRPMPath = sourceRepositoryCommon.resolve("rpms").resolve("jicmp").resolve("x86_64");
+		final Path targetRepositoryCommonRPMPath = targetRepositoryCommon.resolve("rpms").resolve("jicmp").resolve("x86_64");
 		Files.createDirectories(sourceRepositoryCommonRPMPath);
 		Files.createDirectories(targetRepositoryCommonRPMPath);
 
@@ -333,8 +333,8 @@ public class RPMMetaRepositoryTest {
 
 		final Path sourceRepositoryCommonPath = Paths.get(sourceRepositoryPath).resolve("common");
 		final Path targetRepositoryCommonPath = Paths.get(targetRepositoryPath).resolve("common");
-		final Path sourceArchPath = sourceRepositoryCommonPath.resolve("amd64");
-		final Path targetArchPath = targetRepositoryCommonPath.resolve("amd64");
+		final Path sourceArchPath = sourceRepositoryCommonPath.resolve("x86_64");
+		final Path targetArchPath = targetRepositoryCommonPath.resolve("x86_64");
 		Files.createDirectories(sourceArchPath);
 		Files.createDirectories(targetArchPath);
 		final File packageASourceFile = new File(sourceArchPath.toFile(), TestUtils.A1_X64_FILENAME);
@@ -359,8 +359,8 @@ public class RPMMetaRepositoryTest {
 
 		final Path sourceCommonPath = Paths.get(sourceRepositoryPath).resolve("common");
 		final Path targetCommonPath = Paths.get(targetRepositoryPath).resolve("common");
-		final Path sourceArchPath = sourceCommonPath.resolve("rpms").resolve("jicmp").resolve("amd64");
-		final Path targetArchPath = targetCommonPath.resolve("rpms").resolve("jicmp").resolve("amd64");
+		final Path sourceArchPath = sourceCommonPath.resolve("rpms").resolve("jicmp").resolve("x86_64");
+		final Path targetArchPath = targetCommonPath.resolve("rpms").resolve("jicmp").resolve("x86_64");
 
 		Files.createDirectories(sourceArchPath);
 		Files.createDirectories(targetArchPath);
@@ -400,10 +400,10 @@ public class RPMMetaRepositoryTest {
 		new RPMRepository(rhel7Path).refresh();
 
 
-		final Path commonArchPath = commonPath.resolve("rpms").resolve("jicmp").resolve("amd64");
+		final Path commonArchPath = commonPath.resolve("rpms").resolve("jicmp").resolve("x86_64");
 		final Path commonDrpmPath = commonPath.resolve("drpms");
 
-		final Path rhel7ArchPath = rhel7Path.resolve("rpms").resolve("jicmp").resolve("amd64");
+		final Path rhel7ArchPath = rhel7Path.resolve("rpms").resolve("jicmp").resolve("x86_64");
 		final Path rhel7DrpmPath = rhel7Path.resolve("drpms");
 
 		final Path a1path = commonArchPath.resolve(TestUtils.A1_X64_FILENAME);
@@ -460,8 +460,8 @@ public class RPMMetaRepositoryTest {
 	public void testClone() throws Exception {
 		final Path sourceRepositoryPath = Paths.get("target/repositories/RPMMetaRepositoryTest.testClone/source");
 		final Path targetRepositoryPath = Paths.get("target/repositories/RPMMetaRepositoryTest.testClone/target");
-		final Path sourceArchPath = sourceRepositoryPath.resolve("common").resolve("amd64");
-		final Path targetArchPath = targetRepositoryPath.resolve("common").resolve("amd64");
+		final Path sourceArchPath = sourceRepositoryPath.resolve("common").resolve("x86_64");
+		final Path targetArchPath = targetRepositoryPath.resolve("common").resolve("x86_64");
 
 		Files.createDirectories(sourceArchPath);
 		Files.createDirectories(targetArchPath);

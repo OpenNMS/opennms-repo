@@ -55,7 +55,7 @@ public class NormalizeActionTest {
 		final Action action = new NormalizeAction(options, Arrays.asList(sourceRoot.toString()));
 		action.run();
 
-		TestUtils.assertFileExists(sourceRoot.resolve("rpms").resolve("jicmp").resolve("amd64").resolve(TestUtils.A1_X64_FILENAME));
+		TestUtils.assertFileExists(sourceRoot.resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A1_X64_FILENAME));
 
 		final RPMRepository sourceRepo = new RPMRepository(sourceRoot);
 		assertTrue(sourceRepo.isValid());
@@ -78,10 +78,10 @@ public class NormalizeActionTest {
 		final Action action = new NormalizeAction(options, Arrays.asList(sourceRoot.toString()));
 		action.run();
 
-		final Path a1path = sourceRoot.resolve("common").resolve("rpms").resolve("jicmp").resolve("amd64").resolve(TestUtils.A1_X64_FILENAME);
-		final Path a2path = sourceRoot.resolve("rhel6").resolve("rpms").resolve("jicmp").resolve("amd64").resolve(TestUtils.A2_X64_FILENAME);
-		final Path b3path = sourceRoot.resolve("rhel7").resolve("rpms").resolve("jicmp6").resolve("amd64").resolve(TestUtils.B3_X64_FILENAME);
-		final Path b4path = sourceRoot.resolve("rhel7").resolve("rpms").resolve("jicmp6").resolve("amd64").resolve(TestUtils.B4_X64_FILENAME);
+		final Path a1path = sourceRoot.resolve("common").resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A1_X64_FILENAME);
+		final Path a2path = sourceRoot.resolve("rhel6").resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A2_X64_FILENAME);
+		final Path b3path = sourceRoot.resolve("rhel7").resolve("rpms").resolve("jicmp6").resolve("x86_64").resolve(TestUtils.B3_X64_FILENAME);
+		final Path b4path = sourceRoot.resolve("rhel7").resolve("rpms").resolve("jicmp6").resolve("x86_64").resolve(TestUtils.B4_X64_FILENAME);
 		
 		TestUtils.assertFileExists(a1path);
 		TestUtils.assertFileExists(a2path);

@@ -92,7 +92,7 @@ public class RepositoryMetadata {
 
 			// update parent info
 			if (m_parents.size() > 0) {
-				self.put(METADATA_KEY_PARENTS, String.join(",", m_parents.stream().map(parent -> {
+				self.put(METADATA_KEY_PARENTS, String.join(",", Util.getStream(m_parents).map(parent -> {
 					return parent.getRoot().normalize().toAbsolutePath().toString();
 				}).collect(Collectors.toList())));
 			}
@@ -128,7 +128,7 @@ public class RepositoryMetadata {
 			if (hasParent()) {
 				LOG.debug("has parent {}", this);
 				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class, SortedSet.class);
-				return constructor.newInstance(getRoot(), Util.newSortedSet(m_parents.stream().map(repoMetadata -> {
+				return constructor.newInstance(getRoot(), Util.newSortedSet(Util.getStream(m_parents).map(repoMetadata -> {
 					return repoMetadata.getRepositoryInstance();
 				}).collect(Collectors.toList())));
 			} else {

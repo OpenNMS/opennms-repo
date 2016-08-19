@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -46,8 +47,9 @@ public abstract class RPMUtils {
 		final String version = entries[2];
 		final String release = entries[3];
 		final String archString = entries[4];
-		final String sourcePakckageString = entries[5];
+		final String sourcePackageString = entries[5];
 
+		LOG.debug("Parsed RPM {}: {}", Util.relativize(rpmPath), Arrays.asList(entries));
 		final Integer epoch = "(none)".equals(epochString) ? 0 : Integer.valueOf(epochString);
 		Architecture arch = null;
 		if ("x86_64".equals(archString)) {
@@ -57,14 +59,10 @@ public abstract class RPMUtils {
 		} else if ("noarch".equals(archString)) {
 			arch = Architecture.ALL;
 		}
-		if ("1".equals(sourcePakckageString)) {
+		if ("1".equals(sourcePackageString)) {
 			arch = Architecture.SOURCE;
 		}
 		return new RPMPackage(rpmName, new RPMVersion(epoch, version, release), arch, rpmPath);
-	}
-
-	public static File generateDelta(final File rpmFrom, final File rpmTo) {
-		return RPMUtils.generateDelta(rpmFrom, rpmTo, null);
 	}
 
 	public static File generateDelta(final File rpmFromFile, final File rpmToFile, final File rpmOutFile) {
@@ -126,7 +124,7 @@ public abstract class RPMUtils {
 		final Collection<DeltaRPM> deltas = getDeltas(rpms);
 		LOG.debug("Deltas: {}", deltas);
 
-		for (final DeltaRPM drpm : deltas) {
+		Util.getStream(deltas).forEach(drpm -> {
 			final Path drpmPath = drpm.getFilePath(deltaPath);
 			boolean generate = false;
 
@@ -151,12 +149,12 @@ public abstract class RPMUtils {
 				try {
 					RPMUtils.generateDelta(drpm.getFromRPM().getFile(), drpm.getToRPM().getFile(), drpmPath.toFile());
 				} catch (final Exception e) {
-					LOG.error("Failed to generate delta RPM {}", drpm, e);
+					LOG.warn("Failed to generate delta RPM {}", drpm, e);
 				}
 			} else {
 				LOG.trace("- NOT generating {}", drpm);
 			}
-		}
+		});
 	}
 
 	public static String getDeltaFileName(final File fromRPMFile, final File toRPMFile) {

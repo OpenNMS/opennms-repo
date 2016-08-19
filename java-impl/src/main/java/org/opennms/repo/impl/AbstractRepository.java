@@ -22,6 +22,7 @@ import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
 import org.opennms.repo.api.RepositoryMetadata;
 import org.opennms.repo.api.RepositoryPackage;
+import org.opennms.repo.api.RepositoryPackage.Architecture;
 import org.opennms.repo.api.Util;
 import org.opennms.repo.impl.rpm.DeltaRPM;
 import org.opennms.repo.impl.rpm.RPMPackage;
@@ -51,7 +52,7 @@ public abstract class AbstractRepository implements Repository {
 			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), null, null);
 			LOG.trace("parent is null, using metadata: {}", m_metadata);
 			if (m_metadata.hasParent()) {
-				m_parents = new TreeSet<>(m_metadata.getParentMetadata().stream().map(parent -> {
+				m_parents = new TreeSet<>(Util.getStream(m_metadata.getParentMetadata()).map(parent -> {
 					return parent.getRepositoryInstance();
 				}).collect(Collectors.toList()));
 				LOG.trace("parents={}", m_parents);
@@ -60,7 +61,7 @@ public abstract class AbstractRepository implements Repository {
 				m_parents = new TreeSet<>();
 			}
 		} else {
-			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), parents.stream().map(parent -> {
+			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), Util.getStream(parents).map(parent -> {
 				return parent.getRoot();
 			}).collect(Collectors.toList()), parents.iterator().next().getClass());
 			LOG.trace("parent is not null, using metadata: {}", m_metadata);
@@ -119,8 +120,8 @@ public abstract class AbstractRepository implements Repository {
 		return getRoot().relativize(p.getPath());
 	}
 
-	protected RepositoryPackage getPackage(final String packageName) {
-		return m_packageCache.get(packageName);
+	protected RepositoryPackage getPackage(final String packageUniqueName) {
+		return m_packageCache.get(packageUniqueName);
 	}
 
 	@Override
@@ -135,7 +136,9 @@ public abstract class AbstractRepository implements Repository {
 
 	/**
 	 * Given a package, return the ideal path for that package.
-	 * @param pack the package
+	 * 
+	 * @param pack
+	 *            the package
 	 * @return the normalized/ideal path to the package (including filename)
 	 */
 	protected abstract Path getIdealPath(final RepositoryPackage pack);
@@ -143,7 +146,7 @@ public abstract class AbstractRepository implements Repository {
 	@Override
 	public void normalize() throws RepositoryException {
 		refresh();
-		getPackages().parallelStream().forEach(pack -> {
+		Util.getStream(getPackages()).forEach(pack -> {
 			final Path existingPath = pack.getPath().normalize().toAbsolutePath();
 			final Path idealPath = getIdealPath(pack);
 			if (!existingPath.equals(idealPath)) {
@@ -168,7 +171,7 @@ public abstract class AbstractRepository implements Repository {
 			try {
 				final Path targetPath = getIdealPath(pack);
 				final Path relativeTargetPath = Util.relativize(targetPath);
-				final RepositoryPackage existingPackage = getPackage(pack.getName());
+				final RepositoryPackage existingPackage = getPackage(pack.getUniqueName());
 				if (existingPackage == null || existingPackage.isLowerThan(pack)) {
 					LOG.debug("Copying {} to {}", pack, relativeTargetPath);
 					final Path parent = targetPath.getParent();
@@ -184,15 +187,30 @@ public abstract class AbstractRepository implements Repository {
 				}
 
 				if (existingPackage != null) {
-					final DeltaRPM drpm = new DeltaRPM((RPMPackage) pack, (RPMPackage) existingPackage);
-					final Path drpmPath = getRoot().resolve("drpms");
-					final File drpmFile = drpm.getFilePath(drpmPath).toFile();
-					if (drpmFile.exists()) {
-						LOG.debug("Delta RPM for {} -> {} already exists.", pack, existingPackage);
+					final Architecture newArch = pack.getArchitecture();
+					final Architecture existingArch = pack.getArchitecture();
+					if (newArch != null && existingArch != null && !existingArch.equals(newArch)) {
+						LOG.warn("{} and {} do not have the same architecture; skipping delta generation.", existingPackage, pack);
+					} else if (pack.getVersion().equals(existingPackage.getVersion())) {
+						LOG.warn("{} and {} are the same version); skipping delta generation.", pack, existingPackage);
+					} else if (Architecture.SOURCE.equals(pack.getArchitecture()) || Architecture.SOURCE.equals(existingPackage.getArchitecture())) {
+						LOG.debug("Skipping source RPM {}", pack);
 					} else {
-						LOG.debug("Delta RPM for {} -> {} does NOT already exist.", pack, existingPackage);
-						RPMUtils.generateDelta(pack.getFile(), pack.getFile(), drpmFile);
-						m_metadata.resetLastIndexed();
+						LOG.debug("making delta RPM from {} ({}) and {} ({})", Util.relativize(pack.getPath()), newArch, Util.relativize(existingPackage.getPath()), existingArch);
+						final DeltaRPM drpm = new DeltaRPM((RPMPackage) pack, (RPMPackage) existingPackage);
+						final Path drpmPath = getRoot().resolve("drpms");
+						final File drpmFile = drpm.getFilePath(drpmPath).toFile();
+						if (drpmFile.exists()) {
+							LOG.debug("Delta RPM for {} -> {} already exists.", pack, existingPackage);
+						} else {
+							LOG.debug("Delta RPM for {} -> {} does NOT already exist.", pack, existingPackage);
+							try {
+								RPMUtils.generateDelta(pack.getFile(), pack.getFile(), drpmFile);
+								m_metadata.resetLastIndexed();
+							} catch (final Exception e) {
+								LOG.warn("Failed to generate delta RPM: {} -> {}", Util.relativize(pack.getPath()), Util.relativize(existingPackage.getPath()), e);
+							}
+						}
 					}
 				}
 			} catch (final IOException e) {
@@ -203,7 +221,7 @@ public abstract class AbstractRepository implements Repository {
 	}
 
 	protected void updatePackage(final RepositoryPackage pack) {
-		m_packageCache.put(pack.getName(), pack);
+		m_packageCache.put(pack.getUniqueName(), pack);
 	}
 
 	protected Optional<FileTime> getLatestFileTime() {
@@ -231,11 +249,11 @@ public abstract class AbstractRepository implements Repository {
 	public void refresh() {
 		LOG.info("Refreshing {}", this);
 		final Map<String, RepositoryPackage> existingPackagesByName = new HashMap<>();
-		getPackages().stream().forEach(pack -> {
-			final String name = pack.getName();
-			final RepositoryPackage newestPackage = existingPackagesByName.get(name);
+		Util.getStream(getPackages()).forEach(pack -> {
+			final String uniqueName = pack.getUniqueName();
+			final RepositoryPackage newestPackage = existingPackagesByName.get(uniqueName);
 			if (newestPackage == null || newestPackage.isLowerThan(pack)) {
-				existingPackagesByName.put(name, pack);
+				existingPackagesByName.put(uniqueName, pack);
 			}
 		});
 		LOG.debug("{} packages: {}", this, existingPackagesByName);

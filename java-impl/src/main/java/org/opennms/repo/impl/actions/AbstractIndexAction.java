@@ -4,15 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
-import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.Repository;
@@ -29,39 +22,19 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractIndexAction implements Action {
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractIndexAction.class);
-	private static final PrettyTime s_prettyTime = new PrettyTime();
 
-	@Option(name = "--type", aliases = { "-t" }, required = false, usage = "the repository type (rpm, deb) to index", metaVar = "<type>")
 	private String m_type;
-
 	private Path m_repoPath;
-
-	@Argument
-	public List<String> m_arguments = new ArrayList<>();
 	private Options m_options;
 
 	public AbstractIndexAction() {
-		this(null, null);
+		m_options = new Options("unknown");
 	}
 
-	public AbstractIndexAction(final Options options, final List<String> arguments) {
-		final CmdLineParser parser = new CmdLineParser(this);
-		try {
-			parser.parseArgument(arguments);
-		} catch (final CmdLineException e) {
-			throw new RepositoryException("Unable to parse '" + options.getAction() + "' action arguments: " + e.getMessage(), e);
-		}
-
-		if (m_arguments.size() != 1) {
-			throw new IllegalStateException("You must specify a repository to " + options.getAction() + "!");
-		}
-
-		m_repoPath = Paths.get(m_arguments.get(0));
+	protected void initialize(final Options options, final String type, final Path repoPath) {
 		m_options = options;
-
-		if (!m_repoPath.toFile().exists()) {
-			throw new IllegalStateException("Repository " + m_repoPath + " does not exist!");
-		}
+		m_type = type;
+		m_repoPath = repoPath;
 
 		if (options.isGPGConfigured()) {
 			LOG.info("{}: Indexing {} using GPG key {}", options.getAction(), m_repoPath, options.getKeyId());
@@ -112,7 +85,7 @@ public abstract class AbstractIndexAction implements Action {
 		RepositoryMetadata.getInstance(repo.getRoot()).getRepositoryInstance().refresh();
 
 		if (changed) {
-			LOG.info("{}: Index of repository {} completed in {}", m_options.getAction(), Util.relativize(m_repoPath), s_prettyTime.format(start));
+			LOG.info("{}: Index of repository {} completed in {}", m_options.getAction(), Util.relativize(m_repoPath), new PrettyTime().format(start).replaceAll(" ago$", ""));
 		} else {
 			LOG.info("{}: Index of repository {} was not necessary.", m_options.getAction(), Util.relativize(m_repoPath));
 		}
@@ -134,8 +107,8 @@ public abstract class AbstractIndexAction implements Action {
 				throw new IllegalArgumentException("Unknown repository type: " + m_type);
 			}
 		} else {
-	        final RepositoryMetadata metadata = RepositoryMetadata.getInstance(m_repoPath);
-	        repo = metadata.getRepositoryInstance();
+			final RepositoryMetadata metadata = RepositoryMetadata.getInstance(m_repoPath);
+			repo = metadata.getRepositoryInstance();
 		}
 		return repo;
 	}

@@ -86,7 +86,25 @@ public class RPMRepository extends AbstractRepository {
 	protected Path getIdealPath(final RepositoryPackage pack) {
 		Path targetDirectory = this.getRoot().normalize().toAbsolutePath().resolve("rpms").resolve(pack.getCollationName());
 		if (pack.getArchitecture() != null) {
-			targetDirectory = targetDirectory.resolve(pack.getArchitecture().toString().toLowerCase());
+			String archString;
+			switch (pack.getArchitecture()) {
+			case I386:
+				archString = "i386";
+				break;
+			case AMD64:
+				archString = "x86_64";
+				break;
+			case ALL:
+				archString = "noarch";
+				break;
+			case SOURCE:
+				archString = "source";
+				break;
+			default:
+				archString = "misc";
+				break;
+			}
+			targetDirectory = targetDirectory.resolve(archString);
 		}
 		return targetDirectory.resolve(pack.getPath().getFileName());
 	}
@@ -196,8 +214,9 @@ public class RPMRepository extends AbstractRepository {
 					final RPMVersion from = new RPMVersion(fromEpoch == null ? 0 : Integer.valueOf(fromEpoch), fromVersion, fromRevision);
 					final RPMVersion to = new RPMVersion(toEpoch == null ? 0 : Integer.valueOf(toEpoch), toVersion, toRevision);
 
-					final RepositoryPackage latest = getPackage(name);
-					LOG.debug("package: {}, from={}, to={}, latest={}", name, from, to, latest == null? null : latest.getVersion());
+					final RPMPackage drpm = RPMUtils.getPackage(path);
+					final RepositoryPackage latest = getPackage(drpm.getUniqueName());
+					LOG.debug("package: {}, from={}, to={}, latest={}", name, from, to, latest == null ? null : latest.getVersion());
 
 					if (latest == null || !latest.getVersion().equals(to)) {
 						LOG.debug("Removing stale DRPM: {}", drpmName);

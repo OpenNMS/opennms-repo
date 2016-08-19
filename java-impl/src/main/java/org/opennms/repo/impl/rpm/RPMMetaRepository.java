@@ -21,6 +21,7 @@ import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
 import org.opennms.repo.api.RepositoryPackage;
+import org.opennms.repo.api.Util;
 import org.opennms.repo.impl.AbstractRepository;
 import org.opennms.repo.impl.RepoUtils;
 import org.slf4j.Logger;
@@ -67,13 +68,14 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 			Files.createDirectories(getRoot());
 			final Set<Path> subrepos = new HashSet<>(Files.list(getRoot()).filter(path -> {
 				return path.toFile().exists() && path.toFile().isDirectory();
-				//return path.toFile().exists() && path.resolve(REPO_METADATA_FILENAME).toFile().exists();
+				// return path.toFile().exists() &&
+				// path.resolve(REPO_METADATA_FILENAME).toFile().exists();
 			}).map(path -> {
 				return path.normalize().toAbsolutePath();
 			}).collect(Collectors.toSet()));
 			subrepos.add(getRoot().resolve("common"));
 			LOG.debug("ensuring sub repositories exist: {}", subrepos);
-			subrepos.parallelStream().forEach(subrepository -> {
+			Util.getStream(subrepos).forEach(subrepository -> {
 				ensureSubrepositoryExists(subrepository, gpginfo);
 			});
 		} catch (final IOException e) {
@@ -90,7 +92,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	public void normalize() throws RepositoryException {
 		final Collection<Repository> subRepositories = getSubRepositories(true);
 		LOG.debug("normalize(): subrepositories={}", subRepositories);
-		subRepositories.parallelStream().forEach(repo -> {
+		Util.getStream(subRepositories).forEach(repo -> {
 			repo.normalize();
 		});
 	}
@@ -100,17 +102,15 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		LOG.debug("index");
 		ensureSubrepositoriesExist(gpginfo);
 		if (hasParent()) {
-			getParents().parallelStream().forEach(parent -> {
+			Util.getStream(getParents()).forEach(parent -> {
 				parent.as(RPMMetaRepository.class).ensureSubrepositoriesExist(gpginfo);
 			});
 		}
-		boolean changed = false;
-		for (final Repository repo : getSubRepositories()) {
+		final boolean changed = Util.getStream(getSubRepositories()).anyMatch(repo -> {
 			LOG.debug("indexing: {}", repo);
-			if (repo.index(gpginfo)) {
-				changed = true;
-			}
-		}
+			return repo.index(gpginfo);
+		});
+
 		updateLastIndexed();
 		updateMetadata();
 		return changed;
@@ -120,7 +120,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	public void refresh() {
 		final Collection<Repository> subrepos = getSubRepositories();
 		LOG.debug("Refreshing sub-repositories: {}", subrepos);
-		subrepos.parallelStream().forEach(repo -> {
+		Util.getStream(subrepos).forEach(repo -> {
 			repo.refresh();
 		});
 	}
@@ -160,7 +160,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		if (getParents() == null || getParents().size() == 0) {
 			return Collections.emptySortedSet();
 		}
-		return new TreeSet<>(getParents().parallelStream().map(parent -> {
+		return new TreeSet<>(Util.getStream(getParents()).map(parent -> {
 			return parent.as(RPMMetaRepository.class).getSubRepository(subRepoName, false);
 		}).collect(Collectors.toList()));
 	}
@@ -186,7 +186,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		try {
 			final SortedSet<Repository> parents = getParents();
 			return Files.list(getRoot()).filter(path -> {
-				return path.toFile().isDirectory() && path.resolve(REPO_METADATA_FILENAME).toFile().exists();
+				return path.toFile().isDirectory() && !Files.isSymbolicLink(path) && path.resolve(REPO_METADATA_FILENAME).toFile().exists();
 			}).map(path -> {
 				final String repoName = path.getFileName().toString();
 				final RPMRepository existing = m_subRepositories.get(repoName);
@@ -203,7 +203,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 					// fall through to recreating the sub-repository just
 					// to be sure we get a parent, if possible
 				}
-				final SortedSet<Repository> subParents = new TreeSet<>(parents.parallelStream().map(parent -> {
+				final SortedSet<Repository> subParents = new TreeSet<>(Util.getStream(parents).map(parent -> {
 					return parent.as(RPMMetaRepository.class).getSubRepository(repoName, false);
 				}).collect(Collectors.toList()));
 				final RPMRepository repo = new RPMRepository(path, subParents);

@@ -14,6 +14,8 @@ public interface RepositoryPackage extends Comparable<RepositoryPackage> {
 
 	public String getName();
 
+	public String getUniqueName();
+
 	public String getCollationName();
 
 	public Version getVersion();

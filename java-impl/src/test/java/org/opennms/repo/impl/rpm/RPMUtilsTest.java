@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.opennms.repo.api.RepositoryPackage.Architecture;
+import org.opennms.repo.api.Util;
 import org.opennms.repo.api.Version;
 import org.opennms.repo.impl.TestUtils;
 import org.slf4j.Logger;
@@ -86,31 +87,40 @@ public class RPMUtilsTest {
 		final List<RPMPackage> packages = new ArrayList<>(RPMUtils.getPackages(Paths.get("target/test-classes")));
 		assertEquals(16, packages.size());
 		assertEquals(Architecture.I386, packages.get(0).getArchitecture());
-		assertEquals(Architecture.AMD64, packages.get(1).getArchitecture());
+		assertEquals(Architecture.AMD64, packages.get(4).getArchitecture());
+		assertEquals(Architecture.I386, packages.get(8).getArchitecture());
+		assertEquals(Architecture.AMD64, packages.get(12).getArchitecture());
 
-		final List<Version> versions = packages.stream().map(pack -> {
+		final List<Version> versions = Util.getStream(packages).map(pack -> {
 			return pack.getVersion();
 		}).collect(Collectors.toList());
 
 		LOG.debug("versions = {}", versions);
 
 		final Version[] expected = {
-				new RPMVersion("1.4.1", "1"), // i386
-				new RPMVersion("1.4.1", "1"), // x64
-				new RPMVersion("1.4.5", "2"), // i386
-				new RPMVersion("1.4.5", "2"), // x64
-				new RPMVersion("2.0.0", "0.1"), // i386
-				new RPMVersion("2.0.0", "0.1"), // x64
-				new RPMVersion("2.0.0", "0.5"), // i386
-				new RPMVersion("2.0.0", "0.5"), // x64
-				new RPMVersion("1.2.1", "1"), // i386
-				new RPMVersion("1.2.1", "1"), // x64
-				new RPMVersion("1.2.4", "1"), // i386
-				new RPMVersion("1.2.4", "1"), // x64
-				new RPMVersion("2.0.0", "0.2"), // i386
-				new RPMVersion("2.0.0", "0.2"), // x64
-				new RPMVersion("2.0.0", "0.5"), // i386
-				new RPMVersion("2.0.0", "0.5") // x64
+				// jicmp i386 come first
+				new RPMVersion("1.4.1", "1"),
+				new RPMVersion("1.4.5", "2"),
+				new RPMVersion("2.0.0", "0.1"),
+				new RPMVersion("2.0.0", "0.5"),
+
+				// then jicmp x86_64
+				new RPMVersion("1.4.1", "1"),
+				new RPMVersion("1.4.5", "2"),
+				new RPMVersion("2.0.0", "0.1"),
+				new RPMVersion("2.0.0", "0.5"),
+
+				// then jicmp6 i386
+				new RPMVersion("1.2.1", "1"),
+				new RPMVersion("1.2.4", "1"),
+				new RPMVersion("2.0.0", "0.2"),
+				new RPMVersion("2.0.0", "0.5"),
+
+				// then jicmp6 x64
+				new RPMVersion("1.2.1", "1"),
+				new RPMVersion("1.2.4", "1"),
+				new RPMVersion("2.0.0", "0.2"),
+				new RPMVersion("2.0.0", "0.5")
 		};
 
 		for (int i = 0; i < 16; i++) {
@@ -126,16 +136,16 @@ public class RPMUtilsTest {
 		assertEquals(12, deltas.size());
 
 		assertEquals("jicmp-1.4.1-1_2.0.0-0.5.i386.drpm", deltas.get(0).getFileName());
-		assertEquals("jicmp-1.4.1-1_2.0.0-0.5.x86_64.drpm", deltas.get(1).getFileName());
-		assertEquals("jicmp-1.4.5-2_2.0.0-0.5.i386.drpm", deltas.get(2).getFileName());
-		assertEquals("jicmp-1.4.5-2_2.0.0-0.5.x86_64.drpm", deltas.get(3).getFileName());
-		assertEquals("jicmp-2.0.0-0.1_2.0.0-0.5.i386.drpm", deltas.get(4).getFileName());
+		assertEquals("jicmp-1.4.5-2_2.0.0-0.5.i386.drpm", deltas.get(1).getFileName());
+		assertEquals("jicmp-2.0.0-0.1_2.0.0-0.5.i386.drpm", deltas.get(2).getFileName());
+		assertEquals("jicmp-1.4.1-1_2.0.0-0.5.x86_64.drpm", deltas.get(3).getFileName());
+		assertEquals("jicmp-1.4.5-2_2.0.0-0.5.x86_64.drpm", deltas.get(4).getFileName());
 		assertEquals("jicmp-2.0.0-0.1_2.0.0-0.5.x86_64.drpm", deltas.get(5).getFileName());
 		assertEquals("jicmp6-1.2.1-1_2.0.0-0.5.i386.drpm", deltas.get(6).getFileName());
-		assertEquals("jicmp6-1.2.1-1_2.0.0-0.5.x86_64.drpm", deltas.get(7).getFileName());
-		assertEquals("jicmp6-1.2.4-1_2.0.0-0.5.i386.drpm", deltas.get(8).getFileName());
-		assertEquals("jicmp6-1.2.4-1_2.0.0-0.5.x86_64.drpm", deltas.get(9).getFileName());
-		assertEquals("jicmp6-2.0.0-0.2_2.0.0-0.5.i386.drpm", deltas.get(10).getFileName());
+		assertEquals("jicmp6-1.2.4-1_2.0.0-0.5.i386.drpm", deltas.get(7).getFileName());
+		assertEquals("jicmp6-2.0.0-0.2_2.0.0-0.5.i386.drpm", deltas.get(8).getFileName());
+		assertEquals("jicmp6-1.2.1-1_2.0.0-0.5.x86_64.drpm", deltas.get(9).getFileName());
+		assertEquals("jicmp6-1.2.4-1_2.0.0-0.5.x86_64.drpm", deltas.get(10).getFileName());
 		assertEquals("jicmp6-2.0.0-0.2_2.0.0-0.5.x86_64.drpm", deltas.get(11).getFileName());
 	}
 
@@ -153,7 +163,7 @@ public class RPMUtilsTest {
 
 	@Test
 	public void testCreateDeltaRPM() throws Exception {
-		final File deltaRPM = RPMUtils.generateDelta(TestUtils.A1_I386_PATH.toFile(), TestUtils.A2_I386_PATH.toFile());
+		final File deltaRPM = RPMUtils.generateDelta(TestUtils.A1_I386_PATH.toFile(), TestUtils.A2_I386_PATH.toFile(), null);
 		assertNotNull(deltaRPM);
 		assertEquals("jicmp-1.4.1-1_1.4.5-2.i386.drpm", deltaRPM.getName());
 		assertTrue(deltaRPM.length() > 0);
@@ -164,7 +174,7 @@ public class RPMUtilsTest {
 	public void testCreateDeltaRPMOutOfOrder() throws Exception {
 		assert (TestUtils.A1_I386_PATH.toFile() != null);
 		assert (TestUtils.A3_I386_PATH.toFile() != null);
-		final File deltaRPM = RPMUtils.generateDelta(TestUtils.A3_I386_PATH.toFile(), TestUtils.A1_I386_PATH.toFile());
+		final File deltaRPM = RPMUtils.generateDelta(TestUtils.A3_I386_PATH.toFile(), TestUtils.A1_I386_PATH.toFile(), null);
 		assertNotNull(deltaRPM);
 		assertEquals("jicmp-1.4.1-1_2.0.0-0.1.i386.drpm", deltaRPM.getName());
 		assertTrue(deltaRPM.length() > 0);
