@@ -139,6 +139,7 @@ END
 
 print "- cleaning up git and \$M2_REPO:\n";
 clean_for_build();
+compile_base_poms();
 
 if ($TYPE eq 'rpm') {
 	make_rpm();
