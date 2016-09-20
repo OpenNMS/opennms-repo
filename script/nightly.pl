@@ -44,9 +44,9 @@ use vars qw(
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
 $SCRIPTDIR     = abs_path(dirname($0));
-$ROOTDIR       = abs_path('.');
-$SOURCEDIR     = abs_path('.');
 $CMD_BUILDTOOL = File::Spec->catfile($SCRIPTDIR, 'buildtool.pl');
+$ROOTDIR       = '.';
+$SOURCEDIR     = '.';
 
 $ASSEMBLY_ONLY = 0;
 $BRANCH        = undef;
@@ -68,6 +68,9 @@ GetOptions(
 ) or die "Unable to parse command-line: $@\n";
 
 usage() if ($HELP);
+
+$ROOTDIR   = abs_path($ROOTDIR);
+$SOURCEDIR = abs_path($SOURCEDIR);
 
 sub not_empty {
 	my $env_var = shift;
@@ -163,10 +166,13 @@ sub compile_base_poms {
 	);
 
 	chdir($SOURCEDIR);
-	system(@command) == 0 or die "Failed to install pom.xml: $!\n";
+	system(@command) == 0 or die "Failed to install top-level pom.xml: $!\n";
 
-	chdir('opennms-tools');
-	system(@command) == 0 or die "Failed to install pom.xml: $!\n";
+	chdir(File::Spec->catdir($SOURCEDIR, 'opennms-assemblies'));
+	system(@command) == 0 or die "Failed to install opennms-assemblies pom.xml: $!\n";
+
+	chdir(File::Spec->catdir($SOURCEDIR, 'opennms-tools'));
+	system(@command) == 0 or die "Failed to install opennms-tools pom.xml: $!\n";
 
 	chdir($ROOTDIR);
 }
