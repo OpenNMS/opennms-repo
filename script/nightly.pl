@@ -162,12 +162,13 @@ sub compile_base_poms {
 		'install'
 	);
 
+	chdir($SOURCEDIR);
 	system(@command) == 0 or die "Failed to install pom.xml: $!\n";
 
 	chdir('opennms-tools');
 	system(@command) == 0 or die "Failed to install pom.xml: $!\n";
 
-	chdir('..');
+	chdir($ROOTDIR);
 }
 
 sub make_rpm {
