@@ -152,6 +152,23 @@ if ($TYPE eq 'rpm') {
 
 buildtool('save');
 
+sub compile_base_poms {
+	my @command = (
+		File::Spec->catfile($SOURCEDIR, 'compile.pl'),
+		'-Dmaven.test.skip.exec=true',
+		'-Dbuild.skip.tarball=true',
+		'-N',
+		'install'
+	);
+
+	system(@command) == 0 or die "Failed to install pom.xml: $!\n";
+
+	chdir('opennms-tools');
+	system(@command) == 0 or die "Failed to install pom.xml: $!\n";
+
+	chdir('..');
+}
+
 sub make_rpm {
 	my @command = (
 		File::Spec->catfile($SOURCEDIR, 'makerpm.sh'),
