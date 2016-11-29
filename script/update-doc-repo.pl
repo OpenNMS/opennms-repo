@@ -146,6 +146,8 @@ if (-f $DOCS) {
 
 if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DOCDIR, 'guide-admin')) {
 	process_opennms_asciidoc_docdir($DOCDIR);
+} elsif (-f File::Spec->catfile($DOCDIR, 'xsds', 'onms-osgi.xsd')) {
+	process_xsd_docdir(File::Spec->catdir($DOCDIR, 'xsds'));
 } elsif (-f File::Spec->catfile($DOCDIR, 'MINION.html')) {
 	process_minion_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'introduction.html') and -f File::Spec->catfile($DOCDIR, 'mapper.ocs.html')) {
@@ -305,8 +307,12 @@ sub get_docs_for_release {
 		}
 
 		if (not $doc->{'types'}) {
+			my $target = File::Spec->catfile($docpath, 'index.html');
+			if (not -e $target) {
+				$target = $docpath;
+			}
 			$doc->{'types'} = {
-				html => File::Spec->catfile($docpath, 'index.html')
+				html => $target
 			};
 		}
 
@@ -691,10 +697,16 @@ END
 	unlink($file . '.new') or die "Failed to remove $file.new: $!\n";
 }
 
+sub process_xsd_docdir {
+	my $docdir = shift;
+
+	copy_doc_directory($docdir, 'xsds');
+}
+
 sub process_pris_asciidoc_docdir {
 	my $docdir = shift;
 
-	copy_asciidoc_directory($docdir, 'pris');
+	copy_doc_directory($docdir, 'pris');
 }
 
 sub process_opennms_asciidoc_docdir {
@@ -705,7 +717,7 @@ sub process_opennms_asciidoc_docdir {
 	closedir(DIR) or die "Failed to close $docdir: $!\n";
 
 	for my $dir (@guides) {
-		copy_asciidoc_directory(File::Spec->catdir($docdir, $dir), $dir);
+		copy_doc_directory(File::Spec->catdir($docdir, $dir), $dir);
 	}
 }
 
@@ -747,7 +759,7 @@ sub process_minion_asciidoc_docdir {
 	closedir(DIR);
 }
 
-sub copy_asciidoc_directory {
+sub copy_doc_directory {
 	my $from  = shift;
 	my $guide = shift;
 
