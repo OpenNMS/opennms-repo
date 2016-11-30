@@ -146,7 +146,7 @@ if (-f $DOCS) {
 
 if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DOCDIR, 'guide-admin')) {
 	process_opennms_asciidoc_docdir($DOCDIR);
-} elsif (-f File::Spec->catfile($DOCDIR, 'xsds', 'onms-osgi.xsd')) {
+} elsif (-f File::Spec->catfile($DOCDIR, 'xsds', 'event.xsd')) {
 	process_xsd_docdir(File::Spec->catdir($DOCDIR, 'xsds'));
 } elsif (-f File::Spec->catfile($DOCDIR, 'MINION.html')) {
 	process_minion_asciidoc_docdir($DOCDIR);
@@ -161,6 +161,7 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 } elsif (-f File::Spec->catfile($DOCDIR, 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'allclasses-frame.html')) {
 	process_javadoc_docdir($DOCDIR);
 } else {
+	system('ls', '-la', $DOCDIR);
 	die "Unknown documentation type: $DOCS\n";
 }
 
