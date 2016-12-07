@@ -22,7 +22,7 @@ $DESTPATH = shift @ARGV || '/mnt/docs.opennms.org/OpenNMS';
 
 opendir(DIR, $dir) or die "Unable to read from $dir: $!\n";
 while (my $entry = readdir(DIR)) {
-	if ($entry =~ /^guide-all-.*\.tar\.gz$/) {
+	if ($entry =~ /^guide-all-.*\.tar\.(gz|bz2)$/) {
 		$TARBALL = abs_path(File::Spec->catfile($dir, $entry));
 		last;
 	}
@@ -36,6 +36,8 @@ if (defined $TARBALL) {
 	print "  - Year: $year\n";
 	print "  - Version: $version\n";
 
+	my ($extension) = $TARBALL =~ /\.(tar\.gz|tar\.bz2|tgz|tbz2)$/;
+
 	my $cwd = cwd();
 	my $tempdir = File::Spec->catdir($cwd, 'unpack');
 	if (-d $tempdir) {
@@ -45,7 +47,11 @@ if (defined $TARBALL) {
 
 	print "* Unpacking '$TARBALL' into '$tempdir'... ";
 	chdir($tempdir);
-	system('tar', '-xzf', $TARBALL) == 0 or die "Failed to unpack '$TARBALL' into '$tempdir': $!\n";
+	if ($extension =~ /bz2/) {
+		system('tar', '-xjf', $TARBALL) == 0 or die "Failed to unpack '$TARBALL' into '$tempdir': $!\n";
+	} else {
+		system('tar', '-xzf', $TARBALL) == 0 or die "Failed to unpack '$TARBALL' into '$tempdir': $!\n";
+	}
 	print "done.\n";
 
 	for my $dir ('guide-admin', 'guide-concepts', 'guide-development', 'guide-doc', 'guide-install', 'guide-user') {
@@ -53,7 +59,7 @@ if (defined $TARBALL) {
 	}
 	copy_dirs(File::Spec->catdir($tempdir, 'releasenotes'), File::Spec->catdir($DESTPATH, 'releasenotes'), $year, $version, $dir);
 } else {
-	print "Unable to locate guide-all-*.tar.gz in $dir\n";
+	print "Unable to locate guide-all-*.tar.* in $dir\n";
 	exit 1;
 }
 

@@ -15,7 +15,7 @@ use version;
 
 use OpenNMS::Util;
 use OpenNMS::Release;
-use OpenNMS::Release::RPMPackage 2.6.7;
+use OpenNMS::Release::RPMPackage 2.9.16;
 
 use vars qw(
 	$SCRIPTDIR
@@ -68,7 +68,7 @@ opendir(FILES, '.') or die "Unable to read current directory: $!";
 while (my $line = readdir(FILES)) {
 	next if ($line =~ /^\.\.?$/);
 	chomp($line);
-	if ($line =~ /^opennms-source-.*\.tar.gz$/) {
+	if ($line =~ /^opennms-source-.*\.tar.(gz|bz2)$/) {
 		$FILE_SOURCE_TARBALL = $line;
 	} elsif ($line =~ /\.rpm$/) {
 		push(@FILES_RPMS, $line);
@@ -81,7 +81,12 @@ closedir(FILES) or die "Unable to close current directory: $!";
 if ($NOTAR) {
 	print STDERR "WARNING: skipping tarball deployment\n";
 } else {
-	open(TAR, "tar -tzf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
+	my ($extension) = $FILE_SOURCE_TARBALL =~ /\.(gz|bz2)$/;
+	if ($extension eq 'bz2') {
+		open(TAR, "tar -tjf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
+	} else {
+		open(TAR, "tar -tzf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
+	}
 	while (<TAR>) {
 		chomp($_);
 		if (/\/\.nightly$/) {
@@ -91,7 +96,11 @@ if ($NOTAR) {
 	}
 	close(TAR);
 	die "Unable to find .nightly file in $FILE_SOURCE_TARBALL" unless (defined $FILE_NIGHTLY and $FILE_NIGHTLY ne "");
-	chomp($RELEASE=`tar -xzf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
+	if ($extension eq 'bz2') {
+		chomp($RELEASE=`tar -xjf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
+	} else {
+		chomp($RELEASE=`tar -xzf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
+	}
 	if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
 		$RELEASE = $1;
 	} else {
