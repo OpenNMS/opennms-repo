@@ -15,7 +15,7 @@ use version;
 
 use OpenNMS::Util;
 use OpenNMS::Release;
-use OpenNMS::Release::RPMPackage 2.9.16;
+use OpenNMS::Release::RPMPackage 2.9.7;
 
 use vars qw(
 	$SCRIPTDIR
