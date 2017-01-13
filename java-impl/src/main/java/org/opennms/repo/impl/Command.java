@@ -39,8 +39,8 @@ public abstract class Command extends CommandLine implements Runnable {
 			}
 		}
 
-		LOG.warn("Unable to locate executable: {}", executable);
-		return null;
+		LOG.error("Unable to locate executable: {}", executable);
+		throw new RuntimeException("Unable to locate executable: " + executable);
 	}
 
 	public static Map<String, String> getEnvironment() {
