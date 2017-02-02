@@ -382,7 +382,7 @@ sub update_indexes {
 		update_project_indexes($project);
 	}
 	$roottext .= "</ul>\n";
-	write_html('OpenNMS Projects', $roottext, File::Spec->catfile($ROOT, 'index.html'));
+	write_html('OpenNMS Projects', $roottext, File::Spec->catfile($ROOT, 'index.html'), File::Spec->abs2rel(File::Spec->catfile($ROOT, 'meridian', 'index.html'), $ROOT));
 }
 
 sub create_release_symlinks {
@@ -548,6 +548,7 @@ sub write_html {
 	my $title    = shift;
 	my $text     = shift;
 	my $file     = shift;
+	my $redirect = shift;
 
 	my $dirname = dirname($file);
 	my $relative_topdir = File::Spec->abs2rel($ROOT, $dirname);
@@ -580,6 +581,13 @@ sub write_html {
 				white-space: pre;
 			}
 		</style>
+END
+
+	if ($redirect) {
+		print FILEOUT "\t\t<meta http-equiv=\"refresh\" content=\"0;URL='${redirect}'\" />\n";
+	}
+
+	print FILEOUT <<END;
 	</head>
 	<body>
 		<nav class="navbar navbar-inverse navbar-fixed-top">
