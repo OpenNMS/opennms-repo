@@ -70,6 +70,11 @@ public abstract class AbstractRepository implements Repository {
 	}
 
 	@Override
+	public RepositoryMetadata getMetadata() {
+		return m_metadata;
+	}
+
+	@Override
 	public int hashCode() {
 		return Objects.hash(m_metadata, m_parents);
 	}

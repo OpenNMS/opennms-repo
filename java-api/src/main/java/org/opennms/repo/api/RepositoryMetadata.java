@@ -206,7 +206,7 @@ public class RepositoryMetadata {
 			if (metadata.containsKey(METADATA_KEY_PARENTS)) {
 				final String parents = metadata.get(METADATA_KEY_PARENTS);
 				if (parents != null) {
-					for (final String parent : parents.split("/,/")) {
+					for (final String parent : parents.split(",")) {
 						detectedParentPaths.add(path.resolve(Paths.get(parent)).normalize().toAbsolutePath());
 					}
 				}

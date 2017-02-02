@@ -49,6 +49,12 @@ public interface Repository extends Comparable<Repository> {
 	public boolean isValid();
 
 	/**
+	 * Get the {@link RepositoryMetadata} for this repository.
+	 * @return the metadata
+	 */
+	public RepositoryMetadata getMetadata();
+
+	/**
 	 * "Normalize" the repository, moving packages into their ideal locations.
 	 */
 	public void normalize();

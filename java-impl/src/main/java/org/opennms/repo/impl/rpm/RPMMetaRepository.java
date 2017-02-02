@@ -20,6 +20,7 @@ import org.opennms.repo.api.MetaRepository;
 import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
+import org.opennms.repo.api.RepositoryMetadata;
 import org.opennms.repo.api.RepositoryPackage;
 import org.opennms.repo.api.Util;
 import org.opennms.repo.impl.AbstractRepository;

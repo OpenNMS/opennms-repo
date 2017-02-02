@@ -15,11 +15,15 @@ public interface Action {
 	public void printUsage(PrintStream out);
 
 	public static String getActionName(final Class<? extends Action> action) {
-		return action.getSimpleName().replaceAll("Action$", "").toLowerCase();
+		return action.getSimpleName().replaceAll("([A-Z])", "-$1").replaceAll("Action$", "").replaceAll("^-",  "").replaceAll("-$", "").toLowerCase();
 	}
 
-	public static Class<? extends Action> getAction(final String action) {
-		final String className = Action.class.getPackage().getName() + "." + WordUtils.capitalize(action) + "Action";
+	public static Class<? extends Action> getAction(final String actionText) {
+		final StringBuilder action = new StringBuilder();
+		for (final String chunk : actionText.split("-")) {
+			action.append(WordUtils.capitalize(chunk));
+		}
+		final String className = Action.class.getPackage().getName() + "." + action.toString() + "Action";
 		try {
 			return Class.forName(className).asSubclass(Action.class);
 		} catch (ClassNotFoundException e) {
