@@ -290,6 +290,7 @@ sub index($) {
 
 	mkpath($self->cachedir);
 	my @args = ('-q',
+		'--no-database',
 		'--outputdir', $self->path,
 		'--cachedir', $self->cachedir,
 		$self->path);

@@ -31,8 +31,8 @@ cd opennms-full-assembly
 cd -
 
 cat /tmp/modules.$$ | while read PROJECT; do
-	echo "- running ./clean.pl"
-	./clean.pl
+	echo "- running 'git clean -fdx'"
+	git clean -fdx
 
 	printf -- "- cleaning ~/.m2/repository*... "
 	rm -rf ~/.m2/repository*
