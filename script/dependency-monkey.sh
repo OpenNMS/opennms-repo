@@ -24,7 +24,7 @@ fi
 
 cd "$TOPDIR"
 echo "- building source once to prime dependency:tree"
-"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo install
+"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo -P'!enable.tarball' -Dbuild.skip.tarball=true install
 "$TOPDIR/compile.pl" dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' | grep -vE '^org.opennms:opennms$' > /tmp/modules.$$
 cd opennms-full-assembly
 	"$TOPDIR/compile.pl" dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' >> /tmp/modules.$$
@@ -39,7 +39,7 @@ cat /tmp/modules.$$ | while read PROJECT; do
 	echo "done"
 
 	echo "- building project: $PROJECT:" "$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
-	"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
+	"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo -P'!enable.tarball' -Dbuild.skip.tarball=true --projects "$PROJECT" --also-make install
 done
 
 rm -f /tmp/modules.$$
