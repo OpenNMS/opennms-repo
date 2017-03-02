@@ -161,6 +161,7 @@ sub compile_base_poms {
 		File::Spec->catfile($SOURCEDIR, 'compile.pl'),
 		'-Dmaven.test.skip.exec=true',
 		'-Dbuild.skip.tarball=true',
+		'-P!checkstyle',
 		'-N',
 		'install'
 	);

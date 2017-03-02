@@ -24,10 +24,10 @@ fi
 
 cd "$TOPDIR"
 echo "- building source once to prime dependency:tree"
-"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo install
-"$TOPDIR/compile.pl" dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' | grep -vE '^org.opennms:opennms$' > /tmp/modules.$$
+"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo -P'!checkstyle' -P'!enable.tarball' -Dbuild.skip.tarball=true install
+"$TOPDIR/compile.pl" -P'!checkstyle' dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' | grep -vE '^org.opennms:opennms$' > /tmp/modules.$$
 cd opennms-full-assembly
-	"$TOPDIR/compile.pl" dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' >> /tmp/modules.$$
+	"$TOPDIR/compile.pl" -P'!checkstyle' dependency:tree 2>&1 | grep INFO | grep -E ':(bundle|pom):' 2>&1 | grep -vE '[\+\\]\-' | sed -E 's,^.INFO. ,,' | sed -E 's,:(bundle|pom):.*$,,' >> /tmp/modules.$$
 cd -
 
 cat /tmp/modules.$$ | while read PROJECT; do
@@ -38,8 +38,8 @@ cat /tmp/modules.$$ | while read PROJECT; do
 	rm -rf ~/.m2/repository*
 	echo "done"
 
-	echo "- building project: $PROJECT:" "$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
-	"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo --projects "$PROJECT" --also-make install
+	echo "- building project: $PROJECT:" "$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo -P'!checkstyle' --projects "$PROJECT" --also-make install
+	"$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo -P'!checkstyle' -P'!enable.tarball' -Dbuild.skip.tarball=true --projects "$PROJECT" --also-make install
 done
 
 rm -f /tmp/modules.$$
