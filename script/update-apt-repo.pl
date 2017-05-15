@@ -236,9 +236,11 @@ sub sync_repo {
 	my $num_shared = $temp_repo->share_all_packages($from_repo);
 	print $num_shared . " packages updated.\n";
 
-	print "- removing obsolete packages from repo: " . $temp_repo->to_string . "... ";
-	my $num_removed = $temp_repo->delete_obsolete_packages(\&not_opennms);
-	print $num_removed . " packages removed.\n";
+	if (!$NO_OBSOLETE) {
+		print "- removing obsolete packages from repo: " . $temp_repo->to_string . "... ";
+		my $num_removed = $temp_repo->delete_obsolete_packages(\&not_opennms);
+		print $num_removed . " packages removed.\n";
+	}
 
 	print "- indexing repo: " . $temp_repo->to_string . "... ";
 	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });
