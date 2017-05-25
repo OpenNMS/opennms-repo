@@ -9,9 +9,11 @@ use Getopt::Long qw(:config gnu_getopt);
 
 use Cwd qw(abs_path);
 use Data::Dumper;
+use Fcntl qw(LOCK_EX LOCK_NB);
 use File::Basename;
 use File::Copy;
 use File::Find;
+use File::NFSLock qw(uncache);
 use File::Path qw(mkpath remove_tree);
 use File::Temp qw(tempdir tempfile);
 
@@ -121,6 +123,21 @@ if (not defined $BRANCH or $BRANCH eq "") {
 	$INSTALLDIR = File::Spec->catdir($PROJECTROOT, 'branches', $BRANCHDIR);
 }
 
+my $lockfile = File::Spec->catfile($ROOT, '.update-doc-repo.lock');
+
+### set up a lock - lasts until object looses scope
+if (my $lock = new File::NFSLock {
+	file      => $lockfile,
+	lock_type => LOCK_EX|LOCK_NB,
+	blocking_timeout   => 10,      # 10 sec
+	stale_lock_timeout => 30 * 60, # 30 min
+}) {
+	# update the lock file
+	open(FILE, ">$lockfile") || die "Failed to lock $ROOT: $!\n";
+	print FILE localtime(time);
+
+##### MAIN DOCUMENT UPDATING, INSIDE LOCK #####
+
 print "- Creating document directory '$INSTALLDIR'... ";
 mkpath($INSTALLDIR);
 print "done\n";
@@ -175,7 +192,16 @@ update_indexes();
 create_release_symlinks();
 fix_permissions($INSTALLDIR);
 
-exit 0;
+##### FINISHED DOCUMENT UPDATING, FINISH LOCK #####
+
+	unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
+	close(FILE) or die "Failed to close $lockfile: $!\n";
+	$lock->unlock();
+
+	exit 0;
+}else{
+	die "Couldn't lock $lockfile [$File::NFSLock::errstr]";
+}
 
 sub get_projects {
 	my $projectsroot = shift;
@@ -944,7 +970,7 @@ sub versioncmp( $$ ) {
 			$A = uc $A;
 			$B = uc $B;
 			return $A cmp $B if $A cmp $B;
-		}		
+		}
 	}
 	@A <=> @B;
 }
