@@ -61,6 +61,7 @@ $DESCRIPTIONS = {
 	'jrrd2'             => 'JRRD2',
 	'minion'            => 'Minion',
 	'opennms'           => 'OpenNMS',
+	'opennms-js'        => 'OpenNMS.js',
 	'pris'              => 'PRIS',
 	'rancid-api'        => 'RANCID',
 	'releasenotes'      => 'Release Notes',
@@ -177,6 +178,8 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 	process_javadoc_docdir(File::Spec->catdir($DOCDIR, 'apidocs'));
 } elsif (-f File::Spec->catfile($DOCDIR, 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'allclasses-frame.html')) {
 	process_javadoc_docdir($DOCDIR);
+} elsif (-f File::Spec->catfile($DOCDIR, 'index.html') and -f File::Spec->catfile($DOCDIR, 'globals.html')) {
+	process_opennms_js_docdir($DOCDIR);
 } else {
 	system('ls', '-la', $DOCDIR);
 	die "Unknown documentation type: $DOCS\n";
@@ -722,6 +725,12 @@ END
 	}
 	link($file . '.new', $file) or die "Failed to link $file.new to $file: $!\n";
 	unlink($file . '.new') or die "Failed to remove $file.new: $!\n";
+}
+
+sub process_opennms_js_docdir {
+	my $docdir = shift;
+
+	copy_doc_directory($docdir, 'opennms-js');
 }
 
 sub process_xsd_docdir {
