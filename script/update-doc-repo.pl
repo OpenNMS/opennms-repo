@@ -130,7 +130,7 @@ my $lockfile = File::Spec->catfile($ROOT, '.update-doc-repo.lock');
 if (my $lock = new File::NFSLock {
 	file      => $lockfile,
 	lock_type => LOCK_EX|LOCK_NB,
-	blocking_timeout   => 10,      # 10 sec
+	blocking_timeout   => 120,     # 2 min (120 sec)
 	stale_lock_timeout => 30 * 60, # 30 min
 }) {
 	# update the lock file
