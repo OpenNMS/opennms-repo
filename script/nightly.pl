@@ -177,9 +177,6 @@ sub compile_base_poms {
 	chdir(File::Spec->catdir($SOURCEDIR, 'opennms-assemblies'));
 	system(@command) == 0 or die "Failed to install opennms-assemblies pom.xml: $!\n";
 
-	chdir(File::Spec->catdir($SOURCEDIR, 'opennms-full-assembly'));
-	system(@command) == 0 or die "Failed to install opennms-assemblies pom.xml: $!\n";
-
 	chdir(File::Spec->catdir($SOURCEDIR, 'opennms-tools'));
 	system(@command) == 0 or die "Failed to install opennms-tools pom.xml: $!\n";
 
