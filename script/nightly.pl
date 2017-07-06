@@ -169,7 +169,15 @@ sub compile_base_poms {
 	chdir($SOURCEDIR);
 	system(@command) == 0 or die "Failed to install top-level pom.xml: $!\n";
 
+	if (-d File::Spec->catdir($SOURCEDIR, 'checkstyle')) {
+		chdir(File::Spec->catdir($SOURCEDIR, 'checkstyle'));
+		system(@command) == 0 or die "Failed to install checkstyle: $!\n";
+	}
+
 	chdir(File::Spec->catdir($SOURCEDIR, 'opennms-assemblies'));
+	system(@command) == 0 or die "Failed to install opennms-assemblies pom.xml: $!\n";
+
+	chdir(File::Spec->catdir($SOURCEDIR, 'opennms-full-assembly'));
 	system(@command) == 0 or die "Failed to install opennms-assemblies pom.xml: $!\n";
 
 	chdir(File::Spec->catdir($SOURCEDIR, 'opennms-tools'));
