@@ -489,4 +489,21 @@ public class RPMMetaRepositoryTest {
 		TestUtils.assertFileExists(packageA2TargetPath);
 		TestUtils.assertFileExists(packageA3TargetPath);
 	}
+
+	@Test
+	public void testRelativePath() throws Exception {
+		final Path repositoryPath = Paths.get("target/repositories/RPMMetaRepositoryTest.testRelativePath");
+		final Path archPath = repositoryPath.resolve("common").resolve("x86_64");
+
+		Files.createDirectories(archPath);
+
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), archPath.toFile());
+
+		Repository repo = new RPMMetaRepository(repositoryPath);
+		//repo.index(s_gpginfo);
+
+		Path expected = Paths.get("../../test-classes", TestUtils.A1_X64_FILENAME);
+		Path relative = repo.relativePath(RPMUtils.getPackage(TestUtils.A1_X64_PATH));
+		assertEquals(expected, relative);
+	}
 }

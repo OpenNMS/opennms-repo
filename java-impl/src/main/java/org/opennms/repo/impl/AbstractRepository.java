@@ -122,7 +122,7 @@ public abstract class AbstractRepository implements Repository {
 
 	@Override
 	public Path relativePath(final RepositoryPackage p) {
-		return getRoot().relativize(p.getPath());
+		return getRoot().relativize(p.getPath().toAbsolutePath());
 	}
 
 	protected RepositoryPackage getPackage(final String packageUniqueName) {
