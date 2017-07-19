@@ -15,6 +15,7 @@ import java.util.Properties;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -163,5 +164,10 @@ public abstract class Util {
 			final String[] split = name.split("-");
 			return split[0];
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static Predicate<RepositoryPackage> combineFilters(final Predicate<RepositoryPackage>... predicates) {
+		return Stream.of(predicates).reduce(x -> true, Predicate::and);
 	}
 }

@@ -17,6 +17,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.opennms.repo.api.Filter;
 import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
@@ -130,10 +131,10 @@ public abstract class AbstractRepository implements Repository {
 	}
 
 	@Override
-	public <T extends Repository> void addPackages(final T repository) {
+	public <T extends Repository> void addPackages(final T repository, final Filter... filters) {
 		LOG.debug("addPackages({})", repository);
 		repository.refresh();
-		final Collection<RepositoryPackage> fromPackages = repository.getPackages();
+		final Collection<RepositoryPackage> fromPackages = repository.getPackages().stream().filter(Util.combineFilters(filters)).collect(Collectors.toList());
 
 		LOG.info("Adding new packages from {} to repository {}", repository, this);
 		addPackages(fromPackages.toArray(EMPTY_REPOSITORY_PACKAGE_ARRAY));

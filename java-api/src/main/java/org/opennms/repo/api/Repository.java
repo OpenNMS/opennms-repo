@@ -107,8 +107,10 @@ public interface Repository extends Comparable<Repository> {
 	 * 
 	 * @param repository
 	 *            the repository to sync from
+	 * @param filter
+	 *            a filter to include/exclude packages when syncing
 	 */
-	public <T extends Repository> void addPackages(T repository);
+	public <T extends Repository> void addPackages(T repository, Filter... filters);
 
 	/**
 	 * Add the specified packages to the repository.

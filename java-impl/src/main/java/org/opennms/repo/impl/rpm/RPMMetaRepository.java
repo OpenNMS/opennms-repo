@@ -15,6 +15,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
+import org.opennms.repo.api.Filter;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.MetaRepository;
 import org.opennms.repo.api.Repository;
@@ -216,7 +217,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	}
 
 	@Override
-	public <T extends Repository> void addPackages(T repository) {
+	public <T extends Repository> void addPackages(final T repository, final Filter... filters) {
 		repository.refresh();
 		this.refresh();
 		final RPMRepository repo = getSubRepository("common", true);
@@ -226,10 +227,10 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 			if (common == null) {
 				LOG.warn("Attempting to add packages from a missing sub-repository!");
 			} else {
-				repo.addPackages(common);
+				repo.addPackages(common, filters);
 			}
 		} else {
-			repo.addPackages(repository);
+			repo.addPackages(repository, filters);
 		}
 	}
 
