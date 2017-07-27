@@ -53,6 +53,7 @@ $DESCRIPTIONS = {
 	'guide-doc'         => 'Documentation',
 	'guide-install'     => 'Installation',
 	'guide-user'        => 'Users',
+	'helm'              => 'Helm',
 	'javadoc'           => 'Java API',
 	'jicmp'             => 'JICMP',
 	'jicmp6'            => 'JICMP6',
