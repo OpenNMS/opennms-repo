@@ -166,11 +166,11 @@ if (-f $DOCS) {
 if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DOCDIR, 'guide-admin')) {
 	process_opennms_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'xsds', 'event.xsd')) {
-	process_xsd_docdir(File::Spec->catdir($DOCDIR, 'xsds'));
+	process_basic_docdir(File::Spec->catdir($DOCDIR, 'xsds'), 'xsds');
 } elsif (-f File::Spec->catfile($DOCDIR, 'MINION.html')) {
 	process_minion_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'introduction.html') and -f File::Spec->catfile($DOCDIR, 'mapper.ocs.html')) {
-	process_pris_asciidoc_docdir($DOCDIR);
+	process_basic_docdir($DOCDIR, 'pris');
 } elsif (-f File::Spec->catdir($DOCDIR, 'docs', 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.html')) {
 	process_docbook_docdir(File::Spec->catdir($DOCDIR, 'docs'));
 } elsif (-f File::Spec->catdir($DOCDIR, 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'adminref.html')) {
@@ -180,7 +180,9 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 } elsif (-f File::Spec->catfile($DOCDIR, 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'allclasses-frame.html')) {
 	process_javadoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'index.html') and -f File::Spec->catfile($DOCDIR, 'globals.html')) {
-	process_opennms_js_docdir($DOCDIR);
+	process_basic_docdir($DOCDIR, 'opennms-js');
+} elsif (-d File::Spec->catfile($DOCDIR, '_preview', 'helm')) {
+	process_basic_docdir($DOCDIR, 'helm');
 } else {
 	system('ls', '-la', $DOCDIR);
 	die "Unknown documentation type: $DOCS\n";
@@ -728,22 +730,10 @@ END
 	unlink($file . '.new') or die "Failed to remove $file.new: $!\n";
 }
 
-sub process_opennms_js_docdir {
+sub process_basic_docdir {
 	my $docdir = shift;
-
-	copy_doc_directory($docdir, 'opennms-js');
-}
-
-sub process_xsd_docdir {
-	my $docdir = shift;
-
-	copy_doc_directory($docdir, 'xsds');
-}
-
-sub process_pris_asciidoc_docdir {
-	my $docdir = shift;
-
-	copy_doc_directory($docdir, 'pris');
+	my $project = shift;
+	copy_doc_directory($docdir, $project);
 }
 
 sub process_opennms_asciidoc_docdir {
