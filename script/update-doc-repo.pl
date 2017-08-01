@@ -181,8 +181,8 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 	process_javadoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'index.html') and -f File::Spec->catfile($DOCDIR, 'globals.html')) {
 	process_basic_docdir($DOCDIR, 'opennms-js');
-} elsif (-d File::Spec->catfile($DOCDIR, '_preview', 'helm')) {
-	process_basic_docdir($DOCDIR, 'helm');
+} elsif (-d File::Spec->catfile($DOCDIR, '_package', 'helm')) {
+	process_basic_docdir(File::Spec->catfile($DOCDIR, '_package', 'helm'), 'helm');
 } else {
 	system('ls', '-la', $DOCDIR);
 	die "Unknown documentation type: $DOCS\n";
