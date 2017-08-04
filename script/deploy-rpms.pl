@@ -30,6 +30,7 @@ use vars qw(
 	$BRANCH_NAME
 	$BRANCH_NAME_SCRUBBED
 	$RELEASE
+	$SUBDIR
 	$PASSWORD
 
 	$FILE_SOURCE_TARBALL
@@ -42,6 +43,7 @@ print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 $SCRIPTDIR   = abs_path(dirname($0));
 $YUMDIR      = "/var/www/packages";
 $NOTAR       = 0;
+$SUBDIR      = "opennms";
 $BRANCH_NAME = $ENV{'bamboo_OPENNMS_BRANCH_NAME'} || $ENV{'bamboo_planRepository_branchName'};
 
 my $result = GetOptions(
@@ -49,6 +51,7 @@ my $result = GetOptions(
 	"n|notar"     => \$NOTAR,
 	"r|release=s" => \$RELEASE,
 	"b|branch=s"  => \$BRANCH_NAME,
+	"s|subdir=s"  => \$SUBDIR,
 );
 
 die "$YUMDIR does not exist!" unless (-d $YUMDIR);
