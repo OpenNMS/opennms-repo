@@ -43,7 +43,7 @@ print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 $SCRIPTDIR   = abs_path(dirname($0));
 $YUMDIR      = "/var/www/sites/opennms.org/site/yum";
 $NOTAR       = 0;
-$SUDBIR      = "opennms";
+$SUBDIR      = "opennms";
 $BRANCH_NAME = $ENV{'bamboo_OPENNMS_BRANCH_NAME'} || $ENV{'bamboo_planRepository_branchName'};
 
 my $result = GetOptions(
