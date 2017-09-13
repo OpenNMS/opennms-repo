@@ -127,19 +127,19 @@ if (not defined $BRANCH or $BRANCH eq "") {
 
 my $lockfile = File::Spec->catfile($ROOT, '.update-doc-repo.lock');
 
-### set up a lock - lasts until object looses scope
+### set up a lock - lasts until object loses scope
 if (my $lock = new File::NFSLock {
 	file      => $lockfile,
 	lock_type => LOCK_EX,
-	blocking_timeout   => 120,     # 2 min (120 sec)
-	stale_lock_timeout => 30 * 60, # 30 min
+	blocking_timeout   => 30 * 60, # 30 minutes
+	stale_lock_timeout => 60 * 60, # 1 hour
 }) {
 	# update the lock file
 	open(FILE, ">$lockfile") || die "Failed to lock $ROOT: $!\n";
 	print FILE localtime(time);
 	$lock->uncache;
 
-##### MAIN DOCUMENT UPDATING, INSIDE LOCK #####
+##### START UPDATING, INSIDE LOCK #####
 
 print "- Creating document directory '$INSTALLDIR'... ";
 mkpath($INSTALLDIR);
@@ -199,14 +199,14 @@ update_indexes();
 create_release_symlinks();
 fix_permissions($INSTALLDIR);
 
-##### FINISHED DOCUMENT UPDATING, FINISH LOCK #####
+##### FINISHED UPDATING, FINISH LOCK #####
 
 	unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
 	close(FILE) or die "Failed to close $lockfile: $!\n";
 	$lock->unlock();
 
 	exit 0;
-}else{
+} else {
 	die "Couldn't lock $lockfile [$File::NFSLock::errstr]";
 }
 

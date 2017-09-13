@@ -6,7 +6,9 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use Fcntl qw(LOCK_EX LOCK_NB);
 use File::Basename;
+use File::NFSLock qw(uncache);
 use File::ShareDir qw(:ALL);
 use File::Slurp;
 use File::Spec;
@@ -34,6 +36,22 @@ my $platform_descriptions = read_properties(dist_file('OpenNMS-Release', 'platfo
 my @display_order  = split(/\s*,\s*/, $release_descriptions->{order_display});
 my @platform_order = split(/\s*,\s*/, $platform_descriptions->{order_display});
 
+my $lockfile = File::Spec->catfile($base, '.generate-yum-repo-html.lock');
+
+### set up a lock - lasts until object loses scope
+if (my $lock = new File::NFSLock {
+        file      => $lockfile,
+        lock_type => LOCK_EX,
+	blocking_timeout   => 30 * 60, # 30 minutes
+	stale_lock_timeout => 60 * 60, # 1 hour
+}) {
+        # update the lock file
+        open(FILE, ">$lockfile") || die "Failed to lock $base: $!\n";
+        print FILE localtime(time);
+        $lock->uncache;
+
+##### START UPDATING, INSIDE LOCK #####
+#
 my $repos = OpenNMS::Release::YumRepo->find_repos($base);
 
 # convenience hash for looking up repositories
@@ -105,3 +123,14 @@ $index_text .= slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.post')
 open (FILEOUT, ">$base/index.html") or die "unable to write to $base/index.html: $!";
 print FILEOUT $index_text;
 close (FILEOUT);
+
+##### FINISHED UPDATING, FINISH LOCK #####
+
+	unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
+	close(FILE) or die "Failed to close $lockfile: $!\n";
+	$lock->unlock();
+
+	exit 0;
+} else {
+	die "Couldn't lock $lockfile [$File::NFSLock::errstr]";
+}
