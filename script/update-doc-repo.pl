@@ -130,13 +130,14 @@ my $lockfile = File::Spec->catfile($ROOT, '.update-doc-repo.lock');
 ### set up a lock - lasts until object looses scope
 if (my $lock = new File::NFSLock {
 	file      => $lockfile,
-	lock_type => LOCK_EX|LOCK_NB,
+	lock_type => LOCK_EX,
 	blocking_timeout   => 120,     # 2 min (120 sec)
 	stale_lock_timeout => 30 * 60, # 30 min
 }) {
 	# update the lock file
 	open(FILE, ">$lockfile") || die "Failed to lock $ROOT: $!\n";
 	print FILE localtime(time);
+	$lock->uncache;
 
 ##### MAIN DOCUMENT UPDATING, INSIDE LOCK #####
 
