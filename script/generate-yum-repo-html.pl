@@ -38,6 +38,7 @@ my @platform_order = split(/\s*,\s*/, $platform_descriptions->{order_display});
 
 my $lockfile = File::Spec->catfile($base, '.generate-yum-repo-html.lock');
 
+print "* waiting for lock...\n";
 ### set up a lock - lasts until object loses scope
 if (my $lock = new File::NFSLock {
         file      => $lockfile,
@@ -49,9 +50,10 @@ if (my $lock = new File::NFSLock {
         open(FILE, ">$lockfile") || die "Failed to lock $base: $!\n";
         print FILE localtime(time);
         $lock->uncache;
+	print "* got lock -- generating yum repo HTML.\n";
 
 ##### START UPDATING, INSIDE LOCK #####
-#
+
 my $repos = OpenNMS::Release::YumRepo->find_repos($base);
 
 # convenience hash for looking up repositories

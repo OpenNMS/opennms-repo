@@ -127,6 +127,7 @@ if (not defined $BRANCH or $BRANCH eq "") {
 
 my $lockfile = File::Spec->catfile($ROOT, '.update-doc-repo.lock');
 
+print "* waiting for lock...\n";
 ### set up a lock - lasts until object loses scope
 if (my $lock = new File::NFSLock {
 	file      => $lockfile,
@@ -138,6 +139,7 @@ if (my $lock = new File::NFSLock {
 	open(FILE, ">$lockfile") || die "Failed to lock $ROOT: $!\n";
 	print FILE localtime(time);
 	$lock->uncache;
+	print "* got lock -- updating docs.\n";
 
 ##### START UPDATING, INSIDE LOCK #####
 
