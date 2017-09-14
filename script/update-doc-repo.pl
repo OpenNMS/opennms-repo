@@ -132,8 +132,8 @@ print "* waiting for lock...\n";
 if (my $lock = new File::NFSLock {
 	file      => $lockfile,
 	lock_type => LOCK_EX,
-	blocking_timeout   => 30 * 60, # 30 minutes
-	stale_lock_timeout => 60 * 60, # 1 hour
+	blocking_timeout   => 60 * 60, # 60 minutes
+	stale_lock_timeout => 60 * 60 * 2, # 2 hours
 }) {
 	# update the lock file
 	open(FILE, ">$lockfile") || die "Failed to lock $ROOT: $!\n";
