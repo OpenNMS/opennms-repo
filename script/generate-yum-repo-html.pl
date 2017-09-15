@@ -38,30 +38,38 @@ my @platform_order = split(/\s*,\s*/, $platform_descriptions->{order_display});
 
 my $lockfile = File::Spec->catfile($base, '.generate-yum-repo-html.lock');
 
-print "* waiting for lock...\n";
 ### set up a lock - lasts until object loses scope
-if (my $lock = new File::NFSLock {
-        file      => $lockfile,
-        lock_type => LOCK_EX,
-	blocking_timeout   => 60 * 60, # 60 minutes
-	stale_lock_timeout => 60 * 60 * 2, # 2 hours
-}) {
-        # update the lock file
-        open(FILE, ">$lockfile") || die "Failed to lock $base: $!\n";
-        print FILE localtime(time);
-        $lock->uncache;
-	print "* got lock -- generating yum repo HTML.\n";
+my $lock;
+my $timeout = time() + (60 * 60); # 60 minutes
+
+LOCK: while(time() < $timeout) {
+	do_log("* waiting for lock...");
+
+	$lock = new File::NFSLock {
+	        file      => $lockfile,
+	        lock_type => LOCK_EX|LOCK_NB,
+		blocking_timeout   => $timeout,
+		stale_lock_timeout => $timeout * 2,
+	};
+
+	# if we get a lock, update the lock file
+	if ($lock) {
+		open(FILE, ">$lockfile") || die "Failed to lock $base: $!\n";
+		print FILE localtime(time());
+		$lock->uncache;
+		do_log("* got lock -- generating yum repo HTML");
+		last LOCK;
+	}
+
+	# otherwise keep waiting
+	sleep(5);
+}
+
+if (!$lock) {
+	die "Couldn't lock $lockfile [$File::NFSLock::errstr]";
+}
 
 ##### START UPDATING, INSIDE LOCK #####
-
-my $repos = OpenNMS::Release::YumRepo->find_repos($base);
-
-# convenience hash for looking up repositories
-my $repo_map = {};
-for my $repo (@$repos) {
-	next if ($repo->base =~ m,/branches/,);
-	$repo_map->{$repo->release}->{$repo->platform} = $repo;
-}
 
 my $passfile = File::Spec->catfile($ENV{'HOME'}, '.signingpass');
 if (-e $passfile) {
@@ -71,15 +79,23 @@ if (-e $passfile) {
 }
 
 for my $release (@display_order) {
-	next unless (exists $repo_map->{$release});
+	do_log("* processing release $release...");
+
+	my $releasedir = File::Spec->catdir($base, $release);
+	if (! -e $releasedir) {
+		print STDERR "WARNING: No release directory $releasedir";
+		next;
+	}
 
 	my $release_description = $release_descriptions->{$release};
 
-	my $repos  = $repo_map->{$release};
-	my $common = $repos->{'common'};
+	my $common = OpenNMS::Release::YumRepo->new($base, $release, 'common');
+	do_log("* found repo " . $common->to_string());
 
 	my $latest_rpm           = $common->find_newest_package_by_name('opennms-core', 'noarch');
 	next unless ($latest_rpm);
+
+	do_log("* found RPM " . $latest_rpm->path());
 
 	my $description          = $latest_rpm->description();
 	my ($git_url, $git_hash) = $description =~ /(https:\/\/github\.com\/OpenNMS\/opennms\/commit\/(\S+))$/gs;
@@ -119,20 +135,26 @@ for my $release (@display_order) {
 	$index_text .= "</ul>\n";
 }
 
-$index_text .= "<p>Index generated: " . localtime(time) . "</p>";
+$index_text .= "<p>Index generated: " . localtime(time()) . "</p>";
 $index_text .= slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.post'));
 
 open (FILEOUT, ">$base/index.html") or die "unable to write to $base/index.html: $!";
 print FILEOUT $index_text;
 close (FILEOUT);
 
-##### FINISHED UPDATING, FINISH LOCK #####
+END {
+	##### FINISHED UPDATING, CLOSE LOCK #####
 
-	unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
-	close(FILE) or die "Failed to close $lockfile: $!\n";
-	$lock->unlock();
+	if (defined $lockfile and defined $lock) {
+		do_log("* cleaning up lock...");
+		unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
+		close(FILE) or die "Failed to close $lockfile: $!\n";
+		$lock->unlock();
+	}
+}
 
-	exit 0;
-} else {
-	die "Couldn't lock $lockfile [$File::NFSLock::errstr]";
+exit 0;
+
+sub do_log {
+	print localtime(time()) . " " . join('', @_) . "\n";
 }
