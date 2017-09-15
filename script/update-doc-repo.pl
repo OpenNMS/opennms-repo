@@ -95,7 +95,7 @@ if (not defined $DOCS or $DOCS eq "") {
 }
 
 if (not defined $PROJECT or $PROJECT eq "") {
-	print STDERR "ERROR: Youst must also specify a project!\n";
+	print STDERR "ERROR: You must also specify a project!\n";
 	usage();
 }
 
@@ -971,12 +971,15 @@ sub fix_permissions {
 
 sub usage {
 	print STDERR <<END;
-usage: $0 [--root=/path/to/doc/root] [--branch=branch_name] <docs> <project> <version>
+usage: $0 [--debug] [--skip-index] [--root=/path/to/doc/root] [--branch=branch_name] <docs> <project> <version>
 
 OPTIONS:
 
-	--root          the base path for documentation
-	--branch        the branch name for documentation
+	--debug         enable debug logging
+        --skip-index    skip indexing, just copy the files
+
+	--root=/path    the base path for documentation
+	--branch=name   the branch name for documentation
 
 END
 
