@@ -148,19 +148,35 @@ Branch (scrubbed): $BRANCH_NAME_SCRUBBED
 
 END
 
+my $rpm_version = undef;
+
 for my $file (@FILES_RPMS) {
 	print "- signing $file... ";
 	my $package = OpenNMS::Release::RPMPackage->new(abs_path($file));
 	$package->sign('opennms@opennms.org', $PASSWORD);
+	if ($package->name() eq 'meridian-core') {
+		$rpm_version = $package->version()->version();
+	}
 	print "done\n";
+}
+
+my $skip_old = 0;
+if (defined $rpm_version) {
+	($rpm_version) = $rpm_version =~ /^(\d+)\./;
+        if ($rpm_version >= 2017) {
+                print "! Meridian 2017 or newer package found. Skipping rhel5/rhel6 sync.\n";
+                $skip_old = 1;
+        }
 }
 
 #print STDOUT "- uploading $FILE_SOURCE_TARBALL to the $BRANCH_NAME directory on SourceForge:\n";
 #system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
 
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
-system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel5", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
-system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel6", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+if (not $skip_old) {
+	system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel5", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+	system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel6", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+}
 system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel7", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 
 print STDOUT "- updating repo RPMs for $BRANCH_NAME if necessary:\n";
