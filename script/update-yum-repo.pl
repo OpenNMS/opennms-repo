@@ -90,8 +90,8 @@ if (exists $core_rpms[0]) {
 	my $version = $core_rpm->version->version();
 	($version) = $version =~ /^(\d+)\./;
 	if ($version >= 2017) {
-		print "! Meridian 2017 or newer package found. Skipping rhel5/rhel6 sync.\n";
-		@platform_order = grep { !/(centos5|centos6|rhel5|rhel6)/i } @platform_order;
+		print "! Meridian 2017 or newer package found. Skipping rhel5 sync.\n";
+		@platform_order = grep { !/(centos5|rhel5)/i } @platform_order;
 	}
 }
 

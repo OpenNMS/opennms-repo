@@ -164,7 +164,7 @@ my $skip_old = 0;
 if (defined $rpm_version) {
 	($rpm_version) = $rpm_version =~ /^(\d+)\./;
         if ($rpm_version >= 2017) {
-                print "! Meridian 2017 or newer package found. Skipping rhel5/rhel6 sync.\n";
+                print "! Meridian 2017 or newer package found. Skipping rhel5 sync.\n";
                 $skip_old = 1;
         }
 }
@@ -175,8 +175,8 @@ if (defined $rpm_version) {
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
 if (not $skip_old) {
 	system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel5", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
-	system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel6", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 }
+system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel6", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel7", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 
 print STDOUT "- updating repo RPMs for $BRANCH_NAME if necessary:\n";
