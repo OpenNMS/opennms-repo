@@ -86,7 +86,7 @@ delete $platforms->{order_display};
 
 my @core_rpms = grep { /\bmeridian-core-/ } @RPMS;
 if (exists $core_rpms[0]) {
-	my $core_rpm = OpenNMS::Release::RPMPackage->new($core_rpms[0]);
+	my $core_rpm = OpenNMS::Release::RPMPackage->new(Cwd::abs_path($core_rpms[0]));
 	if ($core_rpm->version()->version() >= 2017) {
 		print "! Meridian 2017 or newer package found. Skipping rhel5/rhel6 sync.\n";
 		@platform_order = grep { !/(centos5|centos6|rhel5|rhel6)/i } @platform_order;
