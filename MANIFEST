@@ -48,6 +48,7 @@ script/deploy-rpms.pl
 script/generate-yum-repo-html.pl
 script/nightly.pl
 script/opennms-release.pl
+script/opennms-do-release.sh
 script/smoke.pl
 script/update-apt-repo.pl
 script/update-doc-repo.pl
