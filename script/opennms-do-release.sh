@@ -227,7 +227,7 @@ pushd_q "${GIT_DIR}"
 	if [ -e "${MINION_TARBALL}" ]; then
 		exec_quiet mv "${MINION_TARBALL}" "${ARTIFACT_DIR}/standalone/minion-${CURRENT_VERSION}.tar.gz"
 	else
-		log "WARNING: no minion tarball found -- this should only happen in Meridian builds < 2017"
+		log "WARNING: no minion tarball found -- this should only happen in Meridian builds < 2018"
 	fi
 	exec_quiet mkdir -p "${ARTIFACT_DIR}/rpm"
 	exec_quiet mv target/rpm/RPMS/noarch/*.rpm "${ARTIFACT_DIR}/rpm/"
