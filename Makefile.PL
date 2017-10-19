@@ -26,6 +26,7 @@ install_script 'script/deploy-rpms.pl';
 install_script 'script/generate-yum-repo-html.pl';
 install_script 'script/nightly.pl';
 install_script 'script/opennms-release.pl';
+install_script 'script/opennms-make-release.sh';
 install_script 'script/smoke.pl';
 install_script 'script/update-apt-repo.pl';
 install_script 'script/update-doc-repo.pl';
