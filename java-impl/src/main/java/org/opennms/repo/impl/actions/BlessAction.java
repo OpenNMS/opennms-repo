@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryMetadata;
 import org.opennms.repo.impl.Options;

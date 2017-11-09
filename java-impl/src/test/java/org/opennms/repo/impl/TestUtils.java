@@ -3,9 +3,11 @@ package org.opennms.repo.impl;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
@@ -98,5 +100,20 @@ public abstract class TestUtils {
 
 	public static void assertFileDoesNotExist(final Path path) {
 		assertFalse("File/directory '" + path + "' must not exist.", path.toFile().exists());
+	}
+
+	public static void listFiles(final Path path) {
+		if (path.toFile().exists()) {
+			System.err.println(path);
+			final File[] files = path.toFile().listFiles();
+			Arrays.sort(files);
+			for (final File f : files) {
+				if (f.isDirectory()) {
+					listFiles(f.toPath());
+				} else {
+					System.err.println(f.toPath());
+				}
+			}
+		}
 	}
 }
