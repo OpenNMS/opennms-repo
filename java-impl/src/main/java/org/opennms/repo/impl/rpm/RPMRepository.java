@@ -54,9 +54,10 @@ public class RPMRepository extends AbstractRepository {
 				try {
 					return RPMUtils.getPackage(path.toFile());
 				} catch (final Exception e) {
+					LOG.warn("Failed to get package for path {}", path);
 					return null;
 				}
-			}).sorted().collect(Collectors.toList());
+			}).filter(p -> p != null).sorted().collect(Collectors.toList());
 		} catch (final IOException e) {
 			throw new RepositoryException("Unable to walk " + root + " directory for RPMs", e);
 		}
