@@ -108,6 +108,12 @@ public class CreaterepoCommand extends Command {
 				m_output = IOUtils.readLines(out, Charset.defaultCharset());
 				m_errorOutput = IOUtils.readLines(err, Charset.defaultCharset());
 			}
+			m_output.forEach(line -> {
+				LOG.debug("createrepo: DEBUG: {}", line);
+			});
+			m_errorOutput.forEach(line -> {
+				LOG.warn("createrepo: WARN: {}", line);
+			});
 		} catch (final IOException | InterruptedException e) {
 			throw new RepositoryIndexException(e);
 		}
