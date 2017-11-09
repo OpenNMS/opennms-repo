@@ -1,14 +1,18 @@
 package org.opennms.repo.impl;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -167,6 +171,38 @@ public abstract class AbstractRepository implements Repository {
 				}
 			}
 		});
+		recursiveClean(this.getRoot());
+	}
+
+	private void recursiveClean(final Path root) {
+		try {
+			final List<String> dirs = new ArrayList<>();
+			Files.walk(root).forEach(p -> {
+				if (p.toFile().isDirectory()) {
+					dirs.add(p.toString());
+				}
+			});
+			dirs.sort(new Comparator<String>() {
+				@Override public int compare(final String o1, final String o2) {
+					return o2.compareTo(o1);
+				}
+			});
+			for (final String dir : dirs) {
+				LOG.trace("cleaning: {}", dir);
+				final File f = new File(dir);
+				if (f.list(new FilenameFilter() {
+					@Override public boolean accept(File dir, String name) {
+						return name != "." && name != "..";
+					}
+				}).length == 0) {
+					LOG.debug("Directory {} is empty... removing.");
+					f.delete();
+				}
+			}
+		} catch (final IOException e) {
+			LOG.warn("Error while cleaning empty directories: {}", e.getMessage());
+			LOG.debug("Recursive clean failed.", e);
+		}
 	}
 
 	@Override

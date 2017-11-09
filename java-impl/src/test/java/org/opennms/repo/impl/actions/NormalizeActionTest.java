@@ -63,39 +63,80 @@ public class NormalizeActionTest {
 
 	@Test
 	public void testNormalizeMetaRepository() throws Exception {
-		final Path sourceRoot = repositoryRoot.resolve("testNormalizeMetaRepository").normalize().toAbsolutePath();
-		final Path repodata = sourceRoot.resolve("repodata");
+		final Path packageRoot = repositoryRoot.resolve("testNormalizeMetaRepository").normalize().toAbsolutePath();
+		final Path repodata = packageRoot.resolve("repodata");
 
-		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), sourceRoot.resolve("common").toFile());
-		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), sourceRoot.resolve("rhel6").toFile());
-		FileUtils.copyFileToDirectory(TestUtils.B3_X64_PATH.toFile(), sourceRoot.resolve("rhel7").toFile());
-		FileUtils.copyFileToDirectory(TestUtils.B4_X64_PATH.toFile(), sourceRoot.resolve("rhel7").toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), packageRoot.resolve("common").toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), packageRoot.resolve("rhel6").toFile());
+		FileUtils.copyFileToDirectory(TestUtils.B3_X64_PATH.toFile(), packageRoot.resolve("rhel7").toFile());
+		FileUtils.copyFileToDirectory(TestUtils.B4_X64_PATH.toFile(), packageRoot.resolve("rhel7").toFile());
 		TestUtils.assertFileDoesNotExist(repodata);
 
-		new RPMMetaRepository(sourceRoot).index(s_gpginfo);
+		new RPMMetaRepository(packageRoot).index(s_gpginfo);
 
 		final Options options = new Options("normalize");
-		final Action action = new NormalizeAction(options, Arrays.asList(sourceRoot.toString()));
+		final Action action = new NormalizeAction(options, Arrays.asList(packageRoot.toString()));
 		action.run();
 
-		final Path a1path = sourceRoot.resolve("common").resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A1_X64_FILENAME);
-		final Path a2path = sourceRoot.resolve("rhel6").resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A2_X64_FILENAME);
-		final Path b3path = sourceRoot.resolve("rhel7").resolve("rpms").resolve("jicmp6").resolve("x86_64").resolve(TestUtils.B3_X64_FILENAME);
-		final Path b4path = sourceRoot.resolve("rhel7").resolve("rpms").resolve("jicmp6").resolve("x86_64").resolve(TestUtils.B4_X64_FILENAME);
-		
+		final Path a1path = packageRoot.resolve("common").resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A1_X64_FILENAME);
+		final Path a2path = packageRoot.resolve("rhel6").resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A2_X64_FILENAME);
+		final Path b3path = packageRoot.resolve("rhel7").resolve("rpms").resolve("jicmp6").resolve("x86_64").resolve(TestUtils.B3_X64_FILENAME);
+		final Path b4path = packageRoot.resolve("rhel7").resolve("rpms").resolve("jicmp6").resolve("x86_64").resolve(TestUtils.B4_X64_FILENAME);
+
 		TestUtils.assertFileExists(a1path);
 		TestUtils.assertFileExists(a2path);
 		TestUtils.assertFileExists(b3path);
 		TestUtils.assertFileExists(b4path);
 
-		final RPMMetaRepository sourceRepo = new RPMMetaRepository(sourceRoot);
+		final RPMMetaRepository sourceRepo = new RPMMetaRepository(packageRoot);
 		assertTrue(sourceRepo.isValid());
-		
+
 		final Collection<RepositoryPackage> packages = sourceRepo.getPackages();
 		assertEquals(4, packages.size());
 		assertTrue(packages.contains(RPMUtils.getPackage(a1path)));
 		assertTrue(packages.contains(RPMUtils.getPackage(a2path)));
 		assertTrue(packages.contains(RPMUtils.getPackage(b3path)));
 		assertTrue(packages.contains(RPMUtils.getPackage(b4path)));
+	}
+
+	@Test
+	public void normalizeWithEmptyDirectories() throws Exception {
+		final Path packageRoot = repositoryRoot.resolve("testNormalizeWithEmptyDirectoriesMetaRepository").normalize().toAbsolutePath();
+		final Path repodata = packageRoot.resolve("repodata");
+
+		FileUtils.copyFileToDirectory(TestUtils.A1_X64_PATH.toFile(), packageRoot.resolve("junk").toFile());
+		FileUtils.copyFileToDirectory(TestUtils.A2_X64_PATH.toFile(), packageRoot.resolve("junk").toFile());
+		FileUtils.copyFileToDirectory(TestUtils.B3_X64_PATH.toFile(), packageRoot.resolve("crap").toFile());
+		FileUtils.copyFileToDirectory(TestUtils.B4_X64_PATH.toFile(), packageRoot.resolve("crap").toFile());
+		TestUtils.assertFileDoesNotExist(repodata);
+
+		new RPMRepository(packageRoot).index(s_gpginfo);
+
+		final Options options = new Options("normalize");
+		final Action action = new NormalizeAction(options, Arrays.asList(packageRoot.toString()));
+		action.run();
+
+		final Path a1path = packageRoot.resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A1_X64_FILENAME);
+		final Path a2path = packageRoot.resolve("rpms").resolve("jicmp").resolve("x86_64").resolve(TestUtils.A2_X64_FILENAME);
+		final Path b3path = packageRoot.resolve("rpms").resolve("jicmp6").resolve("x86_64").resolve(TestUtils.B3_X64_FILENAME);
+		final Path b4path = packageRoot.resolve("rpms").resolve("jicmp6").resolve("x86_64").resolve(TestUtils.B4_X64_FILENAME);
+
+		TestUtils.assertFileExists(a1path);
+		TestUtils.assertFileExists(a2path);
+		TestUtils.assertFileExists(b3path);
+		TestUtils.assertFileExists(b4path);
+
+		final RPMRepository sourceRepo = new RPMRepository(packageRoot);
+		assertTrue(sourceRepo.isValid());
+
+		final Collection<RepositoryPackage> packages = sourceRepo.getPackages();
+		assertEquals(4, packages.size());
+		assertTrue(packages.contains(RPMUtils.getPackage(a1path)));
+		assertTrue(packages.contains(RPMUtils.getPackage(a2path)));
+		assertTrue(packages.contains(RPMUtils.getPackage(b3path)));
+		assertTrue(packages.contains(RPMUtils.getPackage(b4path)));
+
+		TestUtils.assertFileDoesNotExist(packageRoot.resolve("crap"));
+		TestUtils.assertFileDoesNotExist(packageRoot.resolve("junk"));
 	}
 }
