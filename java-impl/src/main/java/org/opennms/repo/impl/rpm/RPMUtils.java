@@ -99,10 +99,14 @@ public abstract class RPMUtils {
 
 		try {
 			Files.walk(root.normalize().toAbsolutePath()).forEach(path -> {
-				if (path.toFile().isFile()) {
+				if (path.toFile().isFile() && path.toFile().length() > 0) {
 					if (path.toString().endsWith(".rpm")) {
 						LOG.debug("found RPM: {}", path);
-						rpms.add(RPMUtils.getPackage(path.toFile()));
+						try {
+							rpms.add(RPMUtils.getPackage(path.toFile()));
+						} catch (final Exception e) {
+							LOG.warn("Failed to get package for {}", path.toFile(), e);
+						}
 					} else {
 						LOG.trace("Not an RPM: {}", path);
 					}
