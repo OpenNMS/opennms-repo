@@ -37,6 +37,8 @@ $APTDIR    = "/var/ftp/pub/releases/opennms/debian";
 
 my $result = GetOptions(
 	"a|aptdir=s" => \$APTDIR,
+	"b|branch=s" => \$BRANCH_NAME,
+	"r|release=s" => \$RELEASE,
 );
 
 die "$APTDIR does not exist!" unless (-d $APTDIR);
@@ -67,25 +69,28 @@ if (-e 'opennms-build-repo.txt') {
 	$repo_file = 'opennms-build-repo.txt';
 }
 
-if (-e $repo_file) {
-	chomp($RELEASE=read_file($repo_file));
-	if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
-		$RELEASE = $1;
+if (not defined $RELEASE) {
+	if (-e $repo_file) {
+		chomp($RELEASE=read_file($repo_file));
+		if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
+			$RELEASE = $1;
+		} else {
+			die "Repo file $repo_file exists, but unable to determine the appropriate release repository from '$RELEASE'";
+		}
 	} else {
-		die "Repo file $repo_file exists, but unable to determine the appropriate release repository from '$RELEASE'";
+		print STDERR "WARNING: using 'unstable' as the source release";
+		$RELEASE='unstable';
 	}
-} else {
-	print STDERR "WARNING: using 'unstable' as the source release";
-	$RELEASE='unstable';
+	if (exists $ENV{'bamboo_OPENNMS_SOURCE_REPO'} and $ENV{'bamboo_OPENNMS_SOURCE_REPO'} ne "") {
+		$RELEASE=$ENV{'bamboo_OPENNMS_SOURCE_REPO'};
+	}
 }
 
-if (exists $ENV{'bamboo_OPENNMS_SOURCE_REPO'} and $ENV{'bamboo_OPENNMS_SOURCE_REPO'} ne "") {
-	$RELEASE=$ENV{'bamboo_OPENNMS_SOURCE_REPO'};
-}
-
-chomp($BRANCH_NAME = read_file('opennms-build-branch.txt'));
-if (exists $ENV{'bamboo_OPENNMS_BRANCH_NAME'} and $ENV{'bamboo_OPENNMS_BRANCH_NAME'} ne "") {
-	$BRANCH_NAME=$ENV{'bamboo_OPENNMS_BRANCH_NAME'};
+if (not defined $BRANCH_NAME) {
+	chomp($BRANCH_NAME = read_file('opennms-build-branch.txt'));
+	if (exists $ENV{'bamboo_OPENNMS_BRANCH_NAME'} and $ENV{'bamboo_OPENNMS_BRANCH_NAME'} ne "") {
+		$BRANCH_NAME=$ENV{'bamboo_OPENNMS_BRANCH_NAME'};
+	}
 }
 $BRANCH_NAME_SCRUBBED = $BRANCH_NAME;
 $BRANCH_NAME_SCRUBBED =~ s/[^[:alnum:]\.]+/\-/g;

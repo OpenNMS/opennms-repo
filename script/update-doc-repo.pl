@@ -22,6 +22,7 @@ use version;
 use vars qw(
 	$HELP
 	$DEBUG
+	$SKIP_INDEX
 
 	$BOOTSTRAPVERSION
 	$DESCRIPTIONS
@@ -42,6 +43,7 @@ use vars qw(
 );
 
 $DEBUG = 0;
+$SKIP_INDEX = 0;
 $ROOT = '/mnt/docs.opennms.org';
 
 $BOOTSTRAPVERSION = '3.3.4';
@@ -53,6 +55,7 @@ $DESCRIPTIONS = {
 	'guide-doc'         => 'Documentation',
 	'guide-install'     => 'Installation',
 	'guide-user'        => 'Users',
+	'helm'              => 'Helm',
 	'javadoc'           => 'Java API',
 	'jicmp'             => 'JICMP',
 	'jicmp6'            => 'JICMP6',
@@ -70,11 +73,12 @@ $DESCRIPTIONS = {
 };
 
 my $result = GetOptions(
-	"h|help"     => \$HELP,
-	"d|debug"    => \$DEBUG,
+	"h|help"       => \$HELP,
+	"d|debug"      => \$DEBUG,
+	"s|skip-index" => \$SKIP_INDEX,
 
-	"r|root=s"   => \$ROOT,
-	"b|branch=s" => \$BRANCH,
+	"r|root=s"     => \$ROOT,
+	"b|branch=s"   => \$BRANCH,
 );
 
 if (not defined $ROOT or $ROOT eq "") {
@@ -91,7 +95,7 @@ if (not defined $DOCS or $DOCS eq "") {
 }
 
 if (not defined $PROJECT or $PROJECT eq "") {
-	print STDERR "ERROR: Youst must also specify a project!\n";
+	print STDERR "ERROR: You must also specify a project!\n";
 	usage();
 }
 
@@ -126,28 +130,47 @@ if (not defined $BRANCH or $BRANCH eq "") {
 
 my $lockfile = File::Spec->catfile($ROOT, '.update-doc-repo.lock');
 
-### set up a lock - lasts until object looses scope
-if (my $lock = new File::NFSLock {
-	file      => $lockfile,
-	lock_type => LOCK_EX|LOCK_NB,
-	blocking_timeout   => 120,     # 2 min (120 sec)
-	stale_lock_timeout => 30 * 60, # 30 min
-}) {
-	# update the lock file
-	open(FILE, ">$lockfile") || die "Failed to lock $ROOT: $!\n";
-	print FILE localtime(time);
+### set up a lock - lasts until object loses scope
+my $lock;
+my $timeout = time() + (60 * 60); # 60 minutes
 
-##### MAIN DOCUMENT UPDATING, INSIDE LOCK #####
+LOCK: while(time() < $timeout) {
+	do_log("- waiting for lock...");
 
-print "- Creating document directory '$INSTALLDIR'... ";
+	$lock = new File::NFSLock {
+		file      => $lockfile,
+		lock_type => LOCK_EX|LOCK_NB,
+		blocking_timeout   => $timeout,
+		stale_lock_timeout => $timeout * 2,
+	};
+
+	# if we get a lock, update the lock file
+	if ($lock) {
+		open(FILE, ">$lockfile") || die "Failed to lock $ROOT: $!\n";
+		print FILE localtime(time());
+		$lock->uncache;
+		do_log("- got lock -- updating documentation");
+		last LOCK;
+	}
+
+	# otherwise keep waiting
+	sleep(5);
+}
+
+if (!$lock) {
+	die "Couldn't lock $lockfile [$File::NFSLock::errstr]";
+}
+
+##### START UPDATING, INSIDE LOCK #####
+
+do_log("- Creating document directory '$INSTALLDIR'");
 mkpath($INSTALLDIR);
-print "done\n";
 
 if (-f $DOCS) {
 	$DOCDIR = tempdir( CLEANUP => 1 );
-	print STDERR "! Created temporary directory $DOCDIR.\n" if ($DEBUG);
+	do_debug("! Created temporary directory $DOCDIR");
 	mkpath($DOCDIR);
-	print "- Unpacking '$DOCS' into temporary directory... ";
+	do_log("- Unpacking '$DOCS' into temporary directory");
 	chdir($DOCDIR);
 	if ($DOCS =~ /\.(jar|zip)$/) {
 		system('unzip', '-q', $DOCS) == 0 or die "Failed to unpack $DOCS into $DOCDIR: $!\n";
@@ -157,7 +180,6 @@ if (-f $DOCS) {
 		die "Unhandled file: $DOCS\n";
 	}
 	chdir($INSTALLDIR);
-	print "done\n";
 } else {
 	$DOCDIR = $DOCS;
 }
@@ -165,11 +187,11 @@ if (-f $DOCS) {
 if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DOCDIR, 'guide-admin')) {
 	process_opennms_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'xsds', 'event.xsd')) {
-	process_xsd_docdir(File::Spec->catdir($DOCDIR, 'xsds'));
+	process_basic_docdir(File::Spec->catdir($DOCDIR, 'xsds'), 'xsds');
 } elsif (-f File::Spec->catfile($DOCDIR, 'MINION.html')) {
 	process_minion_asciidoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'introduction.html') and -f File::Spec->catfile($DOCDIR, 'mapper.ocs.html')) {
-	process_pris_asciidoc_docdir($DOCDIR);
+	process_basic_docdir($DOCDIR, 'pris');
 } elsif (-f File::Spec->catdir($DOCDIR, 'docs', 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'docs', 'adminref.html')) {
 	process_docbook_docdir(File::Spec->catdir($DOCDIR, 'docs'));
 } elsif (-f File::Spec->catdir($DOCDIR, 'devguide.html') and -f File::Spec->catfile($DOCDIR, 'adminref.html')) {
@@ -179,7 +201,9 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 } elsif (-f File::Spec->catfile($DOCDIR, 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'allclasses-frame.html')) {
 	process_javadoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'index.html') and -f File::Spec->catfile($DOCDIR, 'globals.html')) {
-	process_opennms_js_docdir($DOCDIR);
+	process_basic_docdir($DOCDIR, 'opennms-js');
+} elsif (-d File::Spec->catfile($DOCDIR, '_package', 'helm')) {
+	process_basic_docdir(File::Spec->catfile($DOCDIR, '_package', 'helm'), 'helm');
 } else {
 	system('ls', '-la', $DOCDIR);
 	die "Unknown documentation type: $DOCS\n";
@@ -190,34 +214,47 @@ open (FILEOUT, '>', $versionfile) or die "Failed to open $versionfile for writin
 print FILEOUT $VERSION;
 close(FILEOUT) or die "Failed to close $versionfile: $!\n";
 
-@PROJECTS = get_projects($ROOT);
-update_indexes();
-create_release_symlinks();
-fix_permissions($INSTALLDIR);
+if (not $SKIP_INDEX) {
+	@PROJECTS = get_projects($ROOT);
+	update_indexes();
+	create_release_symlinks();
+	fix_permissions($INSTALLDIR);
+}
 
-##### FINISHED DOCUMENT UPDATING, FINISH LOCK #####
+END {
+	##### FINISHED UPDATING, CLOSE LOCK #####
 
-	unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
-	close(FILE) or die "Failed to close $lockfile: $!\n";
-	$lock->unlock();
+	if (defined $lockfile and defined $lock) {
+		do_log("- cleaning up lock...");
+		unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
+		close(FILE) or die "Failed to close $lockfile: $!\n";
+		$lock->unlock();
+	}
+}
 
-	exit 0;
-}else{
-	die "Couldn't lock $lockfile [$File::NFSLock::errstr]";
+exit 0;
+
+sub do_log {
+	print localtime(time()) . " " . join('', @_) . "\n";
+}
+
+sub do_debug {
+	return unless $DEBUG;
+	print localtime(time()) . " " . join('', @_) . "\n";
 }
 
 sub get_projects {
 	my $projectsroot = shift;
 
-	print STDERR "! Getting projects from $projectsroot:\n" if ($DEBUG);
+	do_debug("! Getting projects from $projectsroot:");
 	my $projects = {};
 	opendir(DIR, $projectsroot) or die "Failed to open $projectsroot for reading: $!\n";
 	while (my $entry = readdir(DIR)) {
-		my $path = File::Spec->catdir($projectsroot, $entry);
 		next if ($entry =~ /^\./);
 		next if ($entry =~ /^\@eaDir/);
 		next if ($entry =~ /^index\.html$/);
 		next if ($entry =~ /^(api|documentation|Minion-Events|OpenNMS|PRIS|SMNnepO)$/);
+		my $path = File::Spec->catdir($projectsroot, $entry);
 		next if (-l $path);
 		next unless (-d $path);
 
@@ -227,7 +264,7 @@ sub get_projects {
 			path        => $path,
 		};
 
-		print STDERR "! * Found: ", $project->{'description'}, "\n" if ($DEBUG);
+		do_debug("! * Found: ", $project->{'description'});
 		$projects->{$entry} = $project;
 	}
 	closedir(DIR) or die "Failed to close $projectsroot: $!\n";
@@ -256,25 +293,24 @@ sub get_releases {
 	my $project = shift;
 	my @releases;
 
-	print STDERR "! Getting release types for project " . $project->{'description'} . "\n" if ($DEBUG);
+	do_debug("! Getting release types for project " . $project->{'description'});
 	opendir(DIR, $project->{'path'}) or die "Failed to open " . $project->{'path'} . " for reading: $!\n";
 	for my $entry (sort readdir(DIR)) {
-		my $path = File::Spec->catdir($project->{'path'}, $entry);
 		next unless ($entry =~ /^(branches|releases)$/);
-		print STDERR "! * Found release type: $entry\n" if ($DEBUG);
-		print STDERR "! * Searching for releases:\n" if ($DEBUG);
+		do_debug("! * Found release type: $entry");
+		do_debug("! * Searching for releases:");
 
 		my $releasesdir = File::Spec->catdir($project->{'path'}, $entry);
 		opendir(RELEASESDIR, $releasesdir) or die "Failed to open $releasesdir for reading: $!\n";
 		for my $releaseentry (sort readdir(RELEASESDIR)) {
-			my $releasedir = File::Spec->catdir($releasesdir, $releaseentry);
 			next if ($releaseentry =~ /^\./);
 			next if ($releaseentry =~ /^\@eaDir/);
 			next if ($releaseentry =~ /^index\.html$/);
+			my $releasedir = File::Spec->catdir($releasesdir, $releaseentry);
 			next if (-l $releasedir);
 			next unless (-d $releasedir);
 
-			print STDERR "!   * Found: $releaseentry\n" if ($DEBUG);
+			do_debug("!   * Found: $releaseentry");
 
 			my $release = {
 				type    => $entry,
@@ -312,17 +348,17 @@ sub get_docs_for_release {
 	my $docs = {};
 
 	my $display = $release->{'type'} . '/' . $release->{'name'};
-	print STDERR "! Finding documentation in $display... " if ($DEBUG);
+	do_debug("! Finding documentation in $display...");
 	opendir(DIR, $release->{'path'}) or die "Failed to open " . $release->{'path'} . " for reading: $!\n";
 	for my $entry (sort readdir(DIR)) {
-		my $docpath = File::Spec->catdir($release->{'path'}, $entry);
 		next if ($entry =~ /^\./);
 		next if ($entry =~ /^\@eaDir/);
 		next if ($entry =~ /^index\.html$/);
+		my $docpath = File::Spec->catdir($release->{'path'}, $entry);
 		next if (-l $docpath);
 		next unless (-d $docpath);
 
-		print STDERR "$entry... " if ($DEBUG);
+		do_debug("  $entry...");
 
 		my $doc = {
 			name => $entry,
@@ -348,7 +384,6 @@ sub get_docs_for_release {
 
 		$docs->{$entry} = $doc;
 	}
-	print STDERR "done\n" if ($DEBUG);
 
 	return $docs;
 }
@@ -367,13 +402,17 @@ sub get_branches_for_project {
 }
 
 sub update_indexes {
+	do_log("- updating indexes...");
 
 	opendir(DIR, $ROOT) or die "Failed to open $ROOT for reading: $!\n";
 
 	my $roottext = "<h3>OpenNMS Projects</h3>\n<ul>\n";
 	for my $project (@PROJECTS) {
+
 		my $desc = $project->{'description'};
 		my $projectdir = $project->{'path'};
+
+		do_debug("- updating indexes for " . $desc);
 
 		$roottext .= "	<li class=\"project\">\n";
 		$roottext .= get_link($desc, File::Spec->catdir($projectdir, 'index.html'), $ROOT) . "\n";
@@ -424,7 +463,7 @@ sub create_release_symlinks {
 			if (-e $latestfile) {
 				unlink $latestfile;
 			}
-			print STDERR '! ln -sf ' . $release->{'name'} . ' ' . $latestfile . "\n" if ($DEBUG);
+			do_debug('! ln -sf ' . $release->{'name'} . ' ' . $latestfile);
 			symlink($release->{'name'}, $latestfile);
 		}
 	}
@@ -727,22 +766,10 @@ END
 	unlink($file . '.new') or die "Failed to remove $file.new: $!\n";
 }
 
-sub process_opennms_js_docdir {
+sub process_basic_docdir {
 	my $docdir = shift;
-
-	copy_doc_directory($docdir, 'opennms-js');
-}
-
-sub process_xsd_docdir {
-	my $docdir = shift;
-
-	copy_doc_directory($docdir, 'xsds');
-}
-
-sub process_pris_asciidoc_docdir {
-	my $docdir = shift;
-
-	copy_doc_directory($docdir, 'pris');
+	my $project = shift;
+	copy_doc_directory($docdir, $project);
 }
 
 sub process_opennms_asciidoc_docdir {
@@ -801,7 +828,7 @@ sub copy_doc_directory {
 
 	my $to = File::Spec->catdir($INSTALLDIR, $guide);
 
-	print "- Copying $guide to '$to'... ";
+	do_log("- Copying $guide to '$to'");
 	find({
 		wanted => sub {
 			return unless (-f $File::Find::name);
@@ -818,7 +845,7 @@ sub copy_doc_directory {
 				#system('chmod', '755', $dirname) == 0 or die "Failed to fix ownership on $dirname: $!\n";
 			}
 
-			#print "- copy: $fromfile -> $tofile\n";
+			do_debug("  - copy: $fromfile -> $tofile");
 			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
 			#system('chmod', '644', $tofile) == 0 or die "Failed to fix ownership on $tofile: $!\n";
 
@@ -830,7 +857,6 @@ sub copy_doc_directory {
 		follow => 1,
 		no_chdir => 1,
 	}, $from);
-	print "done\n";
 }
 
 sub process_docbook_docdir {
@@ -869,6 +895,7 @@ sub process_docbook_docdir {
 					#system('chmod', '755', $dirname) == 0 or die "Failed to fix ownership on $dirname: $!\n";
 				}
 
+				do_debug("  - copy: $fromfile -> $tofile");
 				copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
 				#system('chmod', '644', $tofile) == 0 or die "Failed to fix ownership on $tofile: $!\n";
 			},
@@ -886,7 +913,7 @@ sub process_docbook_docdir {
 		my ($name) = $file =~ /^(.*?)\.(pdf|html)$/;
 		next if ($done->{$name});
 
-		print "- Processing $name... ";
+		do_debug("- Processing $name");
 
 		my $mappedname = (exists $mapping->{$name}? $mapping->{$name} : $name);
 		my $to = File::Spec->catdir($INSTALLDIR, $mappedname);
@@ -903,6 +930,7 @@ sub process_docbook_docdir {
 				#system('chmod', '755', $dirname) == 0 or die "Failed to fix ownership on $dirname: $!\n";
 			}
 
+			do_debug("  - copy: $fromfile -> $tofile");
 			copy($fromfile, $tofile) or die "Failed to copy '$fromfile' to '$tofile': $!\n";
 			#system('chmod', '644', $tofile) or die "Failed to fix ownership on $tofile: $!\n";
 
@@ -913,7 +941,6 @@ sub process_docbook_docdir {
 			}
 		}
 
-		print "done\n";
 		$done->{$name}++;
 	}
 }
@@ -923,7 +950,7 @@ sub process_javadoc_docdir {
 	my $to   = File::Spec->catdir($INSTALLDIR, 'javadoc');
 	mkpath($to) unless (-d $to);
 
-	print "- Copying javadoc to '$to'... ";
+	do_log("- Copying javadoc to '$to'");
 	system('rsync', '-r', '--delete', $from.'/', $to.'/') == 0 or die "Failed to sync from $from to $to: $!\n";
 	print "done\n";
 }
@@ -936,12 +963,15 @@ sub fix_permissions {
 
 sub usage {
 	print STDERR <<END;
-usage: $0 [--root=/path/to/doc/root] [--branch=branch_name] <docs> <project> <version>
+usage: $0 [--debug] [--skip-index] [--root=/path/to/doc/root] [--branch=branch_name] <docs> <project> <version>
 
 OPTIONS:
 
-	--root          the base path for documentation
-	--branch        the branch name for documentation
+	--debug         enable debug logging
+        --skip-index    skip indexing, just copy the files
+
+	--root=/path    the base path for documentation
+	--branch=name   the branch name for documentation
 
 END
 

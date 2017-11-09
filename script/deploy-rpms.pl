@@ -30,6 +30,7 @@ use vars qw(
 	$BRANCH_NAME
 	$BRANCH_NAME_SCRUBBED
 	$RELEASE
+	$SUBDIR
 	$PASSWORD
 
 	$FILE_SOURCE_TARBALL
@@ -42,6 +43,7 @@ print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 $SCRIPTDIR   = abs_path(dirname($0));
 $YUMDIR      = "/var/www/sites/opennms.org/site/yum";
 $NOTAR       = 0;
+$SUBDIR      = "opennms";
 $BRANCH_NAME = $ENV{'bamboo_OPENNMS_BRANCH_NAME'} || $ENV{'bamboo_planRepository_branchName'};
 
 my $result = GetOptions(
@@ -49,6 +51,7 @@ my $result = GetOptions(
 	"n|notar"     => \$NOTAR,
 	"r|release=s" => \$RELEASE,
 	"b|branch=s"  => \$BRANCH_NAME,
+	"s|subdir=s"  => \$SUBDIR,
 );
 
 die "$YUMDIR does not exist!" unless (-d $YUMDIR);
@@ -156,7 +159,7 @@ for my $file (@FILES_RPMS) {
 #system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
 
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
-system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", "opennms", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", $SUBDIR, @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 
 print STDOUT "- updating repo RPMs for $BRANCH_NAME if necessary:\n";
 my $platforms = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));

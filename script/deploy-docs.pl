@@ -22,7 +22,7 @@ $DESTPATH = shift @ARGV || '/mnt/docs.opennms.org/OpenNMS';
 
 opendir(DIR, $dir) or die "Unable to read from $dir: $!\n";
 while (my $entry = readdir(DIR)) {
-	if ($entry =~ /^guide-all-.*\.tar\.(gz|bz2)$/) {
+	if ($entry =~ /^(guide-all-.*|opennms-.*-docs)\.tar\.(gz|bz2)$/) {
 		$TARBALL = abs_path(File::Spec->catfile($dir, $entry));
 		last;
 	}
@@ -31,7 +31,12 @@ closedir(DIR) or die "Unable to close $dir: $!\n";
 
 if (defined $TARBALL) {
 	print "* Found $TARBALL\n";
-	my ($v) = $TARBALL =~ /guide-all-([\d\.]+)/;
+	my $v;
+	if ($TARBALL =~ /guide-all/) {
+		($v) = $TARBALL =~ /guide-all-([\d\.]+)/;
+	} else {
+		($v) = $TARBALL =~ /opennms-([\d\.]+)-docs/;
+	}
 	my ($year, $version) = $v =~ /^(\d+)\.([\d\.]+)$/;
 	print "  - Year: $year\n";
 	print "  - Version: $version\n";
@@ -59,7 +64,7 @@ if (defined $TARBALL) {
 	}
 	copy_dirs(File::Spec->catdir($tempdir, 'releasenotes'), File::Spec->catdir($DESTPATH, 'releasenotes'), $year, $version, $dir);
 } else {
-	print "Unable to locate guide-all-*.tar.* in $dir\n";
+	print "Unable to locate docs tarball in $dir\n";
 	exit 1;
 }
 
