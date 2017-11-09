@@ -62,7 +62,7 @@ public class SetParentsAction implements Action {
 			throw new RepositoryException("Target repository " + m_target.getName() + " exists, but is invalid!");
 		}
 
-		LOG.info("set-Parents: {} on repository {}", String.join("/", m_parents.stream().map(parent -> {
+		LOG.info("set-parents: {} on repository {}", String.join("/", m_parents.stream().map(parent -> {
 			return parent.getName();
 		}).toArray(String[]::new)), m_target);
 	}
@@ -96,7 +96,7 @@ public class SetParentsAction implements Action {
 
 	@Override
 	public void printUsage(final PrintStream out) {
-		out.println("Usage: set-parent <target> <parent> [additional parents...]");
+		out.println("Usage: set-parents <target> <parent> [additional parents...]");
 		out.println("");
 	}
 
