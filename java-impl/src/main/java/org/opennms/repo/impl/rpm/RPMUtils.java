@@ -128,7 +128,7 @@ public abstract class RPMUtils {
 		final Collection<DeltaRPM> deltas = getDeltas(rpms);
 		LOG.debug("Deltas: {}", deltas);
 
-		Util.getStream(deltas).forEach(drpm -> {
+		deltas.stream().sorted().distinct().forEach(drpm -> {
 			final Path drpmPath = drpm.getFilePath(deltaPath);
 			boolean generate = false;
 

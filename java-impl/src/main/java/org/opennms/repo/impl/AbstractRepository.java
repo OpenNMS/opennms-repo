@@ -57,7 +57,7 @@ public abstract class AbstractRepository implements Repository {
 			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), null, null);
 			LOG.trace("parent is null, using metadata: {}", m_metadata);
 			if (m_metadata.hasParent()) {
-				m_parents = new TreeSet<>(Util.getStream(m_metadata.getParentMetadata()).map(parent -> {
+				m_parents = new TreeSet<>(m_metadata.getParentMetadata().stream().map(parent -> {
 					return parent.getRepositoryInstance();
 				}).collect(Collectors.toList()));
 				LOG.trace("parents={}", m_parents);
@@ -66,9 +66,9 @@ public abstract class AbstractRepository implements Repository {
 				m_parents = new TreeSet<>();
 			}
 		} else {
-			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), Util.getStream(parents).map(parent -> {
+			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), Util.newSortedSet(parents.stream().map(parent -> {
 				return parent.getRoot();
-			}).collect(Collectors.toList()), parents.iterator().next().getClass());
+			}).collect(Collectors.toList())), parents.iterator().next().getClass());
 			LOG.trace("parent is not null, using metadata: {}", m_metadata);
 			m_parents = parents;
 		}
@@ -138,7 +138,7 @@ public abstract class AbstractRepository implements Repository {
 	public <T extends Repository> void addPackages(final T repository, final Filter... filters) {
 		LOG.debug("addPackages({})", repository);
 		repository.refresh();
-		final Collection<RepositoryPackage> fromPackages = repository.getPackages().stream().filter(Util.combineFilters(filters)).collect(Collectors.toList());
+		final Collection<RepositoryPackage> fromPackages = repository.getPackages().stream().distinct().filter(Util.combineFilters(filters)).collect(Collectors.toList());
 
 		LOG.info("Adding new packages from {} to repository {}", repository, this);
 		addPackages(fromPackages.toArray(EMPTY_REPOSITORY_PACKAGE_ARRAY));
@@ -156,7 +156,7 @@ public abstract class AbstractRepository implements Repository {
 	@Override
 	public void normalize() throws RepositoryException {
 		refresh();
-		Util.getStream(getPackages()).forEach(pack -> {
+		getPackages().stream().sorted().distinct().forEach(pack -> {
 			final Path existingPath = pack.getPath().normalize().toAbsolutePath();
 			final Path idealPath = getIdealPath(pack);
 			if (!existingPath.equals(idealPath)) {
@@ -294,7 +294,7 @@ public abstract class AbstractRepository implements Repository {
 	public void refresh() {
 		LOG.info("Refreshing {}", this);
 		final Map<String, RepositoryPackage> existingPackagesByName = new HashMap<>();
-		Util.getStream(getPackages()).forEach(pack -> {
+		getPackages().stream().sorted().distinct().forEach(pack -> {
 			final String uniqueName = pack.getUniqueName();
 			final RepositoryPackage newestPackage = existingPackagesByName.get(uniqueName);
 			if (newestPackage == null || newestPackage.isLowerThan(pack)) {

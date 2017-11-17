@@ -29,7 +29,6 @@ import jnr.posix.POSIXFactory;
 
 public abstract class Util {
 	private static final Logger LOG = LoggerFactory.getLogger(Util.class);
-	private static volatile boolean m_enableParallel = true;
 
 	private Util() {
 	}
@@ -138,22 +137,6 @@ public abstract class Util {
 			sorted.add(item);
 		}
 		return sorted;
-	}
-
-	public static void enableParallel() {
-		m_enableParallel = true;
-	}
-
-	public static void disableParallel() {
-		m_enableParallel = false;
-	}
-
-	public static <T> Stream<T> getStream(Collection<T> coll) {
-		if (m_enableParallel) {
-			return coll.parallelStream();
-		} else {
-			return coll.stream();
-		}
 	}
 
 	public static String getCollationName(final String name) {

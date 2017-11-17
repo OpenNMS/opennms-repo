@@ -132,7 +132,7 @@ public abstract class RepoUtils {
 			if (parents == null || parents.size() == 0) {
 				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), null, null);
 			} else {
-				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), Util.getStream(parents).map(parent -> {
+				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), parents.stream().sorted().distinct().map(parent -> {
 					return parent.getRoot();
 				}).collect(Collectors.toList()), parents.first().getClass());
 			}

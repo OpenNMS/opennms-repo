@@ -22,7 +22,6 @@ import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
 import org.opennms.repo.api.RepositoryIndexException;
 import org.opennms.repo.api.RepositoryPackage;
-import org.opennms.repo.api.Util;
 import org.opennms.repo.impl.AbstractRepository;
 import org.opennms.repo.impl.RepoUtils;
 import org.slf4j.Logger;
@@ -76,7 +75,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 			}).collect(Collectors.toSet()));
 			subrepos.add(getRoot().resolve("common"));
 			LOG.debug("ensuring sub repositories exist: {}", subrepos);
-			Util.getStream(subrepos).forEach(subrepository -> {
+			subrepos.stream().distinct().forEach(subrepository -> {
 				ensureSubrepositoryExists(subrepository, gpginfo);
 			});
 		} catch (final IOException e) {
@@ -93,7 +92,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	public void normalize() throws RepositoryException {
 		final Collection<Repository> subRepositories = getSubRepositories(true);
 		LOG.debug("normalize(): subrepositories={}", subRepositories);
-		Util.getStream(subRepositories).forEach(repo -> {
+		subRepositories.stream().sorted().distinct().forEach(repo -> {
 			repo.normalize();
 		});
 	}
@@ -103,11 +102,11 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		LOG.debug("index");
 		ensureSubrepositoriesExist(gpginfo);
 		if (hasParent()) {
-			Util.getStream(getParents()).forEach(parent -> {
+			getParents().stream().sorted().distinct().forEach(parent -> {
 				parent.as(RPMMetaRepository.class).ensureSubrepositoriesExist(gpginfo);
 			});
 		}
-		final boolean changed = Util.getStream(getSubRepositories()).anyMatch(repo -> {
+		final boolean changed = getSubRepositories().stream().sorted().distinct().anyMatch(repo -> {
 			LOG.debug("indexing: {}", repo);
 			return repo.index(gpginfo);
 		});
@@ -121,7 +120,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 	public void refresh() {
 		final Collection<Repository> subrepos = getSubRepositories();
 		LOG.debug("Refreshing sub-repositories: {}", subrepos);
-		Util.getStream(subrepos).forEach(repo -> {
+		subrepos.stream().sorted().distinct().forEach(repo -> {
 			repo.refresh();
 		});
 	}
@@ -161,7 +160,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		if (getParents() == null || getParents().size() == 0) {
 			return Collections.emptySortedSet();
 		}
-		return new TreeSet<>(Util.getStream(getParents()).map(parent -> {
+		return new TreeSet<>(getParents().stream().map(parent -> {
 			return parent.as(RPMMetaRepository.class).getSubRepository(subRepoName, false);
 		}).collect(Collectors.toList()));
 	}
@@ -204,9 +203,9 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 					// fall through to recreating the sub-repository just
 					// to be sure we get a parent, if possible
 				}
-				final SortedSet<Repository> subParents = new TreeSet<>(Util.getStream(parents).map(parent -> {
-					return parent.as(RPMMetaRepository.class).getSubRepository(repoName, false);
-				}).collect(Collectors.toList()));
+				final SortedSet<Repository> subParents = new TreeSet<>(parents.stream().map(
+						parent -> parent.as(RPMMetaRepository.class).getSubRepository(repoName, false)
+						).collect(Collectors.toList()));
 				final RPMRepository repo = new RPMRepository(path, subParents);
 				m_subRepositories.put(repoName, repo);
 				return repo;

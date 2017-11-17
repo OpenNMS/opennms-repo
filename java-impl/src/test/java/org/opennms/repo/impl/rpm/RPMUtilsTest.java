@@ -91,7 +91,7 @@ public class RPMUtilsTest {
 		assertEquals(Architecture.I386, packages.get(8).getArchitecture());
 		assertEquals(Architecture.AMD64, packages.get(12).getArchitecture());
 
-		final List<Version> versions = Util.getStream(packages).map(pack -> {
+		final List<Version> versions = packages.stream().sorted().distinct().map(pack -> {
 			return pack.getVersion();
 		}).collect(Collectors.toList());
 
