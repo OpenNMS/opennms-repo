@@ -160,6 +160,9 @@ public abstract class Util {
 		if (name.startsWith("jdk1.")) {
 			// special case, "jdk1.8.0_60"
 			return "jdk";
+		} else if (name.startsWith("compat-")) {
+			final String[] split = name.split("-");
+			return split[0] + "-" + split[1];
 		} else {
 			final String[] split = name.split("-");
 			return split[0];

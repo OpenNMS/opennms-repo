@@ -10,5 +10,6 @@ public class UtilTest {
 		assertEquals("jdk", Util.getCollationName("jdk1.8.0_60"));
 		assertEquals("opennms", Util.getCollationName("opennms-core"));
 		assertEquals("jicmp6", Util.getCollationName("jicmp6"));
+		assertEquals("compat-librrd4", Util.getCollationName("compat-librrd4"));
 	}
 }
