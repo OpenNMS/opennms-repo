@@ -100,7 +100,7 @@ public class NormalizeActionTest {
 	}
 
 	@Test
-	public void normalizeWithEmptyDirectories() throws Exception {
+	public void testNormalizeWithEmptyDirectories() throws Exception {
 		final Path packageRoot = repositoryRoot.resolve("testNormalizeWithEmptyDirectoriesMetaRepository").normalize().toAbsolutePath();
 		final Path repodata = packageRoot.resolve("repodata");
 
