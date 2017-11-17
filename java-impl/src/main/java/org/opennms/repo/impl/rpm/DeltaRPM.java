@@ -4,7 +4,7 @@ import java.nio.file.Path;
 
 import org.opennms.repo.api.Util;
 
-public class DeltaRPM {
+public class DeltaRPM implements Comparable<DeltaRPM> {
 	private RPMPackage m_from;
 	private RPMPackage m_to;
 
@@ -49,5 +49,17 @@ public class DeltaRPM {
 	@Override
 	public String toString() {
 		return getFileName();
+	}
+
+	@Override
+	public int compareTo(final DeltaRPM o) {
+		int ret = this.getFromRPM().compareTo(o.getFromRPM());
+		if (ret == 0) {
+			ret = this.getToRPM().compareTo(o.getToRPM());
+		}
+		if (ret == 0) {
+			ret = this.toString().compareTo(o.toString());
+		}
+		return ret;
 	}
 }

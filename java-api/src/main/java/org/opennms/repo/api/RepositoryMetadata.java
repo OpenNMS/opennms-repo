@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RepositoryMetadata {
+public class RepositoryMetadata implements Comparable<RepositoryMetadata> {
 	public static final String METADATA_KEY_NAME = "name";
 	public static final String METADATA_KEY_TYPE = "type";
 	public static final String METADATA_KEY_PARENTS = "parents";
@@ -254,5 +254,17 @@ public class RepositoryMetadata {
 			throw new RepositoryException(e);
 		}
 		throw new IllegalArgumentException("Path " + path + " is not a repository!");
+	}
+
+	@Override
+	public int compareTo(final RepositoryMetadata o) {
+		int ret = this.getRoot().compareTo(o.getRoot());
+		if (ret == 0) {
+			ret = this.getName().compareTo(o.getName());
+		}
+		if (ret == 0) {
+			ret = Long.valueOf(o.getLastIndexed() - this.getLastIndexed()).intValue();
+		}
+		return ret;
 	}
 }
