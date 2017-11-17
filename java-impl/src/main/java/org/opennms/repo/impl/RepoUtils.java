@@ -51,8 +51,25 @@ public abstract class RepoUtils {
 		final Path fromPath = from.normalize().toAbsolutePath();
 		final Path toPath = to.normalize().toAbsolutePath();
 		LOG.info("Cloning from {} into {}", Util.relativize(fromPath), toPath);
+
 		try {
 			FileUtils.cleanDirectory(toPath.toFile());
+		} catch (final IOException e) {
+			LOG.error("Failed to clean up directory {}", toPath, e);
+			throw new RuntimeException(e);
+		}
+
+		try {
+			final RsyncCommand rsync = new RsyncCommand(from, to);
+			rsync.run();
+			return;
+		} catch (final Exception e) {
+			LOG.debug("`rsync` not found or rsync failed", e);
+		}
+
+		// if rsync fails
+		LOG.debug("Using NIO to clone {}", Util.relativize(fromPath));
+		try {
 			Files.walk(fromPath).filter(p -> {
 				return !RepoUtils.isMetadata(p);
 			}).forEach(p -> {
