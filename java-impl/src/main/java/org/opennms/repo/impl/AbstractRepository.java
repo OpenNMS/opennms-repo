@@ -195,7 +195,7 @@ public abstract class AbstractRepository implements Repository {
 						return name != "." && name != "..";
 					}
 				}).length == 0) {
-					LOG.debug("Directory {} is empty... removing.");
+					LOG.debug("Directory {} is empty... removing.", f);
 					f.delete();
 				}
 			}
@@ -214,8 +214,11 @@ public abstract class AbstractRepository implements Repository {
 				final Path targetPath = getIdealPath(pack);
 				final Path relativeTargetPath = Util.relativize(targetPath);
 				final RepositoryPackage existingPackage = getPackage(pack.getUniqueName());
-				if (existingPackage == null || existingPackage.isLowerThan(pack)) {
-					LOG.debug("Copying {} to {}", pack, relativeTargetPath);
+				final Path packPath = pack.getPath().normalize().toAbsolutePath();
+				if (packPath.equals(targetPath)) {
+					LOG.debug("addPackages: Source and target are the same ({})", packPath);
+				} else if (existingPackage == null || existingPackage.isLowerThan(pack)) {
+					LOG.debug("addPackages: Copying {} to {}", pack, relativeTargetPath);
 					final Path parent = targetPath.getParent();
 					if (!parent.toFile().exists()) {
 						Files.createDirectories(parent);
@@ -225,7 +228,7 @@ public abstract class AbstractRepository implements Repository {
 					updatePackage(pack);
 					m_metadata.resetLastIndexed();
 				} else {
-					LOG.debug("NOT copying {} to {} ({} is newer)", pack, relativeTargetPath, existingPackage);
+					LOG.debug("addPackages: NOT copying {} to {} ({} is newer)", pack, relativeTargetPath, existingPackage);
 				}
 
 				if (existingPackage != null) {
