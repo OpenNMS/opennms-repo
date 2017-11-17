@@ -10,7 +10,7 @@ GPG_PASSWORD="rpm-test"
 REPOTOOL="java -jar $(ls -1 java-impl/target/org.opennms.repo.impl-*-jar-with-dependencies.jar | sort -u | tail -n 1) -k ${GPG_ID} -p ${GPG_PASSWORD}"
 REPOTOOL="${REPOTOOL} --debug"
 
-RSYNC="rsync -avr --delete --progress"
+RSYNC="rsync -avr --delete"
 FROM="/mnt/repo-yum/stable"
 TO="/tmp/sample-repo"
 POOL="${TO}/pool"
