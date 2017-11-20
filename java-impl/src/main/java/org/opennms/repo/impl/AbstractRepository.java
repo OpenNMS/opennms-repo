@@ -56,18 +56,18 @@ public abstract class AbstractRepository implements Repository {
 			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), null, null);
 			LOG.trace("parent is null, using metadata: {}", m_metadata);
 			if (m_metadata.hasParent()) {
-				m_parents = new TreeSet<>(m_metadata.getParentMetadata().stream().map(parent -> {
+				m_parents = new TreeSet<>(m_metadata.getParentMetadata().parallelStream().map(parent -> {
 					return parent.getRepositoryInstance();
-				}).collect(Collectors.toList()));
+				}).sorted().distinct().collect(Collectors.toList()));
 				LOG.trace("parents={}", m_parents);
 			} else {
 				LOG.trace("no parent from metadata");
 				m_parents = new TreeSet<>();
 			}
 		} else {
-			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), Util.newSortedSet(parents.stream().map(parent -> {
+			m_metadata = RepositoryMetadata.getInstance(path, this.getClass(), Util.newSortedSet(parents.parallelStream().map(parent -> {
 				return parent.getRoot();
-			}).collect(Collectors.toList())), parents.iterator().next().getClass());
+			}).distinct().collect(Collectors.toList())), parents.iterator().next().getClass());
 			LOG.trace("parent is not null, using metadata: {}", m_metadata);
 			m_parents = parents;
 		}
@@ -137,7 +137,7 @@ public abstract class AbstractRepository implements Repository {
 	public <T extends Repository> void addPackages(final T repository, final Filter... filters) {
 		LOG.debug("addPackages({})", repository);
 		repository.refresh();
-		final Collection<RepositoryPackage> fromPackages = repository.getPackages().stream().distinct().filter(Util.combineFilters(filters)).collect(Collectors.toList());
+		final Collection<RepositoryPackage> fromPackages = repository.getPackages().parallelStream().distinct().filter(Util.combineFilters(filters)).collect(Collectors.toList());
 
 		LOG.info("Adding new packages from {} to repository {}", repository, this);
 		addPackages(fromPackages.toArray(EMPTY_REPOSITORY_PACKAGE_ARRAY));

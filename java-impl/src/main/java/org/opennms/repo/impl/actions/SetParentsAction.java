@@ -33,7 +33,7 @@ public class SetParentsAction implements Action {
 		}
 
 		final Path target = Paths.get(arguments.get(0));
-		m_parents = arguments.subList(1, arguments.size()).stream().map(pathString -> {
+		m_parents = arguments.subList(1, arguments.size()).parallelStream().map(pathString -> {
 			final Path path = Paths.get(pathString).normalize().toAbsolutePath();
 			if (!path.toFile().exists() || !path.toFile().isDirectory()) {
 				throw new RepositoryException("Parent repository path " + Util.relativize(path) + " does not exist or is invalid!");
@@ -46,7 +46,7 @@ public class SetParentsAction implements Action {
 			} catch (final Exception e) {
 				throw new RepositoryException("parent repository path " + Util.relativize(path) + " exists, but is invalid!", e);
 			}
-		}).collect(Collectors.toList());
+		}).sorted().distinct().collect(Collectors.toList());
 
 		if (!target.toFile().exists() || !target.toFile().isDirectory()) {
 			throw new RepositoryException("Target repository path " + Util.relativize(target) + " does not exist or is invalid!");

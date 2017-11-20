@@ -92,9 +92,9 @@ public class RepositoryMetadata implements Comparable<RepositoryMetadata> {
 
 			// update parent info
 			if (m_parents.size() > 0) {
-				self.put(METADATA_KEY_PARENTS, String.join(",", m_parents.stream().sorted().distinct().map(parent -> {
+				self.put(METADATA_KEY_PARENTS, String.join(",", m_parents.parallelStream().map(parent -> {
 					return parent.getRoot().normalize().toAbsolutePath().toString();
-				}).collect(Collectors.toList())));
+				}).sorted().distinct().collect(Collectors.toList())));
 			}
 
 			boolean dirty = false;
@@ -128,9 +128,9 @@ public class RepositoryMetadata implements Comparable<RepositoryMetadata> {
 			if (hasParent()) {
 				LOG.debug("has parent {}", this);
 				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class, SortedSet.class);
-				return constructor.newInstance(getRoot(), Util.newSortedSet(m_parents.stream().map(repoMetadata -> {
+				return constructor.newInstance(getRoot(), Util.newSortedSet(m_parents.parallelStream().map(repoMetadata -> {
 					return repoMetadata.getRepositoryInstance();
-				}).collect(Collectors.toList())));
+				}).sorted().distinct().collect(Collectors.toList())));
 			} else {
 				LOG.debug("no parent {}", this);
 				final Constructor<? extends Repository> constructor = m_type.getConstructor(Path.class);

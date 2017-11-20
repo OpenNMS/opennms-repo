@@ -162,7 +162,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 		}
 		return new TreeSet<>(getParents().stream().map(parent -> {
 			return parent.as(RPMMetaRepository.class).getSubRepository(subRepoName, false);
-		}).collect(Collectors.toList()));
+		}).sorted().distinct().collect(Collectors.toList()));
 	}
 
 	@Override
@@ -205,7 +205,7 @@ public class RPMMetaRepository extends AbstractRepository implements MetaReposit
 				}
 				final SortedSet<Repository> subParents = new TreeSet<>(parents.stream().map(
 						parent -> parent.as(RPMMetaRepository.class).getSubRepository(repoName, false)
-						).collect(Collectors.toList()));
+						).sorted().distinct().collect(Collectors.toList()));
 				final RPMRepository repo = new RPMRepository(path, subParents);
 				m_subRepositories.put(repoName, repo);
 				return repo;

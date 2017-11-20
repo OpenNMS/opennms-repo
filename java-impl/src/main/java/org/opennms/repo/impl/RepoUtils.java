@@ -179,9 +179,9 @@ public abstract class RepoUtils {
 			if (parents == null || parents.size() == 0) {
 				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), null, null);
 			} else {
-				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), parents.stream().sorted().distinct().map(parent -> {
+				newMetadata = RepositoryMetadata.getInstance(tempPath, repo.getClass(), parents.parallelStream().sorted().distinct().map(parent -> {
 					return parent.getRoot();
-				}).collect(Collectors.toList()), parents.first().getClass());
+				}).sorted().distinct().collect(Collectors.toList()), parents.first().getClass());
 			}
 			LOG.debug("createTempRepository: new metadata={}", newMetadata);
 			newMetadata.store();
