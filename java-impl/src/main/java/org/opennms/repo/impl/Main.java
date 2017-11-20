@@ -36,6 +36,9 @@ public class Main {
 	@Option(name = "--debug", aliases = { "-d" }, required = false, usage = "enable debug logging")
 	public boolean m_debug = false;
 
+	@Option(name = "--trace", aliases = { "-t" }, required = false, usage = "enable trace logging")
+	public boolean m_trace = false;
+
 	@Option(name = "--help", aliases = { "-h" }, required = false, usage = "this help", help = true, hidden = true)
 	public boolean m_help = false;
 
@@ -84,6 +87,10 @@ public class Main {
 		if (m_debug) {
 			LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
 			lc.getLogger("root").setLevel(Level.DEBUG);
+		}
+		if (m_trace) {
+			LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+			lc.getLogger("root").setLevel(Level.TRACE);
 		}
 
 		if (m_keyRing != null) {

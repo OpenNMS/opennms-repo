@@ -49,7 +49,7 @@ public abstract class RPMUtils {
 		final String archString = entries[4];
 		final String sourcePackageString = entries[5];
 
-		LOG.debug("Parsed RPM {}: {}", Util.relativize(rpmPath), Arrays.asList(entries));
+		LOG.trace("Parsed RPM {}: {}", Util.relativize(rpmPath), Arrays.asList(entries));
 		final Integer epoch = "(none)".equals(epochString) ? 0 : Integer.valueOf(epochString);
 		Architecture arch = null;
 		if ("x86_64".equals(archString)) {
