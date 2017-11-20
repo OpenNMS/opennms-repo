@@ -20,7 +20,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
 import org.opennms.repo.api.Filter;
 import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
@@ -223,8 +222,8 @@ public abstract class AbstractRepository implements Repository {
 					if (!parent.toFile().exists()) {
 						Files.createDirectories(parent);
 					}
-					FileUtils.copyFile(pack.getFile(), targetPath.toFile());
-					FileUtils.touch(targetPath.toFile());
+					RepoUtils.copyFile(pack.getPath(), targetPath);
+					RepoUtils.touch(targetPath);
 					updatePackage(pack);
 					m_metadata.resetLastIndexed();
 				} else {

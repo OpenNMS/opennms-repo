@@ -92,31 +92,78 @@ public abstract class RepoUtils {
 		}
 	}
 
-	public static void atomicReplace(final Path source, final Path possibleTarget) {
-		LOG.debug("Replacing path {} with path {} atomically", possibleTarget, source);
-		Path deleteMe = source.getParent().resolve(".delete-me-repo-" + UUID.randomUUID());
+	public static void rename(final Path from, final Path to) {
+		LOG.debug("Replacing path {} with path {} atomically", to, from);
+		final Path deleteMe = from.getParent().resolve(".delete-me-repo-" + UUID.randomUUID());
 
-		final Path target;
-		if (Files.isSymbolicLink(possibleTarget)) {
+		Path target = to;
+		while (Files.isSymbolicLink(target)) {
 			try {
-				target = Files.readSymbolicLink(possibleTarget);
+				target = Files.readSymbolicLink(target);
 			} catch (final IOException e) {
-				throw new RepositoryException("Failed to determine if " + possibleTarget + " is a symbolic link.", e);
+				throw new RepositoryException("Unable to resolve symlink " + target, e);
 			}
-		} else {
-			target = possibleTarget;
 		}
 
 		try {
 			if (target.toFile().exists()) {
 				FileUtils.moveDirectory(target.toFile(), deleteMe.toFile());
 			}
-			FileUtils.moveDirectory(source.toFile(), target.toFile());
+			FileUtils.moveDirectory(from.toFile(), target.toFile());
 		} catch (final IOException e) {
-			LOG.error("Failed to replace repository {} with {}", source, target, e);
-			throw new RepositoryException("Failed to replace repository " + source + " with " + target, e);
+			LOG.error("Failed to replace repository {} with {}", from, target, e);
+			throw new RepositoryException("Failed to replace repository " + from + " with " + target, e);
 		} finally {
 			FileUtils.deleteQuietly(deleteMe.toFile());
+		}
+	}
+
+	public static void delete(final Path file) throws RepositoryException {
+		try {
+			FileUtils.forceDelete(file.toFile());
+		} catch (final IOException e) {
+			LOG.error("Failed to forcibly delete file {}", file, e);
+			throw new RepositoryException("Failed to delete file " + file, e);
+		}
+	}
+
+	public static void copyFile(final Path from, final Path to) throws RepositoryException {
+		if (from.toFile().isDirectory()) {
+			throw new IllegalArgumentException("Util.copyFile() 'from' should be a file, not a directory!");
+		}
+		Path source = from.normalize().toAbsolutePath();
+		Path target = to.normalize().toAbsolutePath();
+		String filename = to.getFileName().toString();
+		if (to.toFile().isDirectory()) {
+			filename = from.getFileName().toString();
+			target = target.resolve(filename);
+		}
+		Path temp = null;
+		try {
+			Files.createDirectories(target.getParent());
+			temp = Files.createTempFile(target.getParent(), "repo", ".tmp");
+			temp.toFile().delete();
+			while (Files.isSymbolicLink(source)) {
+				source = Files.readSymbolicLink(source);
+			}
+			Files.createLink(temp, source);
+			RepoUtils.rename(from, target);
+		} catch (final IOException e) {
+			LOG.debug("Failed to copy {} to {}", from, to, e);
+			throw new RepositoryException("Failed to copy " + from + " to " + to, e);
+		} finally {
+			if (temp != null) {
+				temp.toFile().delete();
+			}
+		}
+	}
+
+	public static void touch(final Path file) throws RepositoryException {
+		try {
+			FileUtils.touch(file.toFile());
+		} catch (final IOException e) {
+			LOG.debug("Failed to touch {}", file, e);
+			throw new RepositoryException("Failed to touch file " + file, e);
 		}
 	}
 

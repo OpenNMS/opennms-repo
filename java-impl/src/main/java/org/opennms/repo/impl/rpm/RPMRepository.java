@@ -1,6 +1,5 @@
 package org.opennms.repo.impl.rpm;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,7 +14,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
 import org.opennms.repo.api.GPGInfo;
 import org.opennms.repo.api.Repository;
 import org.opennms.repo.api.RepositoryException;
@@ -161,21 +159,11 @@ public class RPMRepository extends AbstractRepository {
 				throw new RepositoryException(e);
 			}
 
-			try {
-				FileUtils.touch(new File(ascPath));
-				FileUtils.touch(new File(keyPath));
-			} catch (final IOException e) {
-				LOG.debug("Failed to touch {} and {}", ascPath, keyPath, e);
-				throw new RepositoryException(e);
-			}
+			RepoUtils.touch(Paths.get(ascPath));
+			RepoUtils.touch(Paths.get(keyPath));
 		}
 
-		try {
-			FileUtils.touch(repomdfile.toFile());
-		} catch (final IOException e) {
-			LOG.debug("Failed to touch {}", repomdfile, e);
-			throw new RepositoryException(e);
-		}
+		RepoUtils.touch(repomdfile);
 		updateLastIndexed();
 		updateMetadata();
 		return true;
@@ -221,11 +209,7 @@ public class RPMRepository extends AbstractRepository {
 
 					if (latest == null || !latest.getVersion().equals(to)) {
 						LOG.debug("Removing stale DRPM: {}", drpmName);
-						try {
-							FileUtils.forceDelete(path.toFile());
-						} catch (final IOException e) {
-							LOG.warn("Failed to delete {}", path, e);
-						}
+						RepoUtils.delete(path);
 					} else {
 						LOG.debug("Keeping DRPM: {}", drpmName);
 					}

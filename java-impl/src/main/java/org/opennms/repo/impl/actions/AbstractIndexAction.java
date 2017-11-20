@@ -81,7 +81,7 @@ public abstract class AbstractIndexAction implements Action {
 		} else {
 			changed = cloned.index();
 		}
-		RepoUtils.atomicReplace(cloned.getRoot(), repo.getRoot());
+		RepoUtils.rename(cloned.getRoot(), repo.getRoot());
 		RepositoryMetadata.getInstance(repo.getRoot()).getRepositoryInstance().refresh();
 
 		if (changed) {

@@ -44,7 +44,7 @@ public class CloneAction implements Action {
 	@Override
 	public void run() {
 		final Repository tempRepo = RepoUtils.createTempRepository(m_source.getRepositoryInstance());
-		RepoUtils.atomicReplace(tempRepo.getRoot(), m_target);
+		RepoUtils.rename(tempRepo.getRoot(), m_target);
 	}
 
 	@Override

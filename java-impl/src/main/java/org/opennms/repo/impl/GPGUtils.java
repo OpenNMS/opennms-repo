@@ -19,7 +19,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -170,7 +169,7 @@ public abstract class GPGUtils {
 		LOG.info("Detach-signing {} with key {} into {}", Util.relativize(inputFile), gpginfo.getKey(), Util.relativize(outputFile));
 
 		Files.createDirectories(outputFile.getParent());
-		FileUtils.touch(outputFile.toFile());
+		RepoUtils.touch(outputFile);
 
 		try (final FileInputStream sFis = new FileInputStream(inputFile.toFile());
 				final BufferedInputStream sBis = new BufferedInputStream(sFis);
