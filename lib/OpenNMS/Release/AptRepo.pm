@@ -42,7 +42,7 @@ Repositories are expected to be in the form:
 
 our $VERSION = 2.9.13;
 our $APT_FTPARCHIVE = undef;
-our @ARCHITECTURES = qw(amd64 i386);
+our @ARCHITECTURES = qw(amd64 i386 armhf);
 
 =head1 CONSTRUCTOR
 
@@ -277,8 +277,6 @@ sub index($) {
 		if (not -d $archdir) {
 			if (-e $archdir) {
 				croak "Whoa, $archdir isn't a directory?! " . `ls -la $archdir`;
-			} else {
-				mkpath($archdir);
 			}
 		}
 	}
@@ -370,9 +368,18 @@ sub create_indexfile() {
 
 	open ($outputfile, '>' . $filename) or croak "Unable to write to $filename: $!";
 
+	my @found_arches = qw();
+
+	for my $arch (@ARCHITECTURES) {
+		my $archpath = File::Spec->catdir($self->path, 'main', 'binary-' . $arch);
+		if (-d $archpath) {
+			push(@found_arches, $arch);
+		}
+	}
+
 	my $archivedir = $self->base;
 	my $cachedir   = $self->cachedir;
-	my $arches     = join(' ', @ARCHITECTURES);
+	my $arches     = join(' ', @found_arches);
 	my $release    = $self->release;
 
 	my $codename   = $self->release;
