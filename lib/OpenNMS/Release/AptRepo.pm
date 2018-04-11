@@ -269,7 +269,7 @@ sub index($) {
 	my $options = shift;
 
 	$self->_delete_dead_symlinks();
-	#$self->_symlink_packages();
+	$self->_symlink_packages();
 
 	mkpath($self->cachedir);
 	for my $arch (@ARCHITECTURES) {
