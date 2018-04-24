@@ -379,7 +379,7 @@ sub create_indexfile() {
 
 	my $archivedir = $self->base;
 	my $cachedir   = $self->cachedir;
-	my $arches     = join(' ', 'all', @found_arches);
+	my $arches     = join(' ', @found_arches);
 	my $release    = $self->release;
 
 	my $codename   = $self->release;
