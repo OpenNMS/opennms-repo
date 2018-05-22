@@ -79,6 +79,7 @@ exec_quiet() {
 
 git_clean() {
 	exec_quiet git clean -fdx || die "failed to run 'git clean' on repository"
+	exec_quiet git prune || die "failed to run 'git prune' on repository"
 	exec_quiet git reset --hard HEAD || :
 }
 
