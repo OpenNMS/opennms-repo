@@ -248,6 +248,7 @@ pushd_q "${GIT_DIR}"
 				"${ARTIFACT_DIR}/standalone/remote-poller-client-${CURRENT_VERSION}.tar.gz" || die "failed to move the remote poller tarball to the artifacts directory"
 		popd_q
 
+		git_clean
 		log "deploying to maven repository: ${DEPLOY_DIR}"
 		exec_quiet "${DEPLOY[@]}" deploy || die "failed to run compile.pl deploy on the source tree"
 		for dir in opennms-assemblies opennms-tools; do
