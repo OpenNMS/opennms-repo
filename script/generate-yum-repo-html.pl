@@ -141,6 +141,7 @@ $index_text .= slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.post')
 open (FILEOUT, ">$base/index.html") or die "unable to write to $base/index.html: $!";
 print FILEOUT $index_text;
 close (FILEOUT);
+chmod(0644, "$base/index.html");
 
 END {
 	##### FINISHED UPDATING, CLOSE LOCK #####
