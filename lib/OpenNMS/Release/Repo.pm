@@ -167,18 +167,24 @@ sub replace {
 
 	my $self_path   = $self->path;
 	my $target_path = $target_repo->path;
+	my $backup_path     = $target_path . '.bak';
 
 	croak "paths match -- this should not be" if ($self_path eq $target_path);
 
+	if (-e $backup_path) {
+		carp "stale backup path ($backup_path) found, deleting";
+		rmtree($backup_path);
+	}
+
 	if (-e $target_path) {
-		File::Copy::move($target_path, $target_path . '.bak') or croak "failed to rename $target_path to $target_path.bak: $!";
+		File::Copy::move($target_path, $backup_path) or croak "failed to rename $target_path to $backup_path: $!";
 	}
 
 	mkpath($target_path);
 	File::Copy::move($self_path, $target_path) or croak "failed to rename $self_path to $target_path: $!";
 
-	if (-e $target_path . '.bak') {
-		rmtree($target_path . '.bak') or croak "failed to remove old $target_path.bak directory: $!";
+	if (-e $backup_path) {
+		rmtree($backup_path) or croak "failed to remove old $backup_path directory: $!";
 	}
 
 	$self->delete;
