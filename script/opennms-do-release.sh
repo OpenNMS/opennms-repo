@@ -232,12 +232,14 @@ pushd_q "${GIT_DIR}"
 	fi
 	exec_quiet mkdir -p "${ARTIFACT_DIR}/rpm"
 	exec_quiet mv target/rpm/RPMS/noarch/*.rpm "${ARTIFACT_DIR}/rpm/"
+	git_clean
 
 	if [ "$TYPE" = "horizon" ]; then
 		log "building Debian packages"
 		exec_quiet ./makedeb.sh -a -n -s "${SIGNINGPASS}" -M 1
 		exec_quiet mkdir -p "${ARTIFACT_DIR}/deb"
 		exec_quiet mv ../*"${CURRENT_VERSION}"*.{deb,dsc,changes,tar.gz} "${ARTIFACT_DIR}/deb/"
+		git_clean
 
 		log "building remote poller"
 		pushd_q opennms-assemblies/remote-poller-onejar
@@ -248,15 +250,17 @@ pushd_q "${GIT_DIR}"
 			exec_quiet mv "target/org.opennms.assemblies.remote-poller-standalone-${CURRENT_VERSION}-remote-poller.tar.gz" \
 				"${ARTIFACT_DIR}/standalone/remote-poller-client-${CURRENT_VERSION}.tar.gz" || die "failed to move the remote poller tarball to the artifacts directory"
 		popd_q
-
 		git_clean
+
 		log "deploying to maven repository: ${DEPLOY_DIR}"
-		exec_quiet "${DEPLOY[@]}" deploy || die "failed to run compile.pl deploy on the source tree"
+		exec_quiet "${DEPLOY[@]}" install deploy || die "failed to run compile.pl deploy on the source tree"
 		for dir in opennms-assemblies opennms-tools; do
 			pushd_q "$dir"
 				exec_quiet "${DEPLOY[@]}" -N deploy || die "failed to run compile.pl -N deploy in $dir"
 			popd_q
 		done
+
+		git_clean
 	else
 		log "skipping deployment for Meridian"
 	fi
