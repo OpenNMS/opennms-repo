@@ -253,7 +253,7 @@ pushd_q "${GIT_DIR}"
 		git_clean
 
 		log "deploying to maven repository: ${DEPLOY_DIR}"
-		exec_quiet "${DEPLOY[@]}" install deploy || die "failed to run compile.pl deploy on the source tree"
+		exec_quiet "${DEPLOY[@]}" deploy || die "failed to run compile.pl deploy on the source tree"
 		for dir in opennms-assemblies opennms-tools; do
 			pushd_q "$dir"
 				exec_quiet "${DEPLOY[@]}" -N deploy || die "failed to run compile.pl -N deploy in $dir"
