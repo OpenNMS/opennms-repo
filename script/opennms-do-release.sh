@@ -135,7 +135,7 @@ fi
 
 pushd_q "${GIT_DIR}"
 	log "fetching $TYPE git repository"
-	exec_quiet git fetch "$TYPE" || die "failed to refresh/fetch $TYPE repository"
+	exec_quiet git fetch --prune --tags "$TYPE" || die "failed to refresh/fetch $TYPE repository"
 
 	log "cleaning up git repository"
 	git_clean
