@@ -139,6 +139,7 @@ pushd_q "${GIT_DIR}"
 
 	log "cleaning up git repository"
 	git_clean
+	exec_quiet git gc --aggressive || :
 
 	REMOTE_EXISTS="$(git branch -a | grep -c -E "remotes/${TYPE}/${MASTER_BRANCH}\$" || :)"
 	if [ "$REMOTE_EXISTS" -eq 1 ]; then
