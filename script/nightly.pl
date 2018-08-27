@@ -72,6 +72,10 @@ usage() if ($HELP);
 $ROOTDIR   = abs_path($ROOTDIR);
 $SOURCEDIR = abs_path($SOURCEDIR);
 
+sub using_agent {
+	return system('/bin/bash', '-c', 'echo test | /usr/bin/gpg2 --sign --batch --no-tty --pinentry-mode error --local-user "opennms@opennms.org" -o /dev/null') == 0;
+}
+
 sub not_empty {
 	my $env_var = shift;
 
@@ -184,9 +188,10 @@ sub compile_base_poms {
 }
 
 sub make_rpm {
+	my $pass = using_agent() ? '' : $PASSWORD;
 	my @command = (
 		File::Spec->catfile($SOURCEDIR, 'makerpm.sh'),
-		'-s', $PASSWORD,
+		'-s', $pass,
 		'-m', $TIMESTAMP,
 		'-u', $MICRO_REVISION,
 	);
@@ -205,9 +210,10 @@ sub make_rpm {
 }
 
 sub make_debian {
+	my $pass = using_agent() ? '' : $PASSWORD;
 	my @command = (
 		File::Spec->catfile($SOURCEDIR, 'makedeb.sh'),
-		'-s', $PASSWORD,
+		'-s', $pass,
 		'-m', $TIMESTAMP,
 		'-u', $MICRO_REVISION,
 	);
