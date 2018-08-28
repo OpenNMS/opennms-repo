@@ -14,7 +14,7 @@ use File::Slurp;
 use File::Spec;
 use version;
 
-use OpenNMS::Util 2.0.0;
+use OpenNMS::Util 2.7.0;
 use OpenNMS::Release;
 use OpenNMS::Release::YumRepo 2.0.0;
 

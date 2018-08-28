@@ -13,7 +13,7 @@ use File::Spec;
 use Getopt::Long qw(:config gnu_getopt);
 use version;
 
-use OpenNMS::Util;
+use OpenNMS::Util 2.7.0;
 use OpenNMS::Release;
 use OpenNMS::Release::RPMPackage 2.6.7;
 

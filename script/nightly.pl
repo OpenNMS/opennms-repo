@@ -16,6 +16,7 @@ use Git;
 use IO::Handle;
 use version;
 
+use OpenNMS::Util 2.7.0;
 use OpenNMS::Release 2.9.4;
 
 use vars qw(
