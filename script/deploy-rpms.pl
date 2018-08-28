@@ -155,7 +155,7 @@ for my $file (@FILES_RPMS) {
 	print "done\n";
 }
 
-my $using_agent = system('/bin/bash', '-c', 'echo test | /usr/bin/gpg2 --sign --batch --no-tty --pinentry-mode error --local-user "opennms@opennms.org" -o /dev/null') == 0;
+my $using_agent = OpenNMS::Util->get_gpg_version() >= 2;
 
 #print STDOUT "- uploading $FILE_SOURCE_TARBALL to the $BRANCH_NAME directory on SourceForge:\n";
 #system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";

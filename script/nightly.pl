@@ -73,7 +73,7 @@ $ROOTDIR   = abs_path($ROOTDIR);
 $SOURCEDIR = abs_path($SOURCEDIR);
 
 sub using_agent {
-	return system('/bin/bash', '-c', 'echo test | /usr/bin/gpg2 --sign --batch --no-tty --pinentry-mode error --local-user "opennms@opennms.org" -o /dev/null') == 0;
+	return OpenNMS::Util->get_gpg_version() >= 2;
 }
 
 sub not_empty {

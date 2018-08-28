@@ -33,7 +33,7 @@ my $index_text = slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.pre'
 my $release_descriptions  = read_properties(dist_file('OpenNMS-Release', 'release.properties'));
 my $platform_descriptions = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
 
-my $using_agent = system('/bin/bash', '-c', 'echo test | /usr/bin/gpg2 --sign --batch --no-tty --pinentry-mode error --local-user "opennms@opennms.org" -o /dev/null') == 0;
+my $using_agent = OpenNMS::Util->get_gpg_version() >= 2;
 
 my @display_order  = split(/\s*,\s*/, $release_descriptions->{order_display});
 my @platform_order = split(/\s*,\s*/, $platform_descriptions->{order_display});

@@ -122,6 +122,24 @@ sub spit {
 	return close($output);
 }
 
+=item * get_gpg_version()
+
+Return the GPG major version (1 or 2).
+
+=cut
+
+sub get_gpg_version {
+	my $ret = 0;
+	my $input = IO::Handle->new();
+	open ($output, '-|', 'gpg --version') or die "unable to run gpg --version: $!";
+	chomp(my $line = <$output>);
+	if ($line =~ /^gpg\s*.*?(\d+)\.[\d\.]+\s*$/) {
+		$ret = $1;
+	}
+	close($output);
+	return $ret;
+}
+
 =item * gpg_write_key($id, $password, $file)
 
 Given a GPG ID and password, and an output file, writes
