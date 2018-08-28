@@ -29,6 +29,7 @@ our @EXPORT = qw(
 	read_properties
 	slurp
 	spit
+	get_gpg_version
 	gpg_write_key
 	gpg_detach_sign_file
 );
@@ -131,12 +132,12 @@ Return the GPG major version (1 or 2).
 sub get_gpg_version {
 	my $ret = 0;
 	my $input = IO::Handle->new();
-	open ($output, '-|', 'gpg --version') or die "unable to run gpg --version: $!";
-	chomp(my $line = <$output>);
+	open ($input, '-|', 'gpg --version') or die "unable to run gpg --version: $!";
+	chomp(my $line = <$input>);
 	if ($line =~ /^gpg\s*.*?(\d+)\.[\d\.]+\s*$/) {
 		$ret = $1;
 	}
-	close($output);
+	close($input);
 	return $ret;
 }
 
