@@ -62,6 +62,7 @@ $DESCRIPTIONS = {
 	'jmx',              => 'JMX',
 	'jrrd'              => 'JRRD',
 	'jrrd2'             => 'JRRD2',
+	'meridian'          => 'Meridian',
 	'minion'            => 'Minion',
 	'opennms'           => 'OpenNMS',
 	'opennms-js'        => 'OpenNMS.js',
