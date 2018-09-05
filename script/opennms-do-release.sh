@@ -79,6 +79,7 @@ exec_quiet() {
 
 git_clean() {
 	exec_quiet git clean -fdx || die "failed to run 'git clean' on repository"
+	exec_quiet git prune || die "failed to run 'git prune' on repository"
 	exec_quiet git reset --hard HEAD || :
 }
 
@@ -134,10 +135,11 @@ fi
 
 pushd_q "${GIT_DIR}"
 	log "fetching $TYPE git repository"
-	exec_quiet git fetch "$TYPE" || die "failed to refresh/fetch $TYPE repository"
+	exec_quiet git fetch --prune --tags "$TYPE" || die "failed to refresh/fetch $TYPE repository"
 
 	log "cleaning up git repository"
 	git_clean
+	exec_quiet git gc --aggressive || :
 
 	REMOTE_EXISTS="$(git branch -a | grep -c -E "remotes/${TYPE}/${MASTER_BRANCH}\$" || :)"
 	if [ "$REMOTE_EXISTS" -eq 1 ]; then
@@ -223,20 +225,28 @@ pushd_q "${GIT_DIR}"
 	log "building RPMs"
 	exec_quiet ./makerpm.sh -s "${SIGNINGPASS}" -a -M 1
 	exec_quiet mv target/rpm/SOURCES/*source*.tar.gz "${ARTIFACT_DIR}/"
-	MINION_TARBALL="$(ls target/rpm/BUILD/opennms-*/opennms-assemblies/minion/target/*minion*.tar.gz || :)"
+	MINION_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/minion/target/*minion*.tar.gz || :)"
 	if [ -e "${MINION_TARBALL}" ]; then
 		exec_quiet mv "${MINION_TARBALL}" "${ARTIFACT_DIR}/standalone/minion-${CURRENT_VERSION}.tar.gz"
 	else
-		log "WARNING: no minion tarball found -- this should only happen in Meridian builds < 2017"
+		log "WARNING: no minion tarball found -- this should only happen in Meridian builds < 2018"
+	fi
+	SENTINEL_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/sentinel/target/*sentinel*.tar.gz || :)"
+	if [ -e "${SENTINEL_TARBALL}" ]; then
+		exec_quiet mv "${SENTINEL_TARBALL}" "${ARTIFACT_DIR}/standalone/sentinel-${CURRENT_VERSION}.tar.gz"
+	else
+		log "WARNING: no sentinel tarball found -- this should only happen in Meridian builds < 2018"
 	fi
 	exec_quiet mkdir -p "${ARTIFACT_DIR}/rpm"
 	exec_quiet mv target/rpm/RPMS/noarch/*.rpm "${ARTIFACT_DIR}/rpm/"
+	git_clean
 
 	if [ "$TYPE" = "horizon" ]; then
 		log "building Debian packages"
 		exec_quiet ./makedeb.sh -a -n -s "${SIGNINGPASS}" -M 1
 		exec_quiet mkdir -p "${ARTIFACT_DIR}/deb"
 		exec_quiet mv ../*"${CURRENT_VERSION}"*.{deb,dsc,changes,tar.gz} "${ARTIFACT_DIR}/deb/"
+		git_clean
 
 		log "building remote poller"
 		pushd_q opennms-assemblies/remote-poller-onejar
@@ -247,6 +257,7 @@ pushd_q "${GIT_DIR}"
 			exec_quiet mv "target/org.opennms.assemblies.remote-poller-standalone-${CURRENT_VERSION}-remote-poller.tar.gz" \
 				"${ARTIFACT_DIR}/standalone/remote-poller-client-${CURRENT_VERSION}.tar.gz" || die "failed to move the remote poller tarball to the artifacts directory"
 		popd_q
+		git_clean
 
 		log "deploying to maven repository: ${DEPLOY_DIR}"
 		exec_quiet "${DEPLOY[@]}" deploy || die "failed to run compile.pl deploy on the source tree"
@@ -255,6 +266,8 @@ pushd_q "${GIT_DIR}"
 				exec_quiet "${DEPLOY[@]}" -N deploy || die "failed to run compile.pl -N deploy in $dir"
 			popd_q
 		done
+
+		git_clean
 	else
 		log "skipping deployment for Meridian"
 	fi

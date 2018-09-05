@@ -765,7 +765,8 @@ END
 	</body>
 </html>
 END
-	close(FILEOUT) or die "Failed to close $file: $!\n!";
+	close(FILEOUT) or die "Failed to close ${file}.new: $!\n";
+	chmod(0644, "${file}.new") or die "Failed to change ownership of ${file}.new: $!\n";
 
 	if (-e $file) {
 		unlink($file) or die "Failed to unlink $file: $!\n";
@@ -1021,3 +1022,4 @@ sub versioncmp( $$ ) {
 	}
 	@A <=> @B;
 }
+

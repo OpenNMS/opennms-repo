@@ -16,6 +16,7 @@ use Git;
 use IO::Handle;
 use version;
 
+use OpenNMS::Util 2.7.0;
 use OpenNMS::Release 2.9.4;
 
 use vars qw(
@@ -71,6 +72,10 @@ usage() if ($HELP);
 
 $ROOTDIR   = abs_path($ROOTDIR);
 $SOURCEDIR = abs_path($SOURCEDIR);
+
+sub using_agent {
+	return OpenNMS::Util->get_gpg_version() >= 2;
+}
 
 sub not_empty {
 	my $env_var = shift;
@@ -184,9 +189,10 @@ sub compile_base_poms {
 }
 
 sub make_rpm {
+	my $pass = using_agent() ? '' : $PASSWORD;
 	my @command = (
 		File::Spec->catfile($SOURCEDIR, 'makerpm.sh'),
-		'-s', $PASSWORD,
+		'-s', $pass,
 		'-m', $TIMESTAMP,
 		'-u', $MICRO_REVISION,
 	);
@@ -205,9 +211,10 @@ sub make_rpm {
 }
 
 sub make_debian {
+	my $pass = using_agent() ? '' : $PASSWORD;
 	my @command = (
 		File::Spec->catfile($SOURCEDIR, 'makedeb.sh'),
-		'-s', $PASSWORD,
+		'-s', $pass,
 		'-m', $TIMESTAMP,
 		'-u', $MICRO_REVISION,
 	);

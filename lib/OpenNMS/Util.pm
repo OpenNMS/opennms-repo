@@ -29,11 +29,12 @@ our @EXPORT = qw(
 	read_properties
 	slurp
 	spit
+	get_gpg_version
 	gpg_write_key
 	gpg_detach_sign_file
 );
 
-our $VERSION = 2.6.0;
+our $VERSION = 2.7.0;
 
 =head1 METHODS
 
@@ -120,6 +121,24 @@ sub spit {
 	open ($output, '>' . $file) or die "unable to write to $file: $!";
 	print $output $contents;
 	return close($output);
+}
+
+=item * get_gpg_version()
+
+Return the GPG major version (1 or 2).
+
+=cut
+
+sub get_gpg_version {
+	my $ret = 0;
+	my $input = IO::Handle->new();
+	open ($input, '-|', 'gpg --version') or die "unable to run gpg --version: $!";
+	chomp(my $line = <$input>);
+	if ($line =~ /^gpg\s*.*?(\d+)\.[\d\.]+\s*$/) {
+		$ret = $1;
+	}
+	close($input);
+	return $ret;
 }
 
 =item * gpg_write_key($id, $password, $file)
