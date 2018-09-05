@@ -225,7 +225,7 @@ pushd_q "${GIT_DIR}"
 	log "building RPMs"
 	exec_quiet ./makerpm.sh -s "${SIGNINGPASS}" -a -M 1
 	exec_quiet mv target/rpm/SOURCES/*source*.tar.gz "${ARTIFACT_DIR}/"
-	MINION_TARBALL="$(ls target/rpm/BUILD/opennms-*/opennms-assemblies/minion/target/*minion*.tar.gz || :)"
+	MINION_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/minion/target/*minion*.tar.gz || :)"
 	if [ -e "${MINION_TARBALL}" ]; then
 		exec_quiet mv "${MINION_TARBALL}" "${ARTIFACT_DIR}/standalone/minion-${CURRENT_VERSION}.tar.gz"
 	else
