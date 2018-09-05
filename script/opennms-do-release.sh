@@ -231,6 +231,12 @@ pushd_q "${GIT_DIR}"
 	else
 		log "WARNING: no minion tarball found -- this should only happen in Meridian builds < 2018"
 	fi
+	SENTINEL_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/sentinel/target/*sentinel*.tar.gz || :)"
+	if [ -e "${SENTINEL_TARBALL}" ]; then
+		exec_quiet mv "${SENTINEL_TARBALL}" "${ARTIFACT_DIR}/standalone/sentinel-${CURRENT_VERSION}.tar.gz"
+	else
+		log "WARNING: no sentinel tarball found -- this should only happen in Meridian builds < 2018"
+	fi
 	exec_quiet mkdir -p "${ARTIFACT_DIR}/rpm"
 	exec_quiet mv target/rpm/RPMS/noarch/*.rpm "${ARTIFACT_DIR}/rpm/"
 	git_clean
