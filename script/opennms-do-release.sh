@@ -235,7 +235,7 @@ pushd_q "${GIT_DIR}"
 	if [ -e "${SENTINEL_TARBALL}" ]; then
 		exec_quiet mv "${SENTINEL_TARBALL}" "${ARTIFACT_DIR}/standalone/sentinel-${CURRENT_VERSION}.tar.gz"
 	else
-		log "WARNING: no sentinel tarball found -- this should only happen in Meridian builds < 2018"
+		log "WARNING: no sentinel tarball found -- this should only happen in Meridian builds < 2019 and Horizon builds < 23"
 	fi
 	exec_quiet mkdir -p "${ARTIFACT_DIR}/rpm"
 	exec_quiet mv target/rpm/RPMS/noarch/*.rpm "${ARTIFACT_DIR}/rpm/"

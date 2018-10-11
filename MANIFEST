@@ -45,6 +45,7 @@ script/dependency-monkey.sh
 script/deploy-debs.pl
 script/deploy-docs.pl
 script/deploy-rpms.pl
+script/exec-nfs-exclusive-lock.pl
 script/generate-yum-repo-html.pl
 script/nightly.pl
 script/opennms-release.pl
