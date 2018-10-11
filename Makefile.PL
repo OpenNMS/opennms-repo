@@ -23,6 +23,7 @@ install_script 'script/dependency-monkey.sh';
 install_script 'script/deploy-debs.pl';
 install_script 'script/deploy-docs.pl';
 install_script 'script/deploy-rpms.pl';
+install_script 'script/exec-nfs-exclusive-lock.pl';
 install_script 'script/generate-yum-repo-html.pl';
 install_script 'script/nightly.pl';
 install_script 'script/opennms-release.pl';
