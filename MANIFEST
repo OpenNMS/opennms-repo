@@ -45,12 +45,15 @@ script/dependency-monkey.sh
 script/deploy-debs.pl
 script/deploy-docs.pl
 script/deploy-rpms.pl
+script/download-packagecloud.sh
 script/exec-nfs-exclusive-lock.pl
 script/generate-yum-repo-html.pl
 script/nightly.pl
 script/opennms-release.pl
 script/opennms-do-release.sh
+script/sign-package.pl
 script/smoke.pl
+script/sync-packagecloud.sh
 script/update-apt-repo.pl
 script/update-doc-repo.pl
 script/update-sourceforge-repo.pl
