@@ -318,6 +318,7 @@ sub _delete_dead_symlinks() {
 			unlink ($File::Find::name);
 			return;
 		}
+		return unless ($File::Find::name =~ /.deb$/);
 
 		my $linkpackage = OpenNMS::Release::DebPackage->new($File::Find::name);
 		return unless (defined $linkpackage);
