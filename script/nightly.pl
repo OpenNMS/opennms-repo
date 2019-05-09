@@ -269,6 +269,9 @@ sub clean_up_jars {
 }
 
 sub clean_for_build {
+	if ($ENV{SKIP_CLEAN} > 0) {
+		return;
+	}
 	if (-d '.git') {
 		my $git = Git->repository( Directory => $SOURCEDIR );
 		$git->command('clean', '-fdx');
