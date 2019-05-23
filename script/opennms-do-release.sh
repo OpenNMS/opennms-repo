@@ -11,6 +11,8 @@ if [ -z "$SIGNINGPASS" ]; then
 	exit 1
 fi
 
+export MAVEN_OPTS="-Xmx4g -XX:ReservedCodeCacheSize=1g"
+
 if [ -e "$HOME/ci/environment" ]; then
 	. "$HOME/ci/environment"
 fi
