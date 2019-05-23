@@ -20,6 +20,7 @@ if [ -z "$bamboo_buildKey" ]; then
 fi
 
 if [ -e "$HOME/ci/environment" ]; then
+	# shellcheck disable=SC1090
 	. "$HOME/ci/environment"
 fi
 
@@ -216,7 +217,7 @@ pushd_q "${GIT_DIR}"
 
 	log "compiling source"
 	exec_quiet "${COMPILE[@]}" install || die "failed to run 'compile.pl install' on the source tree"
-	log "generating javadoc"
+	log "building javadoc"
 	exec_quiet "${COMPILE[@]}" javadoc:aggregate || die "failed to run 'compile.pl javadoc:aggregate' on the source tree"
 	exec_quiet rsync -ar target/site/apidocs/ "${ARTIFACT_DIR}/docs/opennms-${CURRENT_VERSION}-javadoc/"
 
