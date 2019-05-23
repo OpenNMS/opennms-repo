@@ -208,8 +208,10 @@ pushd_q "${GIT_DIR}"
 		exec_quiet rm -rf ~/.m2/repository*
 	fi
 
-	log "compiling source and javadoc"
-	exec_quiet "${COMPILE[@]}" install javadoc:aggregate || die "failed to run 'compile.pl install javadoc:aggregate' on the source tree"
+	log "compiling source"
+	exec_quiet "${COMPILE[@]}" install || die "failed to run 'compile.pl install' on the source tree"
+	log "generating javadoc"
+	exec_quiet "${COMPILE[@]}" javadoc:aggregate || die "failed to run 'compile.pl javadoc:aggregate' on the source tree"
 	exec_quiet rsync -ar target/site/apidocs/ "${ARTIFACT_DIR}/docs/opennms-${CURRENT_VERSION}-javadoc/"
 
 	log "building XSDs"
