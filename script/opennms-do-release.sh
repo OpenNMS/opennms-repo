@@ -15,6 +15,10 @@ if [ -z "$MAVEN_OPTS" ]; then
 	export MAVEN_OPTS="-Xmx4g -XX:ReservedCodeCacheSize=1g -XX:PermSize=512m -XX:MaxPermSize=1g -XX:MaxMetaspaceSize=1g"
 fi
 
+if [ -z "$bamboo_buildKey" ]; then
+	export bamboo_buildKey="release-${CURRENT_VERSION}"
+fi
+
 if [ -e "$HOME/ci/environment" ]; then
 	. "$HOME/ci/environment"
 fi
