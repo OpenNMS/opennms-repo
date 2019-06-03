@@ -6,7 +6,6 @@ APT_REPODIR="$1"; shift || :
 
 MYDIR="$(dirname "$0")"
 MYDIR="$(cd "$MYDIR"; pwd)"
-ME="$(basename "$0")"
 
 DL="$MYDIR/download-packagecloud.sh"
 
@@ -23,7 +22,7 @@ sign_file() {
 
 rpm_is_signed() {
   __check_file="$1"
-  COUNT="$(rpm -q --qf='%{SIGGPG}' -p "$__check_file" | grep '(none)' | wc -l)"
+  COUNT="$(rpm -q --qf='%{SIGGPG}' -p "$__check_file" | grep -c '(none)')"
   if [ "$COUNT" -eq 0 ]; then
     return 0
   fi
@@ -33,7 +32,7 @@ rpm_is_signed() {
 rpm_sign_unsigned() {
   __searchdir="$1"
 
-  find "$__searchdir" -type f -name \*.rpm | while read FILE; do
+  find "$__searchdir" -type f -name \*.rpm | while read -r FILE; do
     if rpm_is_signed "$FILE"; then
       echo "$FILE" is already signed
     else
@@ -44,7 +43,7 @@ rpm_sign_unsigned() {
 
 deb_is_signed() {
   __check_file="$1"
-  COUNT="$(dpkg-sig --verify "$__check_file" 2>&1 | grep NOSIG | wc -l)"
+  COUNT="$(dpkg-sig --verify "$__check_file" 2>&1 | grep -c NOSIG)"
   if [ "$COUNT" -eq 0 ]; then
     return 0
   fi
@@ -54,7 +53,7 @@ deb_is_signed() {
 deb_sign_unsigned() {
   __searchdir="$1"
 
-  find "$__searchdir" -type f -name \*.deb | while read FILE; do
+  find "$__searchdir" -type f -name \*.deb | while read -r FILE; do
     if deb_is_signed "$FILE"; then
       echo "$FILE" is already signed
     else
