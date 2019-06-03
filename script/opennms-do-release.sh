@@ -11,7 +11,14 @@ if [ -z "$SIGNINGPASS" ]; then
 	exit 1
 fi
 
+if [ -z "$MAVEN_OPTS" ]; then
+	export MAVEN_OPTS="-Xmx4g -XX:ReservedCodeCacheSize=1g -XX:PermSize=512m -XX:MaxPermSize=1g -XX:MaxMetaspaceSize=1g"
+fi
+
+export bamboo_buildKey="release-${CURRENT_VERSION}"
+
 if [ -e "$HOME/ci/environment" ]; then
+	# shellcheck disable=SC1090
 	. "$HOME/ci/environment"
 fi
 
@@ -206,8 +213,10 @@ pushd_q "${GIT_DIR}"
 		exec_quiet rm -rf ~/.m2/repository*
 	fi
 
-	log "compiling source and javadoc"
-	exec_quiet "${COMPILE[@]}" install javadoc:aggregate || die "failed to run 'compile.pl install javadoc:aggregate' on the source tree"
+	log "compiling source"
+	exec_quiet "${COMPILE[@]}" install || die "failed to run 'compile.pl install' on the source tree"
+	log "building javadoc"
+	exec_quiet "${COMPILE[@]}" javadoc:aggregate || die "failed to run 'compile.pl javadoc:aggregate' on the source tree"
 	exec_quiet rsync -ar target/site/apidocs/ "${ARTIFACT_DIR}/docs/opennms-${CURRENT_VERSION}-javadoc/"
 
 	log "building XSDs"
