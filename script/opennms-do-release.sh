@@ -4,9 +4,10 @@ CURRENT_VERSION="$1"
 PREVIOUS_VERSION="$2"
 TYPE="$3"
 SIGNINGPASS="$4"
+ARTIFACT_DIR="$5"
 
 if [ -z "$SIGNINGPASS" ]; then
-	echo "usage: $0 <release-version> <previous-version> <horizon|meridian> <signing-password>"
+	echo "usage: $0 <release-version> <previous-version> <horizon|meridian> <signing-password> [artifact_dir]"
 	echo ""
 	exit 1
 fi
@@ -27,9 +28,13 @@ set -euo pipefail
 CLEAN_REPO=1
 TEST=0
 ROOT_DIR="${HOME}/opennms-release"
-ARTIFACT_DIR="${ROOT_DIR}/artifacts/${CURRENT_VERSION}"
 LOG_DIR="${ROOT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/${TYPE}-${CURRENT_VERSION}.log"
+
+if [ -z "$ARTIFACT_DIR" ]; then
+	ARTIFACT_DIR="${ROOT_DIR}/artifacts/${CURRENT_VERSION}"
+	echo "WARNING: no artifact directory specified... using ${ARTIFACT_DIR}"
+fi
 
 CURRENT_USER="$(id -un)"
 if [ "$TEST" -eq 0 ] && [ "$CURRENT_USER" != "bamboo" ]; then
