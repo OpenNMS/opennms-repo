@@ -1,8 +1,8 @@
-#!/bin/sh -e
+#!/bin/bash
 
-MODE="$1"; shift || :
-REPO="$1"; shift || :
-REPODIR="$1"; shift || :
+MODE="$1"; shift 2>/dev/null || :
+REPO="$1"; shift 2>/dev/null || :
+REPODIR="$1"; shift 2>/dev/null || :
 
 MYDIR="$(dirname "$0")"
 MYDIR="$(cd "$MYDIR"; pwd)"
@@ -15,6 +15,8 @@ if [ -z "$REPODIR" ]; then
   echo ""
   exit 1
 fi
+
+set -e
 
 CONTAINER="$REPO/packagecloud-$MODE"
 
@@ -42,8 +44,8 @@ RUN echo "ipv4" > ~/.curlrc
 RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
 RUN apt-get -y update
 RUN apt-get -y install curl apt-mirror rsync gnupg apt-transport-https
-# gross
-RUN curl --ipv4 -s https://packagecloud.io/install/repositories/$REPO/script.deb.sh | bash
+RUN echo "deb https://packagecloud.io/$REPO/debian/ stretch main" | tee /etc/apt/sources.list.d/opennms-packagecloud.list
+RUN curl -L https://packagecloud.io/$REPO/gpgkey | apt-key add -
 END
     run_docker
     ;;
@@ -59,28 +61,31 @@ END
     cat /etc/apt/mirror.list
     rsync -al --no-compress /var/spool/apt-mirror/ /repo/
     apt-mirror
+    /repo/var/clean.sh
     ;;
   rpm)
     cat <<END >"$TEMPDIR/Dockerfile"
 FROM centos:7
 RUN echo "ipv4" > ~/.curlrc
 RUN echo ip_resolve=4 >> /etc/yum.conf
-RUN yum -y install createrepo yum-utils curl
+RUN yum -y install createrepo yum-utils curl pygpgme
 RUN yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-# gross
-RUN curl --ipv4 -s https://packagecloud.io/install/repositories/$REPO/script.rpm.sh | bash
+RUN curl --ipv4 -L -o /etc/yum.repos.d/opennms-packagecloud.repo "https://packagecloud.io/install/repositories/$REPO/config_file.repo?os=centos&dist=7&source=script"
+RUN curl -L -o /tmp/OPENNMS-GPG-KEY https://yum.opennms.org/OPENNMS-GPG-KEY
+RUN /usr/bin/rpmkeys --import /tmp/OPENNMS-GPG-KEY
+RUN yum -q makecache -y --disablerepo='*' --enablerepo='opennms_plugin-snapshot'
 END
     mkdir -p "$REPODIR"/"$REPO"
     run_docker
     ;;
   rpm-docker)
     REPOID="$(echo "$REPO" | sed -e 's,/,_,g')"
-    yum -y --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" clean expire-cache
-    #yum -y --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" makecache
+    yum -y --verbose --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" clean expire-cache
+    yum -y --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" makecache
     reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/ --urls
-    reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/ --urls
+    #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/ --urls
     reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/
-    reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/
+    #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/
     ;;
   *)
     echo "Unknown mode."
