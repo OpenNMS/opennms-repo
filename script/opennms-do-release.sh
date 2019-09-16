@@ -222,7 +222,7 @@ pushd_q "${GIT_DIR}"
 	exec_quiet "${COMPILE[@]}" install || die "failed to run 'compile.pl install' on the source tree"
 	log "building javadoc"
 	exec_quiet "${COMPILE[@]}" javadoc:aggregate || die "failed to run 'compile.pl javadoc:aggregate' on the source tree"
-	exec_quiet rsync -ar target/site/apidocs/ "${ARTIFACT_DIR}/docs/opennms-${CURRENT_VERSION}-javadoc/"
+	exec_quiet rsync -rl --no-compress target/site/apidocs/ "${ARTIFACT_DIR}/docs/opennms-${CURRENT_VERSION}-javadoc/"
 
 	log "building XSDs"
 	pushd_q opennms-assemblies/xsds

@@ -57,7 +57,7 @@ END
     grep -E '^deb' /etc/apt/sources.list.d/*opennms* >> /etc/apt/mirror.list
     grep -E '^deb ' /etc/apt/sources.list.d/*opennms* | sed -e 's,^deb ,clean ,' >> /etc/apt/mirror.list
     cat /etc/apt/mirror.list
-    rsync -ar /var/spool/apt-mirror/ /repo/
+    rsync -al --no-compress /var/spool/apt-mirror/ /repo/
     apt-mirror
     ;;
   rpm)

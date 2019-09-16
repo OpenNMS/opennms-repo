@@ -64,19 +64,19 @@ deb_sign_unsigned() {
 
 "$DL" "rpm" "opennms/plugin-stable"   "$CACHEDIR/rpm/stable"
 install -d "$YUM_REPODIR/stable/common/packagecloud/"
-rsync -ar --ignore-existing "$CACHEDIR/rpm/stable/" "$YUM_REPODIR/stable/common/packagecloud/"
+rsync -al --ignore-existing --no-compress "$CACHEDIR/rpm/stable/" "$YUM_REPODIR/stable/common/packagecloud/"
 
 "$DL" "rpm" "opennms/plugin-snapshot" "$CACHEDIR/rpm/snapshot"
 install -d "$YUM_REPODIR/bleeding/common/packagecloud/"
-rsync -ar --ignore-existing --delete "$CACHEDIR/rpm/snapshot/" "$YUM_REPODIR/bleeding/common/packagecloud/"
+rsync -al --ignore-existing --no-compress --delete "$CACHEDIR/rpm/snapshot/" "$YUM_REPODIR/bleeding/common/packagecloud/"
 
 "$DL" "deb" "opennms/plugin-stable"   "$CACHEDIR/deb/stable"
 install -d "$APT_REPODIR/dists/stable/main/binary-all/packagecloud/"
-rsync -ar --ignore-existing "$CACHEDIR/deb/stable/mirror/packagecloud.io/opennms/plugin-stable/debian/pool/stretch/main/" "$APT_REPODIR/dists/stable/main/binary-all/packagecloud/"
+rsync -al --ignore-existing --no-compress "$CACHEDIR/deb/stable/mirror/packagecloud.io/opennms/plugin-stable/debian/pool/stretch/main/" "$APT_REPODIR/dists/stable/main/binary-all/packagecloud/"
 
 "$DL" "deb" "opennms/plugin-snapshot" "$CACHEDIR/deb/snapshot"
 install -d "$APT_REPODIR/dists/bleeding/main/binary-all/packagecloud/"
-rsync -ar --ignore-existing "$CACHEDIR/deb/snapshot/mirror/packagecloud.io/opennms/plugin-snapshot/debian/pool/stretch/main/" "$APT_REPODIR/dists/bleeding/main/binary-all/packagecloud/"
+rsync -al --ignore-existing --no-compress "$CACHEDIR/deb/snapshot/mirror/packagecloud.io/opennms/plugin-snapshot/debian/pool/stretch/main/" "$APT_REPODIR/dists/bleeding/main/binary-all/packagecloud/"
 
 rpm_sign_unsigned "$YUM_REPODIR/stable/common/packagecloud"
 rpm_sign_unsigned "$YUM_REPODIR/bleeding/common/packagecloud"
