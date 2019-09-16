@@ -4,6 +4,8 @@ MODE="$1"; shift 2>/dev/null || :
 REPO="$1"; shift 2>/dev/null || :
 REPODIR="$1"; shift 2>/dev/null || :
 
+REPOID="$(echo "$REPO" | sed -e 's,/,_,g')"
+
 MYDIR="$(dirname "$0")"
 MYDIR="$(cd "$MYDIR"; pwd)"
 ME="$(basename "$0")"
@@ -73,13 +75,12 @@ RUN yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.n
 RUN curl --ipv4 -L -o /etc/yum.repos.d/opennms-packagecloud.repo "https://packagecloud.io/install/repositories/$REPO/config_file.repo?os=centos&dist=7&source=script"
 RUN curl -L -o /tmp/OPENNMS-GPG-KEY https://yum.opennms.org/OPENNMS-GPG-KEY
 RUN /usr/bin/rpmkeys --import /tmp/OPENNMS-GPG-KEY
-RUN yum -q makecache -y --disablerepo='*' --enablerepo='opennms_plugin-snapshot'
+RUN yum -q makecache -y --disablerepo='*' --enablerepo="$REPOID"
 END
     mkdir -p "$REPODIR"/"$REPO"
     run_docker
     ;;
   rpm-docker)
-    REPOID="$(echo "$REPO" | sed -e 's,/,_,g')"
     yum -y --verbose --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" clean expire-cache
     yum -y --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" makecache
     reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/ --urls
