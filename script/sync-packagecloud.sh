@@ -76,7 +76,7 @@ rsync -al --ignore-existing --no-compress "$CACHEDIR/deb/stable/mirror/packagecl
 
 "$DL" "deb" "opennms/plugin-snapshot" "$CACHEDIR/deb/snapshot"
 install -d "$APT_REPODIR/dists/bleeding/main/binary-all/packagecloud/"
-rsync -al --ignore-existing --no-compress "$CACHEDIR/deb/snapshot/mirror/packagecloud.io/opennms/plugin-snapshot/debian/pool/stretch/main/" "$APT_REPODIR/dists/bleeding/main/binary-all/packagecloud/"
+rsync -al --ignore-existing --no-compress --delete "$CACHEDIR/deb/snapshot/mirror/packagecloud.io/opennms/plugin-snapshot/debian/pool/stretch/main/" "$APT_REPODIR/dists/bleeding/main/binary-all/packagecloud/"
 
 rpm_sign_unsigned "$YUM_REPODIR/stable/common/packagecloud"
 rpm_sign_unsigned "$YUM_REPODIR/bleeding/common/packagecloud"
