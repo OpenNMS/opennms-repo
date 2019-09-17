@@ -8,6 +8,7 @@ MYDIR="$(dirname "$0")"
 MYDIR="$(cd "$MYDIR"; pwd)"
 
 DL="$MYDIR/download-packagecloud.sh"
+RM="$MYDIR/remove-obsolete-rpms.sh"
 
 mkdir -p "$CACHEDIR"
 
@@ -67,6 +68,7 @@ install -d "$YUM_REPODIR/stable/common/packagecloud/"
 rsync -al --ignore-existing --no-compress "$CACHEDIR/rpm/stable/" "$YUM_REPODIR/stable/common/packagecloud/"
 
 "$DL" "rpm" "opennms/plugin-snapshot" "$CACHEDIR/rpm/snapshot"
+"$RM" "opennms_plugin-snapshot" "$CACHEDIR/rpm/snapshot"
 install -d "$YUM_REPODIR/bleeding/common/packagecloud/"
 rsync -al --ignore-existing --no-compress --delete "$CACHEDIR/rpm/snapshot/" "$YUM_REPODIR/bleeding/common/packagecloud/"
 
@@ -83,7 +85,3 @@ rpm_sign_unsigned "$YUM_REPODIR/bleeding/common/packagecloud"
 
 deb_sign_unsigned "$APT_REPODIR/dists/stable/main/binary-all/packagecloud"
 deb_sign_unsigned "$APT_REPODIR/dists/bleeding/main/binary-all/packagecloud"
-
-#find "$YUM_REPODIR" "$APT_REPODIR" -type f | sort -u
-#find "$CACHEDIR" -type f -name \*.deb -o -name \*.rpm | sort -u
-
