@@ -28,6 +28,13 @@ mkdir -p "$REPODIR"
 
 echo "* Running $ME in $MODE mode."
 
+fix_ownership() {
+	local __fix_path="$1"
+	chown -R bamboo:repo "${__fix_path}"
+	find "${__fix_path}" -type d -print0 | xargs -0 chmod 2775
+	chmod -R ug+rw "${__fix_path}"
+}
+
 run_docker() {
   cd "$TEMPDIR"
   docker build -t "$CONTAINER" .
@@ -49,7 +56,9 @@ RUN apt-get -y install curl apt-mirror rsync gnupg apt-transport-https
 RUN echo "deb https://packagecloud.io/$REPO/debian/ stretch main" | tee /etc/apt/sources.list.d/opennms-packagecloud.list
 RUN curl -L https://packagecloud.io/$REPO/gpgkey | apt-key add -
 END
+    mkdir -p "${REPODIR}/${REPO}"
     run_docker
+    fix_ownership "${REPODIR}/${REPO}"
     ;;
   deb-docker)
     apt-get -y update
@@ -77,8 +86,9 @@ RUN curl -L -o /tmp/OPENNMS-GPG-KEY https://yum.opennms.org/OPENNMS-GPG-KEY
 RUN /usr/bin/rpmkeys --import /tmp/OPENNMS-GPG-KEY
 RUN yum -q makecache -y --disablerepo='*' --enablerepo="$REPOID"
 END
-    mkdir -p "$REPODIR"/"$REPO"
+    mkdir -p "${REPODIR}/${REPO}"
     run_docker
+    fix_ownership "${REPODIR}/${REPO}"
     ;;
   rpm-docker)
     yum -y --verbose --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" clean expire-cache
