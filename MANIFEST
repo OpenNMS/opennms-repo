@@ -39,6 +39,7 @@ MANIFEST
 META.yml
 README.md
 script/buildtool.pl
+script/clean-old-branches.sh
 script/clean-opennms-test-databases.pl
 script/create-repo-rpm.pl
 script/dependency-monkey.sh

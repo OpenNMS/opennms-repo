@@ -18,6 +18,7 @@ test_requires  'Test::More'                => undef;
 
 install_script 'script/buildtool.pl';
 install_script 'script/clean-opennms-test-databases.pl';
+install_script 'script/clean-old-branches.sh';
 install_script 'script/create-repo-rpm.pl';
 install_script 'script/dependency-monkey.sh';
 install_script 'script/deploy-debs.pl';
