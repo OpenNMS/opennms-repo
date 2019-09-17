@@ -5,7 +5,7 @@ set -u
 set -o pipefail
 
 DRY_RUN=0
-BRANCH_FILE="/tmp/$$.branches"
+ACTIVE_BRANCHES="/tmp/$$.branches"
 
 help() {
 	cat <<END
@@ -23,7 +23,7 @@ END
 }
 
 cleanup() {
-	rm -f "${BRANCH_FILE}" || :
+	rm -f "${ACTIVE_BRANCHES}" || :
 }
 trap cleanup EXIT
 
@@ -56,18 +56,19 @@ set -u
 REPO="$1"; shift
 BRANCH_PATH="$1"; shift
 
-git ls-remote --heads "https://github.com/OpenNMS/${REPO}.git" | awk '{ print $NF }' | sed -e 's,refs/heads/,,' -e 's,/,-,g' > "$BRANCH_FILE"
+git ls-remote --heads "https://github.com/OpenNMS/${REPO}.git" | awk '{ print $NF }' | sed -e 's,refs/heads/,,' -e 's,/,-,g' > "$ACTIVE_BRANCHES"
 
 cd "$BRANCH_PATH"
-ls -1 | while read -r BRANCH_DIR; do
-	if [ "$(grep -c "$BRANCH_DIR" "$BRANCH_FILE")" -gt 0 ]; then
-		echo "keep:   $BRANCH_DIR"
+# shellcheck disable=SC2012
+ls -1 | while read -r EXISTING_BRANCH_DIR; do
+	if [ "$(grep -c "$EXISTING_BRANCH_DIR" "$ACTIVE_BRANCHES")" -gt 0 ]; then
+		echo "keep:   $EXISTING_BRANCH_DIR"
 	else
 		if [ "$DRY_RUN" -eq 1 ]; then
-			echo "delete: $BRANCH_DIR (skipping)"
+			echo "delete: $EXISTING_BRANCH_DIR (skipping)"
 		else
-			echo "delete: $BRANCH_DIR"
-			rm -rf "$BRANCH_PATH/$BRANCH_DIR"
+			echo "delete: $EXISTING_BRANCH_DIR"
+			rm -rf "${BRANCH_PATH:?}/${EXISTING_BRANCH_DIR:?}"
 		fi
 	fi
 done
