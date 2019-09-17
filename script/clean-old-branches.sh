@@ -61,7 +61,7 @@ git ls-remote --heads "https://github.com/OpenNMS/${REPO}.git" | awk '{ print $N
 cd "$BRANCH_PATH"
 # shellcheck disable=SC2012
 ls -1 | while read -r EXISTING_BRANCH_DIR; do
-	if [ "$(grep -c "$EXISTING_BRANCH_DIR" "$ACTIVE_BRANCHES")" -gt 0 ]; then
+	if [ "$(grep -c "^${EXISTING_BRANCH_DIR}\$" "$ACTIVE_BRANCHES")" -gt 0 ]; then
 		echo "keep:   $EXISTING_BRANCH_DIR"
 	else
 		if [ "$DRY_RUN" -eq 1 ]; then
