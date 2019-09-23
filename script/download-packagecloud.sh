@@ -92,6 +92,7 @@ END
   rpm-docker)
     # make sure the cache is 100% up-to-date
     yum -y --verbose clean all
+    rm -rf /var/cache/yum/*
     yum -y --verbose --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" list
     reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/ --urls
     #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/ --urls
