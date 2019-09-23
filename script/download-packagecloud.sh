@@ -20,7 +20,7 @@ fi
 
 set -e
 
-CONTAINER="$REPO/packagecloud-$MODE"
+CONTAINER="opennms/packagecloud-$MODE-$REPOID"
 
 TEMPDIR="$(mktemp -d -t pcdl.XXXXXX)"
 mkdir -p "$TEMPDIR"
