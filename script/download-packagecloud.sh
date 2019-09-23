@@ -53,7 +53,7 @@ RUN echo "ipv4" > ~/.curlrc
 RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
 RUN apt-get -y update
 RUN apt-get -y install curl apt-mirror rsync gnupg apt-transport-https
-RUN echo "deb https://packagecloud.io/$REPO/debian/ stretch main" | tee /etc/apt/sources.list.d/opennms-packagecloud.list
+RUN echo "deb https://packagecloud.io/$REPO/debian/ stretch main" | tee /etc/apt/sources.list.d/opennms-$REPOID-packagecloud.list
 RUN curl -L https://packagecloud.io/$REPO/gpgkey | apt-key add -
 END
     mkdir -p "${REPODIR}/${REPO}"
@@ -81,18 +81,16 @@ RUN echo "ipv4" > ~/.curlrc
 RUN echo ip_resolve=4 >> /etc/yum.conf
 RUN yum -y install createrepo yum-utils curl pygpgme
 RUN yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-RUN curl --ipv4 -L -o /etc/yum.repos.d/opennms-packagecloud.repo "https://packagecloud.io/install/repositories/$REPO/config_file.repo?os=centos&dist=7&source=script"
+RUN curl -L -o /etc/yum.repos.d/opennms-$REPOID-packagecloud.repo "https://packagecloud.io/install/repositories/$REPO/config_file.repo?os=centos&dist=7&source=script"
 RUN curl -L -o /tmp/OPENNMS-GPG-KEY https://yum.opennms.org/OPENNMS-GPG-KEY
 RUN /usr/bin/rpmkeys --import /tmp/OPENNMS-GPG-KEY
-RUN yum -q makecache -y --disablerepo='*' --enablerepo="$REPOID"
 END
     mkdir -p "${REPODIR}/${REPO}"
     run_docker
     fix_ownership "${REPODIR}/${REPO}"
     ;;
   rpm-docker)
-    yum -y --verbose --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" clean expire-cache
-    yum -y --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" makecache
+    yum -y --verbose clean all
     reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/ --urls
     #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/ --urls
     reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/
