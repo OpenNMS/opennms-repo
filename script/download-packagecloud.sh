@@ -90,7 +90,9 @@ END
     fix_ownership "${REPODIR}/${REPO}"
     ;;
   rpm-docker)
+    # make sure the cache is 100% up-to-date
     yum -y --verbose clean all
+    yum -y --verbose list
     reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/ --urls
     #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/ --urls
     reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/
