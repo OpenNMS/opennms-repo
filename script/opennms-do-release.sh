@@ -194,7 +194,7 @@ pushd_q "${GIT_DIR}"
 	log "setting logs to WARN (excluding manager.log and root/defaultThreshold log4j2 entries)"
 	# DEBUG -> WARN
 	exec_quiet perl -pi -e 's,"DEBUG","WARN",g' opennms-base-assembly/src/main/filtered/etc/log4j2.xml
-	exec_quiet perl -pi -e 's, DEBUG, WARN,g' container/karaf/src/main/filtered-resources/etc/org.ops4j.pax.logging.cfg
+	exec_quiet perl -pi -e 's, DEBUG , WARN ,g; s,= DEBUG,= WARN,g' container/karaf/src/main/filtered-resources/etc/org.ops4j.pax.logging.cfg
 	# manager.log and root/defaultThreshold back to DEBUG
 	# shellcheck disable=SC2016
 	exec_quiet perl -pi -e 's,("manager" *value=)"WARN",$1"DEBUG",' opennms-base-assembly/src/main/filtered/etc/log4j2.xml
