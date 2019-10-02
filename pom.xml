@@ -40,7 +40,7 @@
     <mavenAssemblyPluginVersion>2.6</mavenAssemblyPluginVersion>
     <mavenBundlePluginVersion>3.2.0</mavenBundlePluginVersion>
     <mavenCompilerPluginVersion>3.5.1</mavenCompilerPluginVersion>
-    <mavenDependencyPluginVersion>2.10</mavenDependencyPluginVersion>
+    <mavenDependencyPluginVersion>3.1.1</mavenDependencyPluginVersion>
     <mavenGpgPluginVersion>1.6</mavenGpgPluginVersion>
     <mavenJavadocPluginVersion>2.10.4</mavenJavadocPluginVersion>
     <mavenShadePluginVersion>2.4.3</mavenShadePluginVersion>
