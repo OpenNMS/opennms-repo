@@ -1,0 +1,14 @@
+jobs:
+  build:
+    docker:
+      - image: opennmsbamboo/build-centos
+    steps:
+      - checkout
+      - run:
+          name: "Resolve Dependencies"
+          command: |
+            mvn -DskipTests clean install dependency:resolve-plugins dependency:go-offline
+      - run:
+          name: "Run Tests"
+          command: |
+            mvn -o test

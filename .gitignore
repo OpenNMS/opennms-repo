@@ -2,12 +2,12 @@
 *.bak
 *.json
 *.old
-*.yml
 .DS_Store
 .classpath
 .project
 .settings
 target/
+/*.yml
 OpenNMS-Release-*.tar.gz
 Makefile
 blib
