@@ -35,7 +35,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <buildHelperMavenPluginVersion>1.12</buildHelperMavenPluginVersion>
+    <buildHelperMavenPluginVersion>3.0.0</buildHelperMavenPluginVersion>
     <jacocoMavenPluginVersion>0.7.7.201606060606</jacocoMavenPluginVersion>
     <mavenAssemblyPluginVersion>2.6</mavenAssemblyPluginVersion>
     <mavenBundlePluginVersion>3.2.0</mavenBundlePluginVersion>
