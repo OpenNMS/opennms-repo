@@ -4,14 +4,22 @@ CURRENT_VERSION="$1"
 PREVIOUS_VERSION="$2"
 TYPE="$3"
 SIGNINGPASS="$4"
+ARTIFACT_DIR="$5"
 
 if [ -z "$SIGNINGPASS" ]; then
-	echo "usage: $0 <release-version> <previous-version> <horizon|meridian> <signing-password>"
+	echo "usage: $0 <release-version> <previous-version> <horizon|meridian> <signing-password> [artifact_dir]"
 	echo ""
 	exit 1
 fi
 
+if [ -z "$MAVEN_OPTS" ]; then
+	export MAVEN_OPTS="-Xmx4g -XX:ReservedCodeCacheSize=1g -XX:PermSize=512m -XX:MaxPermSize=1g -XX:MaxMetaspaceSize=1g"
+fi
+
+export bamboo_buildKey="release-${CURRENT_VERSION}"
+
 if [ -e "$HOME/ci/environment" ]; then
+	# shellcheck disable=SC1090
 	. "$HOME/ci/environment"
 fi
 
@@ -20,9 +28,13 @@ set -euo pipefail
 CLEAN_REPO=1
 TEST=0
 ROOT_DIR="${HOME}/opennms-release"
-ARTIFACT_DIR="${ROOT_DIR}/artifacts/${CURRENT_VERSION}"
 LOG_DIR="${ROOT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/${TYPE}-${CURRENT_VERSION}.log"
+
+if [ -z "$ARTIFACT_DIR" ]; then
+	ARTIFACT_DIR="${ROOT_DIR}/artifacts/${CURRENT_VERSION}"
+	echo "WARNING: no artifact directory specified... using ${ARTIFACT_DIR}"
+fi
 
 CURRENT_USER="$(id -un)"
 if [ "$TEST" -eq 0 ] && [ "$CURRENT_USER" != "bamboo" ]; then
@@ -79,6 +91,7 @@ exec_quiet() {
 
 git_clean() {
 	exec_quiet git clean -fdx || die "failed to run 'git clean' on repository"
+	exec_quiet git prune || die "failed to run 'git prune' on repository"
 	exec_quiet git reset --hard HEAD || :
 }
 
@@ -134,10 +147,11 @@ fi
 
 pushd_q "${GIT_DIR}"
 	log "fetching $TYPE git repository"
-	exec_quiet git fetch "$TYPE" || die "failed to refresh/fetch $TYPE repository"
+	exec_quiet git fetch --prune --tags "$TYPE" || die "failed to refresh/fetch $TYPE repository"
 
 	log "cleaning up git repository"
 	git_clean
+	exec_quiet git gc --prune=all || :
 
 	REMOTE_EXISTS="$(git branch -a | grep -c -E "remotes/${TYPE}/${MASTER_BRANCH}\$" || :)"
 	if [ "$REMOTE_EXISTS" -eq 1 ]; then
@@ -180,7 +194,7 @@ pushd_q "${GIT_DIR}"
 	log "setting logs to WARN (excluding manager.log and root/defaultThreshold log4j2 entries)"
 	# DEBUG -> WARN
 	exec_quiet perl -pi -e 's,"DEBUG","WARN",g' opennms-base-assembly/src/main/filtered/etc/log4j2.xml
-	exec_quiet perl -pi -e 's,DEBUG,WARN,g' container/karaf/src/main/filtered-resources/etc/org.ops4j.pax.logging.cfg
+	exec_quiet perl -pi -e 's, DEBUG , WARN ,g; s,= DEBUG,= WARN,g' container/karaf/src/main/filtered-resources/etc/org.ops4j.pax.logging.cfg
 	# manager.log and root/defaultThreshold back to DEBUG
 	# shellcheck disable=SC2016
 	exec_quiet perl -pi -e 's,("manager" *value=)"WARN",$1"DEBUG",' opennms-base-assembly/src/main/filtered/etc/log4j2.xml
@@ -204,9 +218,11 @@ pushd_q "${GIT_DIR}"
 		exec_quiet rm -rf ~/.m2/repository*
 	fi
 
-	log "compiling source and javadoc"
-	exec_quiet "${COMPILE[@]}" install javadoc:aggregate || die "failed to run 'compile.pl install javadoc:aggregate' on the source tree"
-	exec_quiet rsync -ar target/site/apidocs/ "${ARTIFACT_DIR}/docs/opennms-${CURRENT_VERSION}-javadoc/"
+	log "compiling source"
+	exec_quiet "${COMPILE[@]}" install || die "failed to run 'compile.pl install' on the source tree"
+	log "building javadoc"
+	exec_quiet "${COMPILE[@]}" javadoc:aggregate || die "failed to run 'compile.pl javadoc:aggregate' on the source tree"
+	exec_quiet rsync -rl --no-compress target/site/apidocs/ "${ARTIFACT_DIR}/docs/opennms-${CURRENT_VERSION}-javadoc/"
 
 	log "building XSDs"
 	pushd_q opennms-assemblies/xsds
@@ -223,20 +239,28 @@ pushd_q "${GIT_DIR}"
 	log "building RPMs"
 	exec_quiet ./makerpm.sh -s "${SIGNINGPASS}" -a -M 1
 	exec_quiet mv target/rpm/SOURCES/*source*.tar.gz "${ARTIFACT_DIR}/"
-	MINION_TARBALL="$(ls target/rpm/BUILD/opennms-*/opennms-assemblies/minion/target/*minion*.tar.gz || :)"
+	MINION_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/minion/target/*minion*.tar.gz || :)"
 	if [ -e "${MINION_TARBALL}" ]; then
 		exec_quiet mv "${MINION_TARBALL}" "${ARTIFACT_DIR}/standalone/minion-${CURRENT_VERSION}.tar.gz"
 	else
 		log "WARNING: no minion tarball found -- this should only happen in Meridian builds < 2018"
 	fi
+	SENTINEL_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/sentinel/target/*sentinel*.tar.gz || :)"
+	if [ -e "${SENTINEL_TARBALL}" ]; then
+		exec_quiet mv "${SENTINEL_TARBALL}" "${ARTIFACT_DIR}/standalone/sentinel-${CURRENT_VERSION}.tar.gz"
+	else
+		log "WARNING: no sentinel tarball found -- this should only happen in Meridian builds < 2019 and Horizon builds < 23"
+	fi
 	exec_quiet mkdir -p "${ARTIFACT_DIR}/rpm"
 	exec_quiet mv target/rpm/RPMS/noarch/*.rpm "${ARTIFACT_DIR}/rpm/"
+	git_clean
 
 	if [ "$TYPE" = "horizon" ]; then
 		log "building Debian packages"
 		exec_quiet ./makedeb.sh -a -n -s "${SIGNINGPASS}" -M 1
 		exec_quiet mkdir -p "${ARTIFACT_DIR}/deb"
 		exec_quiet mv ../*"${CURRENT_VERSION}"*.{deb,dsc,changes,tar.gz} "${ARTIFACT_DIR}/deb/"
+		git_clean
 
 		log "building remote poller"
 		pushd_q opennms-assemblies/remote-poller-onejar
@@ -247,6 +271,7 @@ pushd_q "${GIT_DIR}"
 			exec_quiet mv "target/org.opennms.assemblies.remote-poller-standalone-${CURRENT_VERSION}-remote-poller.tar.gz" \
 				"${ARTIFACT_DIR}/standalone/remote-poller-client-${CURRENT_VERSION}.tar.gz" || die "failed to move the remote poller tarball to the artifacts directory"
 		popd_q
+		git_clean
 
 		log "deploying to maven repository: ${DEPLOY_DIR}"
 		exec_quiet "${DEPLOY[@]}" deploy || die "failed to run compile.pl deploy on the source tree"
@@ -255,6 +280,8 @@ pushd_q "${GIT_DIR}"
 				exec_quiet "${DEPLOY[@]}" -N deploy || die "failed to run compile.pl -N deploy in $dir"
 			popd_q
 		done
+
+		git_clean
 	else
 		log "skipping deployment for Meridian"
 	fi

@@ -14,7 +14,7 @@ use File::Slurp;
 use File::Spec;
 use version;
 
-use OpenNMS::Util 2.0.0;
+use OpenNMS::Util 2.7.0;
 use OpenNMS::Release;
 use OpenNMS::Release::YumRepo 2.0.0;
 
@@ -32,6 +32,8 @@ my $index_text = slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.pre'
 
 my $release_descriptions  = read_properties(dist_file('OpenNMS-Release', 'release.properties'));
 my $platform_descriptions = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
+
+my $using_agent = OpenNMS::Util->get_gpg_version() >= 2;
 
 my @display_order  = split(/\s*,\s*/, $release_descriptions->{order_display});
 my @platform_order = split(/\s*,\s*/, $platform_descriptions->{order_display});
@@ -117,7 +119,7 @@ for my $release (@display_order) {
 
 		if ($platform ne "common" and not -e "$base/repofiles/$rpmname") {
 			print STDERR "WARNING: repo RPM does not exist for $release/$platform... creating.\n";
-			system("create-repo-rpm.pl", "-s", $PASSWORD, $base, $release, $platform) == 0 or die "Failed to create repo RPM: $!\n";
+			system("create-repo-rpm.pl", "-s", ($using_agent? '' : $PASSWORD), $base, $release, $platform) == 0 or die "Failed to create repo RPM: $!\n";
 		}
 
 		if (-e "$base/repofiles/$rpmname") {
@@ -141,6 +143,7 @@ $index_text .= slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.post')
 open (FILEOUT, ">$base/index.html") or die "unable to write to $base/index.html: $!";
 print FILEOUT $index_text;
 close (FILEOUT);
+chmod(0644, "$base/index.html");
 
 END {
 	##### FINISHED UPDATING, CLOSE LOCK #####

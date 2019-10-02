@@ -97,12 +97,12 @@ sub new {
 
 	my $name = $d_package;
 	my ($epoch, $version, $release, $arch);
-	if ($d_version =~ /^\d+\:/) {
-		($epoch, $version, $release) = $d_version =~ /^(\d+):([^\-]+)-(.*?)$/;
+	if ($d_version =~ /^[\d\.\+]+\:/) {
+		($epoch, $version, $release) = $d_version =~ /^([\d\.\+]+):([^\-]+)-(.*?)$/;
 	} elsif ($d_version =~ /-/) {
 		($version, $release) = $d_version =~ /^([^\-]+)-(.*?)$/;
 	} else {
-		($version) = $d_version =~ /^([\d\.]+)$/;
+		($version) = $d_version =~ /^([\d\.\+]+)$/;
 		$release = 0;
 	}
 	$version = OpenNMS::Release::DebVersion->new($version, $release, $epoch);

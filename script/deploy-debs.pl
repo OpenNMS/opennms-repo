@@ -72,7 +72,7 @@ if (-e 'opennms-build-repo.txt') {
 if (not defined $RELEASE) {
 	if (-e $repo_file) {
 		chomp($RELEASE=read_file($repo_file));
-		if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
+		if ($RELEASE =~ /^repo:\s*(\S*?)\b/) {
 			$RELEASE = $1;
 		} else {
 			die "Repo file $repo_file exists, but unable to determine the appropriate release repository from '$RELEASE'";

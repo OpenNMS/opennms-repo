@@ -26,6 +26,7 @@ my $HELP             = 0;
 my $ALL              = 0;
 my $RESIGN           = 0;
 my $NO_OBSOLETE      = 0;
+my $NO_SYNC          = 0;
 
 my $BRANCH           = undef;
 my $SIGNING_PASSWORD = undef;
@@ -35,6 +36,7 @@ my $result = GetOptions(
 	"h|help"        => \$HELP,
 	"a|all"         => \$ALL,
 	"b|branch=s"    => \$BRANCH,
+	"n|no-sync"     => \$NO_SYNC,
 	"s|sign=s"      => \$SIGNING_PASSWORD,
 	"g|gpg-id=s"    => \$SIGNING_ID,
 	"r|resign"      => \$RESIGN,
@@ -88,10 +90,12 @@ if ($ALL) {
 
 my @sync_order = map { $_->release } @all_repositories;
 
-for my $orig_repo (@$scan_repositories) {
-	print "* syncing ", $orig_repo->to_string, "... ";
-	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
-	print "done\n";
+if (not $NO_SYNC) {
+	for my $orig_repo (@$scan_repositories) {
+		print "* syncing ", $orig_repo->to_string, "... ";
+		sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+		print "done\n";
+	}
 }
 
 if (defined $BRANCH) {
@@ -268,6 +272,7 @@ usage: $0 [-h] [-s <password>] [-g <signing_id>] ( -a <base> | [-b <branch_name>
 	-r            : re-sign packages in the repositor(y|ies)
 	-s <password> : sign the package using this password for the gpg key
 	-g <gpg_id>   : sign using this gpg_id (default: opennms\@opennms.org)
+	-n            : don't sync up all repositories
 	-o            : don't remove obsolete packages
 
 	base          : the base directory of the APT repository

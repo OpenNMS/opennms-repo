@@ -13,7 +13,7 @@ use File::Spec;
 use Getopt::Long qw(:config gnu_getopt);
 use version;
 
-use OpenNMS::Util;
+use OpenNMS::Util 2.7.0;
 use OpenNMS::Release;
 use OpenNMS::Release::RPMPackage 2.6.7;
 
@@ -104,7 +104,7 @@ if ($NOTAR) {
 	} else {
 		chomp($RELEASE=`tar -xzf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
 	}
-	if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
+	if ($RELEASE =~ /^repo:\s*(\S*?)\b/) {
 		$RELEASE = $1;
 	} else {
 		die "Unable to determine the appropriate release repository from '$RELEASE'";
@@ -155,11 +155,13 @@ for my $file (@FILES_RPMS) {
 	print "done\n";
 }
 
+my $using_agent = OpenNMS::Util->get_gpg_version() >= 2;
+
 #print STDOUT "- uploading $FILE_SOURCE_TARBALL to the $BRANCH_NAME directory on SourceForge:\n";
 #system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
 
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
-system($CMD_UPDATE_REPO, '-s', $PASSWORD, '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", $SUBDIR, @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+system($CMD_UPDATE_REPO, '-s', ($using_agent? '' : $PASSWORD), '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "common", $SUBDIR, @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 
 print STDOUT "- updating repo RPMs for $BRANCH_NAME if necessary:\n";
 my $platforms = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
@@ -174,7 +176,7 @@ for my $platform (@platform_order) {
 		print "exists\n";
 	} else {
 		print "creating:\n";
-		my @command = ("create-repo-rpm.pl", "-s", $PASSWORD, "-b", $YUMDIR, $BRANCH_NAME, $platform);
+		my @command = ("create-repo-rpm.pl", "-s", ($using_agent? '' : $PASSWORD), "-b", $YUMDIR, $BRANCH_NAME, $platform);
 		print "@command\n";
 		system(@command) == 0 or die "Failed to create repo RPM: $!\n";
 	}

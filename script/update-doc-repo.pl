@@ -757,7 +757,8 @@ END
 	</body>
 </html>
 END
-	close(FILEOUT) or die "Failed to close $file: $!\n!";
+	close(FILEOUT) or die "Failed to close ${file}.new: $!\n";
+	chmod(0644, "${file}.new") or die "Failed to change ownership of ${file}.new: $!\n";
 
 	if (-e $file) {
 		unlink($file) or die "Failed to unlink $file: $!\n";
@@ -793,13 +794,13 @@ sub process_minion_asciidoc_docdir {
 	if (-d $images) {
 		my $imagedir = File::Spec->catdir($INSTALLDIR, '.images');
 		mkpath($imagedir);
-		system('rsync', '-ar', '--delete', $images.'/', $imagedir.'/') == 0 or die "Failed to sync $images to $imagedir: $!\n";
+		system('rsync', '-rl', '--no-compress', '--delete', $images.'/', $imagedir.'/') == 0 or die "Failed to sync $images to $imagedir: $!\n";
 	}
 
 	if (-d $files) {
 		my $filedir = File::Spec->catdir($INSTALLDIR, '.files');
 		mkpath($filedir);
-		system('rsync', '-ar', '--delete', $files.'/', $filedir.'/') == 0 or die "Failed to sync $files to $filedir: $!\n";
+		system('rsync', '-rl', '--no-compress', '--delete', $files.'/', $filedir.'/') == 0 or die "Failed to sync $files to $filedir: $!\n";
 	}
 
 	opendir(DIR, $docdir) or die "Failed to open $docdir for reading: $!\n";
@@ -951,7 +952,7 @@ sub process_javadoc_docdir {
 	mkpath($to) unless (-d $to);
 
 	do_log("- Copying javadoc to '$to'");
-	system('rsync', '-r', '--delete', $from.'/', $to.'/') == 0 or die "Failed to sync from $from to $to: $!\n";
+	system('rsync', '-rl', '--no-compress', '--delete', $from.'/', $to.'/') == 0 or die "Failed to sync from $from to $to: $!\n";
 	print "done\n";
 }
 
@@ -1013,3 +1014,4 @@ sub versioncmp( $$ ) {
 	}
 	@A <=> @B;
 }
+
