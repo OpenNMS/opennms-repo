@@ -31,6 +31,7 @@ my $NO_DELTAS        = 0;
 my $NO_OBSOLETE      = 0;
 
 my $BRANCH           = undef;
+my $CACHE_DIR        = undef;
 my $SIGNING_PASSWORD = undef;
 my $SIGNING_ID       = 'opennms@opennms.org';
 
@@ -38,6 +39,7 @@ my $result = GetOptions(
 	"h|help"        => \$HELP,
 	"a|all"         => \$ALL,
 	"b|branch=s"    => \$BRANCH,
+	"c|cache-dir=s" => \$CACHE_DIR,
 	"s|sign=s"      => \$SIGNING_PASSWORD,
 	"g|gpg-id=s"    => \$SIGNING_ID,
 	"r|resign"      => \$RESIGN,
@@ -135,7 +137,7 @@ if (defined $BRANCH) {
 
 	# then, update with the new RPMs
 	my $repo = OpenNMS::Release::YumRepo->new($branch_base, $BRANCH, $PLATFORM);
-	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $CACHE_DIR, $SUBDIRECTORY, @RPMS);
 
 	exit 0;
 }
@@ -143,14 +145,14 @@ if (defined $BRANCH) {
 # finally, update any platforms that need it
 if ($NO_SYNC) {
 	my $repo = $releases->{$RELEASE}->{$PLATFORM};
-	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $CACHE_DIR, $SUBDIRECTORY, @RPMS);
 } else {
 	for my $release (@sync_order) {
 		next unless (exists $releases->{$release});
 
 		for my $platform (sort keys %{$releases->{$release}}) {
 			my $repo = $releases->{$release}->{$platform};
-			update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+			update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $CACHE_DIR, $SUBDIRECTORY, @RPMS);
 			sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
 		}
 	}
@@ -161,6 +163,7 @@ sub update_platform {
 	my $resign           = shift;
 	my $signing_id       = shift;
 	my $signing_password = shift;
+	my $cache_dir        = shift;
 	my $subdirectory     = shift;
 	my @rpms             = @_;
 
@@ -202,7 +205,7 @@ sub update_platform {
 			install_rpms($release_repo, $subdirectory, @rpms);
 		}
 
-		index_repo($release_repo, $signing_id, $signing_password);
+		index_repo($release_repo, $cache_dir, $signing_id, $signing_password);
 
 		print "- replacing " . $orig_repo->to_string . " with " . $release_repo->to_string . "... ";
 		$release_repo = $release_repo->replace($orig_repo) or die "Unable to replace " . $orig_repo->to_string . " with " . $release_repo->to_string . "!";
@@ -249,6 +252,7 @@ sub install_rpms {
 
 sub index_repo {
 	my $release_repo     = shift;
+	my $cache_dir        = shift;
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
@@ -260,7 +264,11 @@ sub index_repo {
 
 	print "- reindexing repo: " . $release_repo->to_string . "... ";
 	$release_repo->enable_deltas(0) if ($NO_DELTAS);
-	$release_repo->index({ signing_id => $signing_id, signing_password => $signing_password });
+	$release_repo->index({
+		cache_dir => $cache_dir,
+		signing_id => $signing_id,
+		signing_password => $signing_password,
+	});
 	print "done.\n";
 }
 

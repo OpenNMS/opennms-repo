@@ -259,9 +259,13 @@ sub _packageset {
 	
 }
 
-sub cachedir() {
+sub cachedir($) {
 	my $self = shift;
-	return File::Spec->catdir($self->base, "caches", $self->release, $self->platform);
+	my $base = shift;
+	if (not defined $base) {
+		return File::Spec->catdir($base, "caches", $self->release, $self->platform);
+	}
+	return $base;
 }
 
 =head2 * index({options})
@@ -288,11 +292,13 @@ sub index($) {
 	my $self    = shift;
 	my $options = shift;
 
-	mkpath($self->cachedir);
+	my $cachedir = $self->cachedir($options->{'cache_dir'});
+
+	mkpath($cachedir);
 	my @args = ('-q',
 		'--no-database',
 		'--outputdir', $self->path,
-		'--cachedir', $self->cachedir,
+		'--cachedir', $cachedir,
 		$self->path);
 
 	if ($CREATEREPO_USE_UPDATE) {

@@ -28,6 +28,7 @@ my $RESIGN           = 0;
 my $NO_OBSOLETE      = 0;
 
 my $BRANCH           = undef;
+my $CACHE_DIR        = undef;
 my $SIGNING_PASSWORD = undef;
 my $SIGNING_ID       = 'opennms@opennms.org';
 
@@ -35,6 +36,7 @@ my $result = GetOptions(
 	"h|help"        => \$HELP,
 	"a|all"         => \$ALL,
 	"b|branch=s"    => \$BRANCH,
+	"c|cache-dir=s" => \$CACHE_DIR,
 	"s|sign=s"      => \$SIGNING_PASSWORD,
 	"g|gpg-id=s"    => \$SIGNING_ID,
 	"r|resign"      => \$RESIGN,
@@ -102,14 +104,14 @@ if (defined $BRANCH) {
 	sync_repo($from_repo, $to_repo, $SIGNING_ID, $SIGNING_PASSWORD);
 
 	# then, update with the new Debs
-	update_repo($to_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
+	update_repo($to_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $CACHE_DIR, @PACKAGES);
 
 	exit 0;
 }
 
 for my $orig_repo (@$scan_repositories) {
 	print "* syncing and updating ", $orig_repo->to_string, "... ";
-	update_repo($orig_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, @PACKAGES);
+	update_repo($orig_repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $CACHE_DIR, @PACKAGES);
 	sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
 	print "done\n";
 }
@@ -119,6 +121,7 @@ sub update_repo {
 	my $resign           = shift;
 	my $signing_id       = shift;
 	my $signing_password = shift;
+	my $cache_dir        = shift;
 	my @packages         = @_;
 
 	my $base     = $from_repo->abs_base;
@@ -136,7 +139,7 @@ sub update_repo {
 		install_packages($to_repo, @packages);
 	}
 
-	index_repo($to_repo, $signing_id, $signing_password);
+	index_repo($to_repo, $cache_dir, $signing_id, $signing_password);
 
 	$to_repo->replace($from_repo) or die "Unable to replace " . $from_repo->to_string . " with " . $to_repo->to_string . "!";
 }
@@ -194,6 +197,7 @@ sub install_packages {
 
 sub index_repo {
 	my $release_repo     = shift;
+	my $cache_dir        = shift;
 	my $signing_id       = shift;
 	my $signing_password = shift;
 
@@ -204,7 +208,11 @@ sub index_repo {
 	}
 
 	print "- reindexing repo: " . $release_repo->to_string . "... ";
-	$release_repo->index({ signing_id => $signing_id, signing_password => $signing_password });
+	$release_repo->index({
+		cache_dir => $cache_dir,
+		signing_id => $signing_id,
+		signing_password => $signing_password,
+	});
 	print "done.\n";
 }
 

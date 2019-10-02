@@ -239,9 +239,13 @@ sub install_package {
 	return $self->copy_package($package, $topath);
 }
 
-sub cachedir() {
+sub cachedir($) {
 	my $self = shift;
-	return File::Spec->catdir($self->path, ".ftparchive");
+	my $base = shift;
+	if (not defined $base) {
+		return File::Spec->catdir($self->base, $self->release);
+	}
+	return $base;
 }
 
 =head2 * index({options})
@@ -266,12 +270,13 @@ If either of the signing options are not passed, we do not sign the repository.
 
 sub index($) {
 	my $self    = shift;
-	my $options = shift;
+	my $options = shift || {};
 
 	$self->_delete_dead_symlinks();
 	$self->_symlink_packages();
 
-	mkpath($self->cachedir);
+	my $cachedir = $self->cachedir($options->{'cache_dir'});
+	mkpath($cachedir);
 	for my $arch (@ARCHITECTURES) {
 		my $archdir = File::Spec->catdir($self->path, 'main', 'binary-' . $arch);
 		if (not -d $archdir) {
@@ -281,7 +286,7 @@ sub index($) {
 		}
 	}
 	mkpath(File::Spec->catdir($self->path, 'main', 'source'));
-	$self->create_indexfile();
+	$self->create_indexfile($options);
 
 	my $release_handle = IO::Handle->new();
 	my $path	   = $self->path;
@@ -358,8 +363,9 @@ sub _symlink_packages() {
 	return 1;
 }
 
-sub create_indexfile() {
-	my $self = shift;
+sub create_indexfile($) {
+	my $self    = shift;
+	my $options = shift || {};
 
 	my $outputfile = IO::Handle->new();
 	my $filename = $self->indexfile();
@@ -379,7 +385,7 @@ sub create_indexfile() {
 	}
 
 	my $archivedir = $self->base;
-	my $cachedir   = $self->cachedir;
+	my $cachedir   = $self->cachedir($options->{'cache_dir'});
 	my $arches     = join(' ', @found_arches);
 	my $release    = $self->release;
 
