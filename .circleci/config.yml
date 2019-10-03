@@ -20,6 +20,7 @@ jobs:
       - run:
           name: "Resolve Dependencies"
           command: |
+            yum -y install createrepo
             mvn -s .circleci/settings.xml -DskipTests clean install dependency:resolve-plugins dependency:go-offline
 
       - run:
