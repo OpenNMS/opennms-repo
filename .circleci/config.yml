@@ -25,7 +25,7 @@ jobs:
       - run:
           name: "Run Tests"
           command: |
-            mvn -s .circleci/settings.xml -o test
+            mvn -s .circleci/settings.xml -o verify
 
       - save_cache:
           key: m2-repo-{{ .Branch }}-{{ .Revision }}
