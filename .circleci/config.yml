@@ -5,12 +5,24 @@ jobs:
     docker:
       - image: opennmsbamboo/build-centos
     steps:
+      - restore_cache:
+          keys:
+            - m2-repo-{{ .Branch }}-{{ .Revision }}
+            - m2-repo-{{ .Branch }}-
+            - m2-repo-
+
       - checkout
+
       - run:
           name: "Resolve Dependencies"
           command: |
-            mvn -DskipTests clean install dependency:resolve-plugins dependency:go-offline
+            mvn -s .circleci/settings.xml -DskipTests clean install dependency:resolve-plugins dependency:go-offline
+
       - run:
           name: "Run Tests"
           command: |
-            mvn -o test
+            mvn -s .circleci/settings.xml -o test
+
+      - save_cache:
+          key: m2-repo-{{ .Branch }}-{{ .Revision }}
+          paths: ~/.m2/repository
