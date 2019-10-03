@@ -1,10 +1,10 @@
 version: 2.1
 
 jobs:
-  environment:
-    JAVA_HOME: /usr/java/latest
-
   build:
+    environment:
+      JAVA_HOME: /usr/java/latest
+
     docker:
       - image: opennmsbamboo/build-centos
 
