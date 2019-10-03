@@ -1,9 +1,13 @@
 version: 2
 
 jobs:
+  environment:
+    JAVA_HOME: /usr/java/latest
+
   build:
     docker:
       - image: opennmsbamboo/build-centos
+
     steps:
       - restore_cache:
           keys:
