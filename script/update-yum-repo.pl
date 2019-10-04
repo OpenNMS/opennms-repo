@@ -62,7 +62,7 @@ if ($HELP) {
 }
 
 if ($CACHEDIR) {
-	OpenNMS::Release::YumRepo::CREATEREPO_USE_GLOBAL_CACHE = $CACHEDIR;
+	$OpenNMS::Release::YumRepo::CREATEREPO_USE_GLOBAL_CACHE = $CACHEDIR;
 }
 
 if ($RESIGN and not defined $SIGNING_PASSWORD) {
