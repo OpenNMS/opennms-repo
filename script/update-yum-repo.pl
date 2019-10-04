@@ -93,6 +93,10 @@ if (exists $core_rpms[0]) {
 		print "! Meridian 2017 or newer package found. Skipping rhel5 sync.\n";
 		@platform_order = grep { !/(centos5|rhel5)/i } @platform_order;
 	}
+	if ($version >= 2019) {
+		print "! Meridian 2019 or newer package found. Skipping rhel6 sync.\n";
+		@platform_order = grep { !/(centos6|rhel6)/i } @platform_order;
+	}
 }
 
 if ($ALL) {
