@@ -43,11 +43,12 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = 2.9.13;
+our $VERSION = 2.10.0;
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 our $CREATEREPO_USE_DELTAS = 0;
 our $CREATEREPO_USE_UPDATE = 0;
+our $CREATEREPO_USE_GLOBAL_CACHE = undef;
 
 =head1 CONSTRUCTOR
 
@@ -256,7 +257,6 @@ sub _packageset {
 		push(@packages, $package);
 	}, no_chdir => 1}, $self->path);
 	return OpenNMS::Release::PackageSet->new(\@packages);
-	
 }
 
 sub cachedir() {
@@ -292,8 +292,14 @@ sub index($) {
 	my @args = ('-q',
 		'--no-database',
 		'--outputdir', $self->path,
-		'--cachedir', $self->cachedir,
 		$self->path);
+
+	if ($CREATEREPO_USE_GLOBAL_CACHE) {
+		print "* using global createrepo cache at " . $CREATEREPO_USE_GLOBAL_CACHE . "\n";
+		unshift(@args, '--cachedir', $CREATEREPO_USE_GLOBAL_CACHE);
+	} else {
+		unshift(@args, '--cachedir', $self->cachedir);
+	}
 
 	if ($CREATEREPO_USE_UPDATE) {
 		unshift(@args, '--update');

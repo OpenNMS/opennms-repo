@@ -17,7 +17,7 @@ use IO::Handle;
 use OpenNMS::Util 2.0.0;
 use OpenNMS::Release;
 use OpenNMS::Release::Repo 2.7.2;
-use OpenNMS::Release::YumRepo 2.7.2;
+use OpenNMS::Release::YumRepo 2.10.0;
 use OpenNMS::Release::RPMPackage 2.0.0;
 
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
@@ -31,6 +31,7 @@ my $NO_DELTAS        = 0;
 my $NO_OBSOLETE      = 0;
 
 my $BRANCH           = undef;
+my $CACHEDIR         = undef;
 my $SIGNING_PASSWORD = undef;
 my $SIGNING_ID       = 'opennms@opennms.org';
 
@@ -38,13 +39,14 @@ my $result = GetOptions(
 	"h|help"        => \$HELP,
 	"a|all"         => \$ALL,
 	"b|branch=s"    => \$BRANCH,
-	"s|sign=s"      => \$SIGNING_PASSWORD,
-	"g|gpg-id=s"    => \$SIGNING_ID,
-	"r|resign"      => \$RESIGN,
-	"n|no-sync"     => \$NO_SYNC,
+	"c|cache-dir=s" => \$CACHEDIR,
 	"d|no-deltas"   => \$NO_DELTAS,
+	"g|gpg-id=s"    => \$SIGNING_ID,
 	"i|reindex"     => \$REINDEX,
+	"n|no-sync"     => \$NO_SYNC,
 	"o|no-obsolete" => \$NO_OBSOLETE,
+	"r|resign"      => \$RESIGN,
+	"s|sign=s"      => \$SIGNING_PASSWORD,
 );
 
 my ($BASE, $RELEASE, $PLATFORM, $SUBDIRECTORY, @RPMS);
@@ -57,6 +59,10 @@ $BASE = Cwd::abs_path($BASE);
 
 if ($HELP) {
 	usage();
+}
+
+if ($CACHEDIR) {
+	OpenNMS::Release::YumRepo::CREATEREPO_USE_GLOBAL_CACHE = $CACHEDIR;
 }
 
 if ($RESIGN and not defined $SIGNING_PASSWORD) {
