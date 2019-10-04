@@ -160,13 +160,18 @@ for my $file (@FILES_RPMS) {
 	print "done\n";
 }
 
-my $skip_old = 0;
+my $skip_rhel5 = 0;
+my $skip_rhel6 = 0;
 if (defined $rpm_version) {
 	($rpm_version) = $rpm_version =~ /^(\d+)\./;
         if ($rpm_version >= 2017) {
-                print "! Meridian 2017 or newer package found. Skipping rhel5 sync.\n";
-                $skip_old = 1;
+                print "! Meridian 2017 or newer package found.  Skipping rhel5 sync.\n";
+                $skip_rhel5 = 1;
         }
+	if ($rpm_version >= 2019) {
+		print "! Meridian 2019 or newer package found.  Skipping rhel6 sync.\n";
+                $skip_rhel6 = 1;
+	}
 }
 
 my $using_agent = OpenNMS::Util->get_gpg_version() >= 2;
@@ -175,11 +180,14 @@ my $using_agent = OpenNMS::Util->get_gpg_version() >= 2;
 #system($CMD_UPDATE_SF_REPO, $BRANCH_NAME, $FILE_SOURCE_TARBALL) == 0 or die "Failed to push $FILE_SOURCE_TARBALL to SourceForge: $!";
 
 print STDOUT "- adding RPMs for $BRANCH_NAME to the YUM repo, based on $RELEASE:\n";
-if (not $skip_old) {
-	system($CMD_UPDATE_REPO, '-s', ($using_agent? '' : $PASSWORD), '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel5", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+if (not $skip_rhel5) {
+	system($CMD_UPDATE_REPO, '-s', ($using_agent? '' : $PASSWORD), '--no-obsolete', '--cache-dir=' . File::Spec->catdir($YUMDIR, '.cache'), '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel5", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 }
-system($CMD_UPDATE_REPO, '-s', ($using_agent? '' : $PASSWORD), '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel6", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
-system($CMD_UPDATE_REPO, '-s', ($using_agent? '' : $PASSWORD), '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel7", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+if (not $skip_rhel6) {
+	system($CMD_UPDATE_REPO, '-s', ($using_agent? '' : $PASSWORD), '--no-obsolete', '--cache-dir=' . File::Spec->catdir($YUMDIR, '.cache'), '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel6", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+}
+system($CMD_UPDATE_REPO, '-s', ($using_agent? '' : $PASSWORD), '--no-obsolete', '--cache-dir=' . File::Spec->catdir($YUMDIR, '.cache'), '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel7", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
+system($CMD_UPDATE_REPO, '-s', ($using_agent? '' : $PASSWORD), '--no-obsolete', '--cache-dir=' . File::Spec->catdir($YUMDIR, '.cache'), '-b', $BRANCH_NAME_SCRUBBED, $YUMDIR, $RELEASE, "rhel8", "meridian/noarch", @FILES_RPMS) == 0 or die "Failed to update repository: $!";
 
 print STDOUT "- updating repo RPMs for $BRANCH_NAME if necessary:\n";
 my $platforms = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));

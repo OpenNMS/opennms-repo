@@ -295,7 +295,6 @@ sub index($) {
 		$self->path);
 
 	if ($CREATEREPO_USE_GLOBAL_CACHE) {
-		print "* using global createrepo cache at " . $CREATEREPO_USE_GLOBAL_CACHE . "\n";
 		unshift(@args, '--cachedir', $CREATEREPO_USE_GLOBAL_CACHE);
 	} else {
 		unshift(@args, '--cachedir', $self->cachedir);
