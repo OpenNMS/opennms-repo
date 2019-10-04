@@ -82,9 +82,9 @@ sub clean_up {
 				my $top_surefiredir = File::Spec->catdir($rootdir, 'target', 'surefire-reports');
 				print "- syncing surefire-reports to top-of-tree... ";
 				mkpath($top_surefiredir);
-				if (system('rsync', '-ar', '--delete', $surefiredir . '/', $top_surefiredir . '/') == 0) {
+				if (system('rsync', '-ar', '--no-compress', '--delete', $surefiredir . '/', $top_surefiredir . '/') == 0) {
 					print "done\n";
-	
+
 					my $relative_script = File::Spec->abs2rel($SCRIPT, $rootdir);
 					print "- deleting remaining files... ";
 					my @remove;
@@ -96,13 +96,13 @@ sub clean_up {
 								my $relative = File::Spec->abs2rel($name, $rootdir);
 								return if ($relative =~ /^target/);
 								return if ($relative eq $relative_script);
-	
+
 								push(@remove, $name);
 							}
 						},
 						$rootdir
 					);
-	
+
 					for my $file (@remove) {
 						if (-d $file) {
 							rmdir($file);

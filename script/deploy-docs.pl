@@ -89,7 +89,7 @@ sub copy_dirs {
 		my $source = File::Spec->catdir($from, $target);
 		if (-e $source) {
 			print "* Copying '$source' to '$dest/'... ";
-			system('rsync', '-ar', '--exclude=*.adoc', $source, $dest . '/') == 0 or die "failed to copy files: $!\n";
+			system('rsync', '--no-compress', '-rl', '--exclude=*.adoc', $source, $dest . '/') == 0 or die "failed to copy files: $!\n";
 			print "done.\n";
 		}
 	}

@@ -146,7 +146,7 @@ sub copy {
 	my $dest_fs   = $self->_get_fs_for_path($repopath);
 
 	if (defined $source_fs and defined $dest_fs and $source_fs eq $dest_fs) {
-		system($RSYNC, "-aqrH", "--exclude=*.bak", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
+		system($RSYNC, "-aqrH", "--no-compress", "--exclude=*.bak", "--link-dest=" . $selfpath . "/", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
 	} else {
 		system($RSYNC, "-aqrH", "--exclude=*.bak", $selfpath . "/", $repopath . "/") == 0 or croak "failure while rsyncing: $!";
 	}

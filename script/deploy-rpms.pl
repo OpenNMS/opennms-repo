@@ -104,7 +104,7 @@ if ($NOTAR) {
 	} else {
 		chomp($RELEASE=`tar -xzf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);
 	}
-	if ($RELEASE =~ /^repo:\s*(.*?)\s*$/) {
+	if ($RELEASE =~ /^repo:\s*(\S*?)\b/) {
 		$RELEASE = $1;
 	} else {
 		die "Unable to determine the appropriate release repository from '$RELEASE'";
