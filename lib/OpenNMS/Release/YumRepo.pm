@@ -43,7 +43,7 @@ be preserved when sharing RPMs between repositories.
 
 =cut
 
-our $VERSION = 2.10.0;
+our $VERSION = 2.9.13;
 our $CREATEREPO = undef;
 our $CREATEREPO_USE_CHECKSUM = 0;
 our $CREATEREPO_USE_DELTAS = 0;
@@ -74,7 +74,6 @@ sub new {
 	my $base     = shift;
 	my $release  = shift;
 	my $platform = shift;
-	my $cachedir = shift;
 
 	my $self = bless($proto->SUPER::new($base), $class);
 
@@ -85,10 +84,6 @@ sub new {
 	if (not defined $platform) {
 		carp "You did not specify a platform!";
 		return undef;
-	}
-
-	if (defined $cachedir) {
-		$self->{CACHEDIR} = $cachedir;
 	}
 
 	if (not defined $CREATEREPO) {
@@ -261,11 +256,12 @@ sub _packageset {
 		push(@packages, $package);
 	}, no_chdir => 1}, $self->path);
 	return OpenNMS::Release::PackageSet->new(\@packages);
+	
 }
 
 sub cachedir() {
 	my $self = shift;
-	return $self->{CACHEDIR} || File::Spec->catdir($self->base, "caches", $self->release, $self->platform);
+	return File::Spec->catdir($self->base, "caches", $self->release, $self->platform);
 }
 
 =head2 * index({options})
