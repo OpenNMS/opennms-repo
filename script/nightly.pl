@@ -123,6 +123,10 @@ $scrubbed_buildname =~ s/[^[:alnum:]]+/\./gs;
 $scrubbed_buildname =~ s/^\.+//;
 $scrubbed_buildname =~ s/\.+$//;
 
+if (length($scrubbed_buildname) > 20) {
+	$scrubbed_buildname = substr($scrubbed_buildname, 0, 20);
+}
+
 $MICRO_REVISION = $scrubbed_buildname . '.' . $REVISION;
 print <<END;
 Build Root:    $ROOTDIR
