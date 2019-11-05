@@ -125,6 +125,7 @@ $scrubbed_buildname =~ s/\.+$//;
 
 if (length($scrubbed_buildname) > 20) {
 	$scrubbed_buildname = substr($scrubbed_buildname, 0, 20);
+	$scrubbed_buildname =~ s/\.+$//;
 }
 
 $MICRO_REVISION = $scrubbed_buildname . '.' . $REVISION;
