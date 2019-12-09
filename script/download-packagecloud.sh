@@ -20,6 +20,9 @@ fi
 
 set -e
 
+DEBIAN_DOCKER="debian:stretch-slim"
+RPM_DOCKER="centos:7"
+
 CONTAINER="opennms/packagecloud-$MODE-$REPOID"
 
 TEMPDIR="$(mktemp -d -t pcdl.XXXXXX)"
@@ -48,11 +51,11 @@ run_docker() {
 case "$MODE" in
   deb)
     cat <<END >"$TEMPDIR/Dockerfile"
-FROM debian:stretch
+FROM $DEBIAN_DOCKER
 RUN echo "ipv4" > ~/.curlrc
 RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
 RUN apt-get -y update
-RUN apt-get -y install curl apt-mirror rsync gnupg apt-transport-https
+RUN apt-get -y --no-install-recommends install ca-certificates curl apt-mirror rsync gnupg apt-transport-https
 RUN echo "deb https://packagecloud.io/$REPO/debian/ stretch main" | tee /etc/apt/sources.list.d/opennms-$REPOID-packagecloud.list
 RUN curl -L https://packagecloud.io/$REPO/gpgkey | apt-key add -
 END
@@ -76,7 +79,7 @@ END
     ;;
   rpm)
     cat <<END >"$TEMPDIR/Dockerfile"
-FROM centos:7
+FROM $RPM_DOCKER
 RUN echo "ipv4" > ~/.curlrc
 RUN echo ip_resolve=4 >> /etc/yum.conf
 RUN yum -y install createrepo yum-utils curl pygpgme
