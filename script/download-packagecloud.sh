@@ -19,6 +19,7 @@ if [ -z "$REPODIR" ]; then
 fi
 
 set -e
+set -o pipefail
 
 DEBIAN_DOCKER="debian:stretch-slim"
 RPM_DOCKER="centos:7"
@@ -84,7 +85,8 @@ RUN echo "ipv4" > ~/.curlrc
 RUN echo ip_resolve=4 >> /etc/yum.conf
 RUN yum -y install createrepo yum-utils curl pygpgme
 RUN yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-RUN curl -L -o /etc/yum.repos.d/opennms-$REPOID-packagecloud.repo "https://packagecloud.io/install/repositories/$REPO/config_file.repo?os=centos&dist=7&source=script"
+# gross
+RUN curl -s "https://packagecloud.io/install/repositories/$REPO/script.rpm.sh" | bash
 RUN curl -L -o /tmp/OPENNMS-GPG-KEY https://yum.opennms.org/OPENNMS-GPG-KEY
 RUN /usr/bin/rpmkeys --import /tmp/OPENNMS-GPG-KEY
 END
