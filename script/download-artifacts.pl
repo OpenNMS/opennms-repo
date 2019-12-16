@@ -10,14 +10,15 @@ use File::Spec;
 use HTTP::Request;
 use JSON::PP qw();
 use LWP;
+use URI::Escape;
 
 use vars qw(
   $CIRCLECI_API_ROOT
-  $BRANCH_ROOT
+  $PROJECT_ROOT
 );
 
 $CIRCLECI_API_ROOT = 'https://circleci.com/api/v1.1';
-$BRANCH_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms';
+$PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms';
 
 my $product     = shift(@ARGV);
 my $package     = shift(@ARGV);
@@ -33,7 +34,7 @@ my $agent = LWP::UserAgent->new;
 $agent->default_header('Accept', 'application/json');
 $agent->ssl_opts(verify_hostname => 0);
 
-my $url = $BRANCH_ROOT . '/tree/' . $branch . '?limit=100';
+my $url = $PROJECT_ROOT . '/tree/' . uri_escape($branch) . '?limit=100';
 my $response = $agent->get($url);
 die "Can't get $url: ", $response->status_line, "\n" unless $response->is_success;
 
@@ -75,7 +76,7 @@ for my $workflow (@$workflows) {
   if (not $workflow->{'failed'} and exists $workflow->{'builds'}->{$job}) {
     my $build_num = $workflow->{'builds'}->{$job};
 
-    my $artifacts_response = $agent->get($BRANCH_ROOT . '/' . $build_num . '/artifacts');
+    my $artifacts_response = $agent->get($PROJECT_ROOT . '/' . $build_num . '/artifacts');
     die "Can't list artifacts for job $job: ", $artifacts_response->status_line, "\n" unless $artifacts_response->is_success;
 
     my $artifacts = $json->decode($artifacts_response->decoded_content);
