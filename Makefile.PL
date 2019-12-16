@@ -14,6 +14,8 @@ requires       'List::Compare'             => undef;
 requires       'Module::Load::Conditional' => undef;
 requires       'Net::SFTP::Foreign'        => undef;
 requires       'version'                   => undef;
+recommends     'JSON::PP'                  => 4.04; # for download-artifacts.pl
+recommends     'LWP'                       => 6.43; # for download-artifacts.pl
 test_requires  'Test::More'                => undef;
 
 install_script 'script/buildtool.pl';
@@ -24,6 +26,7 @@ install_script 'script/dependency-monkey.sh';
 install_script 'script/deploy-debs.pl';
 install_script 'script/deploy-docs.pl';
 install_script 'script/deploy-rpms.pl';
+install_script 'script/download-artifacts.pl';
 install_script 'script/download-packagecloud.sh';
 install_script 'script/exec-nfs-exclusive-lock.pl';
 install_script 'script/generate-yum-repo-html.pl';
