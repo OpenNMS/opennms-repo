@@ -123,4 +123,4 @@ for my $workflow (@$workflows) {
 
 }
 
-print "Failed to find passing job with artifacts.\n";
+print "Failed to find passing job with $package artifacts for $product in $branch.\n";
