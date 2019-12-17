@@ -49,7 +49,7 @@
     <nexusStagingMavenPluginVersion>1.6.7</nexusStagingMavenPluginVersion>
     <wagonSshExternalVersion>2.10</wagonSshExternalVersion>
 
-    <args4jVersion>2.32</args4jVersion>
+    <args4jVersion>2.33</args4jVersion>
     <bouncyCastleVersion>1.54</bouncyCastleVersion>
     <commonsExecVersion>1.3</commonsExecVersion>
     <commonsIoVersion>2.5</commonsIoVersion>
