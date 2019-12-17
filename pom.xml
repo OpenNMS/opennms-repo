@@ -50,7 +50,7 @@
     <wagonSshExternalVersion>2.10</wagonSshExternalVersion>
 
     <args4jVersion>2.32</args4jVersion>
-    <bouncyCastleVersion>1.54</bouncyCastleVersion>
+    <bouncyCastleVersion>1.64</bouncyCastleVersion>
     <commonsExecVersion>1.3</commonsExecVersion>
     <commonsIoVersion>2.5</commonsIoVersion>
     <commonsLangVersion>3.4</commonsLangVersion>
