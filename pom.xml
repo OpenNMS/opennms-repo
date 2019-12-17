@@ -39,7 +39,7 @@
     <jacocoMavenPluginVersion>0.7.7.201606060606</jacocoMavenPluginVersion>
     <mavenAssemblyPluginVersion>2.6</mavenAssemblyPluginVersion>
     <mavenBundlePluginVersion>3.2.0</mavenBundlePluginVersion>
-    <mavenCompilerPluginVersion>3.5.1</mavenCompilerPluginVersion>
+    <mavenCompilerPluginVersion>3.8.1</mavenCompilerPluginVersion>
     <mavenDependencyPluginVersion>2.10</mavenDependencyPluginVersion>
     <mavenGpgPluginVersion>1.6</mavenGpgPluginVersion>
     <mavenJavadocPluginVersion>2.10.4</mavenJavadocPluginVersion>
