@@ -44,7 +44,7 @@
     <mavenGpgPluginVersion>1.6</mavenGpgPluginVersion>
     <mavenJavadocPluginVersion>2.10.4</mavenJavadocPluginVersion>
     <mavenShadePluginVersion>2.4.3</mavenShadePluginVersion>
-    <mavenSourcePluginVersion>3.0.1</mavenSourcePluginVersion>
+    <mavenSourcePluginVersion>3.2.1</mavenSourcePluginVersion>
     <mavenSurefirePluginVersion>2.18</mavenSurefirePluginVersion>
     <nexusStagingMavenPluginVersion>1.6.7</nexusStagingMavenPluginVersion>
     <wagonSshExternalVersion>2.10</wagonSshExternalVersion>
