@@ -172,11 +172,16 @@ pushd_q "${GIT_DIR}"
 		die "the release notes don't contain an entry for ${CURRENT_VERSION}"
 		exit 1
 	fi
-	DEB_VERSION_COUNT="$(grep -c "${CURRENT_VERSION}-" debian/changelog || :)"
-	if [ "$TYPE" = "horizon" ] && [ "$DEB_VERSION_COUNT" -eq 0 ]; then
-		die "debian/changelog doesn't contain an entry for ${CURRENT_VERSION}"
-		exit 1
-	fi
+
+	for CHANGELOG_FILE in debian/changelog opennms-assemblies/minion/src/main/filtered/debian/changelog opennms-assemblies/sentinel/src/main/filtered/debian/changelog; do
+		if [ -e "${CHANGELOG_FILE}" ]; then
+			DEB_VERSION_COUNT="$(grep -c "${CURRENT_VERSION}-" ${CHANGELOG_FILE} || :)"
+			if [ "$TYPE" = "horizon" ] && [ "$DEB_VERSION_COUNT" -eq 0 ]; then
+				die "${CHANGELOG_FILE} doesn't contain an entry for ${CURRENT_VERSION}"
+				exit 1
+			fi
+		fi
+	done
 
 	log "setting version to ${CURRENT_VERSION} in POMs and other relevant files"
 	find . \
