@@ -32,7 +32,7 @@ LOG_DIR="${ROOT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/${TYPE}-${CURRENT_VERSION}.log"
 
 if [ -z "$ARTIFACT_DIR" ]; then
-	ARTIFACT_DIR="${ROOT_DIR}/artifacts/${CURRENT_VERSION}"
+	ARTIFACT_DIR="/mnt/releases/${TYPE}/${CURRENT_VERSION}"
 	echo "WARNING: no artifact directory specified... using ${ARTIFACT_DIR}"
 fi
 
