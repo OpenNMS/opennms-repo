@@ -4,6 +4,7 @@ MODE="$1"; shift 2>/dev/null || :
 REPO="$1"; shift 2>/dev/null || :
 REPODIR="$1"; shift 2>/dev/null || :
 
+# shellcheck disable=SC2001
 REPOID="$(echo "$REPO" | sed -e 's,/,_,g')"
 
 MYDIR="$(dirname "$0")"
@@ -19,6 +20,10 @@ if [ -z "$REPODIR" ]; then
 fi
 
 set -e
+set -o pipefail
+
+DEBIAN_DOCKER="debian:stretch-slim"
+RPM_DOCKER="centos:7"
 
 CONTAINER="opennms/packagecloud-$MODE-$REPOID"
 
@@ -29,10 +34,10 @@ mkdir -p "$REPODIR"
 echo "* Running $ME in $MODE mode."
 
 fix_ownership() {
-	local __fix_path="$1"
-	chown -R bamboo:repo "${__fix_path}"
-	find "${__fix_path}" -type d -print0 | xargs -0 chmod 2775
-	chmod -R ug+rw "${__fix_path}"
+  local __fix_path="$1"
+  chown -R bamboo:repo "${__fix_path}"
+  find "${__fix_path}" -type d -print0 | xargs -0 chmod 2775
+  chmod -R ug+rw "${__fix_path}"
 }
 
 run_docker() {
@@ -48,11 +53,11 @@ run_docker() {
 case "$MODE" in
   deb)
     cat <<END >"$TEMPDIR/Dockerfile"
-FROM debian:stretch
+FROM $DEBIAN_DOCKER
 RUN echo "ipv4" > ~/.curlrc
 RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
 RUN apt-get -y update
-RUN apt-get -y install curl apt-mirror rsync gnupg apt-transport-https
+RUN apt-get -y --no-install-recommends install ca-certificates curl apt-mirror rsync gnupg apt-transport-https
 RUN echo "deb https://packagecloud.io/$REPO/debian/ stretch main" | tee /etc/apt/sources.list.d/opennms-$REPOID-packagecloud.list
 RUN curl -L https://packagecloud.io/$REPO/gpgkey | apt-key add -
 END
@@ -70,18 +75,25 @@ END
     grep -E '^deb' /etc/apt/sources.list.d/*opennms* >> /etc/apt/mirror.list
     grep -E '^deb ' /etc/apt/sources.list.d/*opennms* | sed -e 's,^deb ,clean ,' >> /etc/apt/mirror.list
     cat /etc/apt/mirror.list
-    rsync -al --no-compress /var/spool/apt-mirror/ /repo/
-    apt-mirror
-    /repo/var/clean.sh
+    rsync -al --no-compress /var/spool/apt-mirror/ /repo/ || exit 1
+    apt-mirror || exit 1
+    /repo/var/clean.sh || exit 1
+    DEB_COUNT="$(find /repo/ -type f -name \*.deb | wc -l)"
+    # shellcheck disable=SC2086
+    if [ $DEB_COUNT -eq 0 ]; then
+      echo "No DEBs found, this is probably wrong."
+      exit 1
+    fi
     ;;
   rpm)
     cat <<END >"$TEMPDIR/Dockerfile"
-FROM centos:7
+FROM $RPM_DOCKER
 RUN echo "ipv4" > ~/.curlrc
 RUN echo ip_resolve=4 >> /etc/yum.conf
 RUN yum -y install createrepo yum-utils curl pygpgme
 RUN yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-RUN curl -L -o /etc/yum.repos.d/opennms-$REPOID-packagecloud.repo "https://packagecloud.io/install/repositories/$REPO/config_file.repo?os=centos&dist=7&source=script"
+# gross
+RUN curl -s "https://packagecloud.io/install/repositories/$REPO/script.rpm.sh" | bash
 RUN curl -L -o /tmp/OPENNMS-GPG-KEY https://yum.opennms.org/OPENNMS-GPG-KEY
 RUN /usr/bin/rpmkeys --import /tmp/OPENNMS-GPG-KEY
 END
@@ -94,10 +106,16 @@ END
     yum -y --verbose clean all
     rm -rf /var/cache/yum/*
     yum -y --verbose --disablerepo='*' --enablerepo="$REPOID" --enablerepo="$REPOID-source" list --showduplicates '*opennms*' '*alec*' '*minion*' '*sentinel*'
-    reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/ --urls
-    #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/ --urls
-    reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/
-    #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/
+    reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/ --urls || exit 1
+    #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/ --urls || exit 1
+    reposync --allow-path-traversal --delete --repoid="$REPOID" --download_path=/repo/ || exit 1
+    #reposync --allow-path-traversal --delete --repoid="$REPOID-source" --download_path=/repo/ || exit 1
+    RPM_COUNT="$(find /repo/ -type f -name \*.rpm | wc -l)"
+    # shellcheck disable=SC2086
+    if [ $RPM_COUNT -eq 0 ]; then
+      echo "No RPMs found, this is probably wrong."
+      exit 1
+    fi
     ;;
   *)
     echo "Unknown mode."
