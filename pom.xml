@@ -47,7 +47,7 @@
     <mavenSourcePluginVersion>3.0.1</mavenSourcePluginVersion>
     <mavenSurefirePluginVersion>2.18</mavenSurefirePluginVersion>
     <nexusStagingMavenPluginVersion>1.6.7</nexusStagingMavenPluginVersion>
-    <wagonSshExternalVersion>2.10</wagonSshExternalVersion>
+    <wagonSshExternalVersion>3.4.0</wagonSshExternalVersion>
 
     <args4jVersion>2.32</args4jVersion>
     <bouncyCastleVersion>1.54</bouncyCastleVersion>
