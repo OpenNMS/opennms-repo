@@ -40,6 +40,8 @@ use vars qw(
 	$BRANCHDIR
 	$DOCDIR
 	$INSTALLDIR
+
+	$MANUAL_INDEXES
 );
 
 $DEBUG = 0;
@@ -70,6 +72,27 @@ $DESCRIPTIONS = {
 	'releasenotes'      => 'Release Notes',
 	'releases'          => 'Releases',
 	'sampler'           => 'Sampler',
+};
+
+$MANUAL_INDEXES = {
+	'alec' => {
+		releases => [
+			'1.0.0',
+			'1.0.1',
+			'1.0.2',
+		],
+		development => [
+			'2.0.0-SNAPSHOT',
+		],
+	},
+	'helm' => {
+		releases => [
+			'5.0.2',
+		],
+		development => [
+			'5.0.3-SNAPSHOT',
+		],
+	},
 };
 
 my $result = GetOptions(
@@ -428,7 +451,7 @@ sub update_indexes {
 				my $release = $releases[0];
 				$roottext .= "			<li>Releases: [";
 				$roottext .= get_link($release->{'name'}, File::Spec->catdir($release->{'path'}, 'index.html'), $ROOT) . ", ";
-				$roottext .= get_link('Browse', File::Spec->catdir($project->{'path'}, 'releases', 'index.html'), $ROOT);
+				$roottext .= get_link('All', File::Spec->catdir($project->{'path'}, 'releases', 'index.html'), $ROOT);
 				$roottext .= "]</li>\n";
 			}
 			if (@branches > 0) {
@@ -441,7 +464,7 @@ sub update_indexes {
 					}
 					$roottext .= get_link($linkname . ' (' . $latest_release->{'name'} . ')', File::Spec->catdir($latest_release->{'path'}, 'index.html'), $ROOT) . ", ";
 				}
-				$roottext .= get_link('Browse', File::Spec->catdir($project->{'path'}, 'branches', 'index.html'), $ROOT);
+				$roottext .= get_link('All', File::Spec->catdir($project->{'path'}, 'branches', 'index.html'), $ROOT);
 				$roottext .= "]</li>\n";
 			}
 		}
@@ -971,7 +994,7 @@ usage: $0 [--debug] [--skip-index] [--root=/path/to/doc/root] [--branch=branch_n
 OPTIONS:
 
 	--debug         enable debug logging
-        --skip-index    skip indexing, just copy the files
+	--skip-index    skip indexing, just copy the files
 
 	--root=/path    the base path for documentation
 	--branch=name   the branch name for documentation
