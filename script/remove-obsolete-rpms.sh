@@ -8,6 +8,14 @@ DRY_RUN=0
 REPOQUERY_OUTPUT="/tmp/$$.repoquery"
 RPM_LIST="/tmp/$$.rpms"
 
+REPOQUERY="$(command -v repoquery)"
+
+if [ -z "$REPOQUERY" ]; then
+	echo "ERROR: repoquery not found"
+	echo ""
+	exit 1
+fi
+
 cleanup() {
 	rm -f "$REPOQUERY_OUTPUT" || :
 	rm -f "$RPM_LIST" || :
@@ -57,9 +65,9 @@ set -u
 REPOID="$1"; shift
 RPM_PATH="$1"; shift
 
-repoquery --repoid="$REPOID" --show-duplicates --queryformat='%{name}###%{epoch}###%{version}###%{release}' '*' >"$REPOQUERY_OUTPUT"
+"$REPOQUERY" --repoid="$REPOID" --show-duplicates --queryformat='%{name}###%{epoch}###%{version}###%{release}' '*' >"$REPOQUERY_OUTPUT"
 find "$RPM_PATH" -type f -name \*.rpm | sort -u >"$RPM_LIST"
-RPM_COUNT="$(cat "$RPM_LIST" | wc -l)"
+RPM_COUNT="$(wc -l < "$RPM_LIST")"
 
 echo "* Scanning $RPM_COUNT RPMs for obsolescence..."
 
