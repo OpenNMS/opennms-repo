@@ -243,21 +243,34 @@ pushd_q "${GIT_DIR}"
 
 	log "building RPMs"
 	exec_quiet ./makerpm.sh -s "${SIGNINGPASS}" -a -M 1
-	exec_quiet mv target/rpm/SOURCES/*source*.tar.gz "${ARTIFACT_DIR}/"
+	exec_quiet cp target/rpm/SOURCES/*source*.tar.gz "${ARTIFACT_DIR}/"
 	MINION_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/minion/target/*minion*.tar.gz || :)"
 	if [ -e "${MINION_TARBALL}" ]; then
-		exec_quiet mv "${MINION_TARBALL}" "${ARTIFACT_DIR}/standalone/minion-${CURRENT_VERSION}.tar.gz"
+		exec_quiet cp "${MINION_TARBALL}" "${ARTIFACT_DIR}/standalone/minion-${CURRENT_VERSION}.tar.gz"
 	else
 		log "WARNING: no minion tarball found -- this should only happen in Meridian builds < 2018"
 	fi
 	SENTINEL_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/sentinel/target/*sentinel*.tar.gz || :)"
 	if [ -e "${SENTINEL_TARBALL}" ]; then
-		exec_quiet mv "${SENTINEL_TARBALL}" "${ARTIFACT_DIR}/standalone/sentinel-${CURRENT_VERSION}.tar.gz"
+		exec_quiet cp "${SENTINEL_TARBALL}" "${ARTIFACT_DIR}/standalone/sentinel-${CURRENT_VERSION}.tar.gz"
 	else
 		log "WARNING: no sentinel tarball found -- this should only happen in Meridian builds < 2019 and Horizon builds < 23"
 	fi
+
+	log "building OCIs"
+	if [ -e opennms-container/horizon/Dockerfile ]; then
+		exec_quiet mkdir -p "${ARTIFACT_DIR}/oci"
+		find opennms-container -type f -name Dockerfile | sed -e 's,^opennms-container/,,' -e 's,/Dockerfile$,,' | while read -r PROJECT; do
+			pushd_q "opennms-container/${PROJECT}"
+				exec_quiet ./build_container_image.sh
+				exec_quiet cp images/*.oci "${ARTIFACT_DIR}/oci/${PROJECT}.oci"
+			popd_q "opennms-container/${PROJECT}"
+		done
+	fi
+
 	exec_quiet mkdir -p "${ARTIFACT_DIR}/rpm"
 	exec_quiet mv target/rpm/RPMS/noarch/*.rpm "${ARTIFACT_DIR}/rpm/"
+
 	git_clean
 
 	if [ "$TYPE" = "horizon" ]; then
