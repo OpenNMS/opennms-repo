@@ -43,7 +43,7 @@
     <mavenDependencyPluginVersion>2.10</mavenDependencyPluginVersion>
     <mavenGpgPluginVersion>1.6</mavenGpgPluginVersion>
     <mavenJavadocPluginVersion>2.10.4</mavenJavadocPluginVersion>
-    <mavenShadePluginVersion>2.4.3</mavenShadePluginVersion>
+    <mavenShadePluginVersion>3.2.4</mavenShadePluginVersion>
     <mavenSourcePluginVersion>3.0.1</mavenSourcePluginVersion>
     <mavenSurefirePluginVersion>2.18</mavenSurefirePluginVersion>
     <nexusStagingMavenPluginVersion>1.6.7</nexusStagingMavenPluginVersion>
