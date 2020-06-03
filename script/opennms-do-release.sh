@@ -6,6 +6,8 @@ TYPE="$3"
 SIGNINGPASS="$4"
 ARTIFACT_DIR="$5"
 
+MAJOR_VERSION="$(echo "${CURRENT_VERSION}" | cut -d. -f1)"
+
 if [ -z "$SIGNINGPASS" ]; then
 	echo "usage: $0 <release-version> <previous-version> <horizon|meridian> <signing-password> [artifact_dir]"
 	echo ""
@@ -305,7 +307,8 @@ pushd_q "${GIT_DIR}"
 	fi
 popd_q
 
-if [ "$TYPE" = "horizon" ]; then
+# as of 27, we are no longer building the installer
+if [ "$TYPE" = "horizon" ] && [ "$MAJOR_VERSION" -lt 27 ]; then
 	if [ ! -d "${ROOT_DIR}/installer" ]; then
 		log "checking out installer repository"
 		exec_quiet git clone git@github.com:OpenNMS/installer.git
