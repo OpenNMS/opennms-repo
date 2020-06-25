@@ -3,6 +3,7 @@
 MODE="$1"; shift 2>/dev/null || :
 REPO="$1"; shift 2>/dev/null || :
 REPODIR="$1"; shift 2>/dev/null || :
+OWNER="$1"; shift 2>/dev/null || :
 
 # shellcheck disable=SC2001
 REPOID="$(echo "$REPO" | sed -e 's,/,_,g')"
@@ -10,6 +11,10 @@ REPOID="$(echo "$REPO" | sed -e 's,/,_,g')"
 MYDIR="$(dirname "$0")"
 MYDIR="$(cd "$MYDIR"; pwd)"
 ME="$(basename "$0")"
+
+if [ -z "$OWNER" ]; then
+  OWNER="bamboo:repo"
+fi
 
 if [ -z "$REPODIR" ]; then
   echo "usage: $0 <deb|rpm> <repo> <repodir>"
@@ -35,7 +40,7 @@ echo "* Running $ME in $MODE mode."
 
 fix_ownership() {
   local __fix_path="$1"
-  chown -R bamboo:repo "${__fix_path}"
+  chown -R "$OWNER" "${__fix_path}"
   find "${__fix_path}" -type d -print0 | xargs -0 chmod 2775
   chmod -R ug+rw "${__fix_path}"
 }
@@ -75,7 +80,7 @@ END
     grep -E '^deb' /etc/apt/sources.list.d/*opennms* >> /etc/apt/mirror.list
     grep -E '^deb ' /etc/apt/sources.list.d/*opennms* | sed -e 's,^deb ,clean ,' >> /etc/apt/mirror.list
     cat /etc/apt/mirror.list
-    rsync -al --no-compress /var/spool/apt-mirror/ /repo/ || exit 1
+    rsync -al /var/spool/apt-mirror/ /repo/ || exit 1
     apt-mirror || exit 1
     /repo/var/clean.sh || exit 1
     DEB_COUNT="$(find /repo/ -type f -name \*.deb | wc -l)"

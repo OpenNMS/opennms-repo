@@ -6,6 +6,8 @@ TYPE="$3"
 SIGNINGPASS="$4"
 ARTIFACT_DIR="$5"
 
+MAJOR_VERSION="$(echo "${CURRENT_VERSION}" | cut -d. -f1)"
+
 if [ -z "$SIGNINGPASS" ]; then
 	echo "usage: $0 <release-version> <previous-version> <horizon|meridian> <signing-password> [artifact_dir]"
 	echo ""
@@ -183,6 +185,13 @@ pushd_q "${GIT_DIR}"
 		fi
 	done
 
+	log "validating OIA"
+	OIA_SNAPSHOT_COUNT="$(grep opennmsApiVersion pom.xml | grep -c -- -SNAPSHOT)"
+	if [ "$OIA_SNAPSHOT_COUNT" -gt 0 ]; then
+		die "\${opennmsApiVersion} is set to a -SNAPSHOT version in pom.xml; OIA must be bumped to a release version before we can continue"
+		exit 1
+	fi
+
 	log "setting version to ${CURRENT_VERSION} in POMs and other relevant files"
 	find . \
 		-type f \
@@ -243,21 +252,34 @@ pushd_q "${GIT_DIR}"
 
 	log "building RPMs"
 	exec_quiet ./makerpm.sh -s "${SIGNINGPASS}" -a -M 1
-	exec_quiet mv target/rpm/SOURCES/*source*.tar.gz "${ARTIFACT_DIR}/"
+	exec_quiet cp target/rpm/SOURCES/*source*.tar.gz "${ARTIFACT_DIR}/"
 	MINION_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/minion/target/*minion*.tar.gz || :)"
 	if [ -e "${MINION_TARBALL}" ]; then
-		exec_quiet mv "${MINION_TARBALL}" "${ARTIFACT_DIR}/standalone/minion-${CURRENT_VERSION}.tar.gz"
+		exec_quiet cp "${MINION_TARBALL}" "${ARTIFACT_DIR}/standalone/minion-${CURRENT_VERSION}.tar.gz"
 	else
 		log "WARNING: no minion tarball found -- this should only happen in Meridian builds < 2018"
 	fi
 	SENTINEL_TARBALL="$(ls target/rpm/BUILD/*/opennms-assemblies/sentinel/target/*sentinel*.tar.gz || :)"
 	if [ -e "${SENTINEL_TARBALL}" ]; then
-		exec_quiet mv "${SENTINEL_TARBALL}" "${ARTIFACT_DIR}/standalone/sentinel-${CURRENT_VERSION}.tar.gz"
+		exec_quiet cp "${SENTINEL_TARBALL}" "${ARTIFACT_DIR}/standalone/sentinel-${CURRENT_VERSION}.tar.gz"
 	else
 		log "WARNING: no sentinel tarball found -- this should only happen in Meridian builds < 2019 and Horizon builds < 23"
 	fi
+
+	log "building OCIs"
+	if [ -e opennms-container/horizon/Dockerfile ]; then
+		exec_quiet mkdir -p "${ARTIFACT_DIR}/oci"
+		find opennms-container -type f -name Dockerfile | sed -e 's,^opennms-container/,,' -e 's,/Dockerfile$,,' | while read -r PROJECT; do
+			pushd_q "opennms-container/${PROJECT}"
+				exec_quiet ./build_container_image.sh
+				exec_quiet cp images/*.oci "${ARTIFACT_DIR}/oci/${PROJECT}.oci"
+			popd_q "opennms-container/${PROJECT}"
+		done
+	fi
+
 	exec_quiet mkdir -p "${ARTIFACT_DIR}/rpm"
 	exec_quiet mv target/rpm/RPMS/noarch/*.rpm "${ARTIFACT_DIR}/rpm/"
+
 	git_clean
 
 	if [ "$TYPE" = "horizon" ]; then
@@ -292,7 +314,8 @@ pushd_q "${GIT_DIR}"
 	fi
 popd_q
 
-if [ "$TYPE" = "horizon" ]; then
+# as of 27, we are no longer building the installer
+if [ "$TYPE" = "horizon" ] && [ "$MAJOR_VERSION" -lt 27 ]; then
 	if [ ! -d "${ROOT_DIR}/installer" ]; then
 		log "checking out installer repository"
 		exec_quiet git clone git@github.com:OpenNMS/installer.git
