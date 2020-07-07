@@ -5,11 +5,12 @@ PREVIOUS_VERSION="$2"
 TYPE="$3"
 SIGNINGPASS="$4"
 ARTIFACT_DIR="$5"
+DEPLOY_DIR="$6"
 
 MAJOR_VERSION="$(echo "${CURRENT_VERSION}" | cut -d. -f1)"
 
 if [ -z "$SIGNINGPASS" ]; then
-	echo "usage: $0 <release-version> <previous-version> <horizon|meridian> <signing-password> [artifact_dir]"
+	echo "usage: $0 <release-version> <previous-version> <horizon|meridian> <signing-password> [artifact_dir] [deploy_dir]"
 	echo ""
 	exit 1
 fi
@@ -34,8 +35,13 @@ LOG_DIR="${ROOT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/${TYPE}-${CURRENT_VERSION}.log"
 
 if [ -z "$ARTIFACT_DIR" ]; then
-	ARTIFACT_DIR="/mnt/releases/${TYPE}/${CURRENT_VERSION}"
+	ARTIFACT_DIR="/opt/mecha/releases/${TYPE}/${CURRENT_VERSION}"
 	echo "WARNING: no artifact directory specified... using ${ARTIFACT_DIR}"
+fi
+
+if [ -z "$DEPLOY_DIR" ]; then
+	DEPLOY_DIR="/opt/mecha/repo-maven/maven2"
+	echo "WARNING: no deploy directory specified... using ${DEPLOY_DIR}"
 fi
 
 CURRENT_USER="$(id -un)"
@@ -119,8 +125,8 @@ COMPILE=("${GIT_DIR}/compile.pl" \
 	"-Dbuild.profile=full" \
 	"-Prun-expensive-tasks")
 
-DEPLOY_DIR="/mnt/repo-maven/maven2"
 if [ $TEST -eq 1 ]; then
+	echo "WARNING: using testing mode: deploying to /tmp"
 	DEPLOY_DIR="/tmp/maven2"
 fi
 DEPLOY=("${COMPILE[@]}" "-DaltDeploymentRepository=opennms::default::file://${DEPLOY_DIR}")
