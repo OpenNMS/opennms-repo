@@ -35,7 +35,7 @@ if (defined $TARBALL) {
 	if ($TARBALL =~ /guide-all/) {
 		($v) = $TARBALL =~ /guide-all-([\d\.]+)/;
 	} else {
-		($v) = $TARBALL =~ /(opennms|meridian)-([\d\.]+)-docs/;
+		($v) = $TARBALL =~ /\w+-([\d\.]+)-docs/;
 	}
 	my ($year, $version) = $v =~ /^(\d+)\.([\d\.]+)$/;
 	print "  - Year: $year\n";
