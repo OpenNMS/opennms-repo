@@ -117,10 +117,10 @@ fi
 
 MASTER_BRANCH="master-$(majorVersion "${CURRENT_VERSION}")"
 RELEASE_BRANCH="release-${CURRENT_VERSION}"
-GIT_DIR="${ROOT_DIR}/opennms-source"
+GIT_PREFIX="${ROOT_DIR}/opennms-source"
 DISPLAY_TYPE="$(echo "$TYPE" | perl -p -e 's/\b(.)/\u$1/g')"
 
-COMPILE=("${GIT_DIR}/compile.pl" \
+COMPILE=("${GIT_PREFIX}/compile.pl" \
 	"-Dmaven.test.skip.exec=true" \
 	"-Dbuild.profile=full" \
 	"-Prun-expensive-tasks")
@@ -143,9 +143,9 @@ fi
 
 pushd_q "${ROOT_DIR}"
 
-if [ ! -d "${GIT_DIR}" ]; then
-	exec_quiet mkdir -p "${GIT_DIR}"
-	pushd_q "${GIT_DIR}"
+if [ ! -d "${GIT_PREFIX}" ]; then
+	exec_quiet mkdir -p "${GIT_PREFIX}"
+	pushd_q "${GIT_PREFIX}"
 		log "initializing git repository"
 		exec_quiet git init . || die "git init failed"
 		exec_quiet git remote add horizon "git@github.com:OpenNMS/opennms.git" || die "unable to add horizon repo to git"
@@ -153,7 +153,7 @@ if [ ! -d "${GIT_DIR}" ]; then
 	popd_q
 fi
 
-pushd_q "${GIT_DIR}"
+pushd_q "${GIT_PREFIX}"
 	log "fetching $TYPE git repository"
 	exec_quiet git fetch --prune --tags "$TYPE" || die "failed to refresh/fetch $TYPE repository"
 
@@ -240,6 +240,7 @@ pushd_q "${GIT_DIR}"
 
 	log "compiling source"
 	exec_quiet "${COMPILE[@]}" install || die "failed to run 'compile.pl install' on the source tree"
+
 	log "building javadoc"
 	exec_quiet "${COMPILE[@]}" javadoc:aggregate || die "failed to run 'compile.pl javadoc:aggregate' on the source tree"
 	exec_quiet rsync -rl --no-compress target/site/apidocs/ "${ARTIFACT_DIR}/docs/opennms-${CURRENT_VERSION}-javadoc/"
@@ -331,7 +332,7 @@ if [ "$TYPE" = "horizon" ] && [ "$MAJOR_VERSION" -lt 27 ]; then
 		git_clean
 
 		log "building installer"
-		exec_quiet ln -s "${GIT_DIR}" opennms-build
+		exec_quiet ln -s "${GIT_PREFIX}" opennms-build
 		pushd_q opennms-build
 			git_clean
 		popd_q
