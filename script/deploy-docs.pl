@@ -22,7 +22,7 @@ $DESTPATH = shift @ARGV || '/var/www';
 
 opendir(DIR, $dir) or die "Unable to read from $dir: $!\n";
 while (my $entry = readdir(DIR)) {
-	if ($entry =~ /^(guide-all-.*|opennms-.*-docs|meridian-.*-docs|opennms-.*-javadoc|meridian-.*-javadoc)\.tar\.(gz|bz2)$/) {
+	if ($entry =~ /^(guide-all-.*|opennms-.*-docs|meridian-.*-docs)\.tar\.(gz|bz2)$/) {
 		$TARBALL = abs_path(File::Spec->catfile($dir, $entry));
 		last;
 	}
