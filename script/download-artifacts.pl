@@ -45,7 +45,7 @@ my $branch      = shift(@ARGV);
 my $download_to = shift(@ARGV) || '.';
 
 if (not defined $branch) {
-  print "usage: $0 [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|rpm|deb|oci|tgz> <branch> [download-directory]\n\n";
+  print "usage: $0 [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|rpm|deb|oci|tgz|tar.gz> <branch> [download-directory]\n\n";
   exit(1);
 }
 
@@ -57,7 +57,7 @@ if ($WORKFLOW) {
   $INCLUDE_FAILED = 1;
 }
 
-our @EXTENSIONS = ('rpm', 'deb', 'oci', 'tgz');
+our @EXTENSIONS = ('rpm', 'deb', 'oci', 'tgz', 'tar.gz');
 if ($extension ne 'all') {
   @EXTENSIONS = ($extension);
 }
@@ -182,12 +182,22 @@ for my $workflow (@$workflows) {
       for my $job (keys %{$workflow->{'artifacts'}}) {
         for my $artifact (@{$workflow->{'artifacts'}->{$job}}) {
           my ($filename) = $artifact =~ /^.*\/([^\/]+)$/;
-          my ($filepart, $ext) = $filename =~ /^(.+)\.([^\.]+)$/;
-          if (defined $ext) {
+          my ($filepart, $ext);
+          for my $try (@EXTENSIONS) {
+            my $quoted = quotemeta($try);
+            if ($filename =~ qr(^(.*)\.${quoted}$)) {
+              $filepart = $1;
+              $ext = $try;
+            # } else {
+            #   print "no match: $filename / $quoted\n";
+            }
+          }
+          if (defined $filepart and defined $ext) {
             if (grep { $_ eq $ext } @EXTENSIONS) {
+              # print "extension matched: $filepart / $ext\n";
               if (defined $MATCH) {
-                # my $quoted = quotemeta($MATCH);
-                if ($filepart =~ /$MATCH/i) {
+                my $quoted = quotemeta($MATCH);
+                if ($filepart =~ /${quoted}/i) {
                   print "$filepart matches \"$MATCH\". Downloading.\n";
                   download_artifact($artifact, $filename);
                 # } else {
@@ -197,7 +207,7 @@ for my $workflow (@$workflows) {
                 download_artifact($artifact, $filename);
               }
             # } else {
-            #   print "$filename DOES NOT match: $filepart / $ext\n";
+            #   print "$filename DOES NOT match: @EXTENSIONS / $filepart / $ext\n";
             }
           }
         }
