@@ -5,34 +5,64 @@ use warnings;
 
 $|++;
 
+use Data::Dumper;
 use File::Path qw(make_path);
 use File::Spec;
+use Getopt::Long;
 use HTTP::Request;
 use JSON::PP qw();
 use LWP;
+use LWP::Protocol::https;
 use URI::Escape;
 
 use vars qw(
+  $API_TOKEN
+  $INCLUDE_FAILED
+  $MATCH
+  $PRIME
+
   $CIRCLECI_API_ROOT
   $PROJECT_ROOT
 );
 
+$INCLUDE_FAILED = 0;
+$PRIME = 0;
+
 $CIRCLECI_API_ROOT = 'https://circleci.com/api/v1.1';
 $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms';
 
-my $product     = shift(@ARGV);
-my $package     = shift(@ARGV);
+GetOptions(
+  "match=s"        => \$MATCH,
+  "prime"          => \$PRIME,
+  "token=s"        => \$API_TOKEN,
+  "include-failed" => \$INCLUDE_FAILED,
+) or die "failed to get options for @ARGV\n";
+
+my $extension   = shift(@ARGV);
 my $branch      = shift(@ARGV);
 my $download_to = shift(@ARGV) || '.';
 
 if (not defined $branch) {
-  print "usage: $0 <horizon|minion|sentinel> <rpm|deb|oci> <branch> [download-directory]\n\n";
+  print "usage: $0 [--prime] [--include-failed] [--token=circle-api-token] [--match=match] <all|rpm|deb|oci|tgz> <branch> [download-directory]\n\n";
   exit(1);
+}
+
+if ($PRIME) {
+  $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms-prime';
+}
+
+our @EXTENSIONS = ('rpm', 'deb', 'oci', 'tgz');
+if ($extension ne 'all') {
+  @EXTENSIONS = ($extension);
 }
 
 my $agent = LWP::UserAgent->new;
 $agent->default_header('Accept', 'application/json');
 $agent->ssl_opts(verify_hostname => 0);
+
+if (defined $API_TOKEN) {
+  $agent->default_header('Circle-Token', $API_TOKEN);
+}
 
 my $url = $PROJECT_ROOT . '/tree/' . uri_escape($branch) . '?limit=100';
 my $response = $agent->get($url);
@@ -70,57 +100,153 @@ for my $entry (@$decoded) {
   $workflow->{'builds'}->{$job_name} = $build_num;
 }
 
-for my $workflow (@$workflows) {
-  my $job = join('-', $product, ($package eq 'oci' ? 'rpm' : $package), 'build');
+sub get_artifacts_for_workflow($) {
+  my $workflow = shift;
+  my $jobs = {};
 
-  if (not $workflow->{'failed'} and exists $workflow->{'builds'}->{$job}) {
+  for my $job (keys %{$workflow->{'builds'}}) {
     my $build_num = $workflow->{'builds'}->{$job};
-
     my $artifacts_response = $agent->get($PROJECT_ROOT . '/' . $build_num . '/artifacts');
     die "Can't list artifacts for job $job: ", $artifacts_response->status_line, "\n" unless $artifacts_response->is_success;
 
     my $artifacts = $json->decode($artifacts_response->decoded_content);
-    @$artifacts = grep { /\.$package$/ } map { $_->{'url'} } @$artifacts;
-
-    if (! -d $download_to) {
-      make_path($download_to);
+    if (scalar @$artifacts > 0) {
+      @$artifacts = map { $_ -> {'url'} } @$artifacts;
+      $jobs->{$job} = $artifacts;
     }
-
-    for my $artifact (@$artifacts) {
-      my ($filename) = $artifact =~ /^.*\/([^\/]+)$/;
-      my $output_file = File::Spec->catfile($download_to, $filename);
-
-      my $dl_string = "downloading $filename...";
-      print $dl_string;
-      open FILEOUT, '>>', $output_file or die "\ncannot open $output_file for writing: $!\n";
-      binmode FILEOUT;
-      my $amount = 0;
-      my $last_time = 0;
-      my $request = HTTP::Request->new(GET => $artifact);
-      my $dl_response = $agent->request($request, sub {
-        my ($data, $response, $protocol) = @_;
-        $amount += length($data);
-
-        my $time = time();
-        if ($time != $last_time) {
-          $last_time = $time;
-          my $mb = scalar($amount / 1024 / 1024);
-          printf "\r\%s \%.1fMB", $dl_string, $mb;
-        }
-
-        print FILEOUT $data;
-      }, 1024 * 64);
-      close FILEOUT;
-      if (not $dl_response->is_success) {
-        unlink($output_file);
-        die " failed: ", $dl_response->status_line, "\n";
-      }
-      print "\r\e[K$dl_string done\n";
-    }
-
-    exit(0);
   }
 
+  return $jobs;
+}
+
+sub download_artifact($$) {
+  my ($url, $filename) = @_;
+
+  if (not -d $download_to) {
+    make_path($download_to);
+  }
+
+  my $output_file = File::Spec->catfile($download_to, $filename);
+  my $dl_string = "downloading $filename...";
+  print $dl_string;
+  open FILEOUT, '>>', $output_file or die "\ncannot open $output_file for writing: $!\n";
+  binmode FILEOUT;
+  my $amount = 0;
+  my $last_time = 0;
+  my $request = HTTP::Request->new(GET => $url);
+  my $dl_response = $agent->request($request, sub {
+    my ($data, $response, $protocol) = @_;
+    $amount += length($data);
+
+    my $time = time();
+    if ($time != $last_time) {
+      $last_time = $time;
+      my $mb = scalar($amount / 1024 / 1024);
+      printf "\r\%s \%.1fMB", $dl_string, $mb;
+    }
+
+    print FILEOUT $data;
+  }, 1024 * 64);
+  close FILEOUT;
+  if (not $dl_response->is_success) {
+    unlink($output_file);
+    die " failed: ", $dl_response->status_line, "\n";
+  }
+  print "\r\e[K$dl_string done\n";
+}
+
+for my $workflow (@$workflows) {
+  my $artifacts = get_artifacts_for_workflow($workflow);
+
+  $workflow->{'artifacts'} = $artifacts;
+
+  if (keys %{$workflow->{'artifacts'}} > 0) {
+    if ($INCLUDE_FAILED || not $workflow->{'failed'}) {
+      print 'Workflow ', $workflow->{'id'}, ' has ', scalar(keys %{$workflow->{'artifacts'}}), " jobs.\n";
+      # print $workflow->{'id'}, ' has artifacts:', Dumper($workflow->{'artifacts'}), "\n";
+
+      for my $job (keys %{$workflow->{'artifacts'}}) {
+        for my $artifact (@{$workflow->{'artifacts'}->{$job}}) {
+          my ($filename) = $artifact =~ /^.*\/([^\/]+)$/;
+          my ($filepart, $ext) = $filename =~ /^(.+)\.([^\.]+)$/;
+          if (defined $ext) {
+            if (grep { $_ eq $ext } @EXTENSIONS) {
+              if (defined $MATCH) {
+                # my $quoted = quotemeta($MATCH);
+                if ($filepart =~ /$MATCH/i) {
+                  print "$filepart matches \"$MATCH\". Downloading.\n";
+                  download_artifact($artifact, $filename);
+                # } else {
+                #   print "$filepart does not match $MATCH. Skipping.\n";
+                }
+              } else {
+                download_artifact($artifact, $filename);
+              }
+            # } else {
+            #   print "$filename DOES NOT match: $filepart / $ext\n";
+            }
+          }
+        }
+      }
+      last;
+    } else {
+      print $workflow->{'id'}, " not eligible.\n";
+    }
+  }
+}
+__END__
+  for my $job (keys %{$workflow->{'builds'}}) {
+    my $ok = $workflow->{'failed'} || $INCLUDE_FAILED;
+
+    if ($ok) {
+      my $build_num = $workflow->{'builds'}->{$job};
+
+      my $artifacts_response = $agent->get($PROJECT_ROOT . '/' . $build_num . '/artifacts');
+      die "Can't list artifacts for job $job: ", $artifacts_response->status_line, "\n" unless $artifacts_response->is_success;
+
+      my $artifacts = $json->decode($artifacts_response->decoded_content);
+      @$artifacts = grep { /\.$package$/ } map { $_->{'url'} } @$artifacts;
+
+      if (! -d $download_to) {
+        make_path($download_to);
+      }
+
+      for my $artifact (@$artifacts) {
+        my ($filename) = $artifact =~ /^.*\/([^\/]+)$/;
+        my $output_file = File::Spec->catfile($download_to, $filename);
+
+        my $dl_string = "downloading $filename...";
+        print $dl_string;
+        open FILEOUT, '>>', $output_file or die "\ncannot open $output_file for writing: $!\n";
+        binmode FILEOUT;
+        my $amount = 0;
+        my $last_time = 0;
+        my $request = HTTP::Request->new(GET => $artifact);
+        my $dl_response = $agent->request($request, sub {
+          my ($data, $response, $protocol) = @_;
+          $amount += length($data);
+
+          my $time = time();
+          if ($time != $last_time) {
+            $last_time = $time;
+            my $mb = scalar($amount / 1024 / 1024);
+            printf "\r\%s \%.1fMB", $dl_string, $mb;
+          }
+
+          print FILEOUT $data;
+        }, 1024 * 64);
+        close FILEOUT;
+        if (not $dl_response->is_success) {
+          unlink($output_file);
+          die " failed: ", $dl_response->status_line, "\n";
+        }
+        print "\r\e[K$dl_string done\n";
+      }
+
+      exit(0);
+    }
+
+  }
 }
 
 print "Failed to find passing job with $package artifacts for $product in $branch.\n";
