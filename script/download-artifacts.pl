@@ -20,6 +20,7 @@ use vars qw(
   $INCLUDE_FAILED
   $MATCH
   $PRIME
+  $WORKFLOW
 
   $CIRCLECI_API_ROOT
   $PROJECT_ROOT
@@ -36,6 +37,7 @@ GetOptions(
   "prime"          => \$PRIME,
   "token=s"        => \$API_TOKEN,
   "include-failed" => \$INCLUDE_FAILED,
+  "workflow=s"     => \$WORKFLOW,
 ) or die "failed to get options for @ARGV\n";
 
 my $extension   = shift(@ARGV);
@@ -43,12 +45,16 @@ my $branch      = shift(@ARGV);
 my $download_to = shift(@ARGV) || '.';
 
 if (not defined $branch) {
-  print "usage: $0 [--prime] [--include-failed] [--token=circle-api-token] [--match=match] <all|rpm|deb|oci|tgz> <branch> [download-directory]\n\n";
+  print "usage: $0 [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|rpm|deb|oci|tgz> <branch> [download-directory]\n\n";
   exit(1);
 }
 
 if ($PRIME) {
   $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms-prime';
+}
+
+if ($WORKFLOW) {
+  $INCLUDE_FAILED = 1;
 }
 
 our @EXTENSIONS = ('rpm', 'deb', 'oci', 'tgz');
@@ -156,6 +162,14 @@ sub download_artifact($$) {
 }
 
 for my $workflow (@$workflows) {
+  if ($WORKFLOW) {
+    if ($workflow->{'id'} ne $WORKFLOW) {
+      next;
+    } else {
+      print "Found workflow ${WORKFLOW}.\n";
+    }
+  }
+
   my $artifacts = get_artifacts_for_workflow($workflow);
 
   $workflow->{'artifacts'} = $artifacts;
@@ -194,59 +208,3 @@ for my $workflow (@$workflows) {
     }
   }
 }
-__END__
-  for my $job (keys %{$workflow->{'builds'}}) {
-    my $ok = $workflow->{'failed'} || $INCLUDE_FAILED;
-
-    if ($ok) {
-      my $build_num = $workflow->{'builds'}->{$job};
-
-      my $artifacts_response = $agent->get($PROJECT_ROOT . '/' . $build_num . '/artifacts');
-      die "Can't list artifacts for job $job: ", $artifacts_response->status_line, "\n" unless $artifacts_response->is_success;
-
-      my $artifacts = $json->decode($artifacts_response->decoded_content);
-      @$artifacts = grep { /\.$package$/ } map { $_->{'url'} } @$artifacts;
-
-      if (! -d $download_to) {
-        make_path($download_to);
-      }
-
-      for my $artifact (@$artifacts) {
-        my ($filename) = $artifact =~ /^.*\/([^\/]+)$/;
-        my $output_file = File::Spec->catfile($download_to, $filename);
-
-        my $dl_string = "downloading $filename...";
-        print $dl_string;
-        open FILEOUT, '>>', $output_file or die "\ncannot open $output_file for writing: $!\n";
-        binmode FILEOUT;
-        my $amount = 0;
-        my $last_time = 0;
-        my $request = HTTP::Request->new(GET => $artifact);
-        my $dl_response = $agent->request($request, sub {
-          my ($data, $response, $protocol) = @_;
-          $amount += length($data);
-
-          my $time = time();
-          if ($time != $last_time) {
-            $last_time = $time;
-            my $mb = scalar($amount / 1024 / 1024);
-            printf "\r\%s \%.1fMB", $dl_string, $mb;
-          }
-
-          print FILEOUT $data;
-        }, 1024 * 64);
-        close FILEOUT;
-        if (not $dl_response->is_success) {
-          unlink($output_file);
-          die " failed: ", $dl_response->status_line, "\n";
-        }
-        print "\r\e[K$dl_string done\n";
-      }
-
-      exit(0);
-    }
-
-  }
-}
-
-print "Failed to find passing job with $package artifacts for $product in $branch.\n";
