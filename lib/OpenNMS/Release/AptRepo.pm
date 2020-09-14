@@ -288,8 +288,8 @@ sub index($) {
 	my $indexfile      = $self->indexfile;
 	my $releasefile    = File::Spec->catfile($path, 'Release');
 
-	system($APT_FTPARCHIVE, '--contents', 'generate', $indexfile) == 0 or croak "unable to run $APT_FTPARCHIVE generate: $!";
-	system("$APT_FTPARCHIVE --db -c '$indexfile' release '$path' > '$releasefile'") == 0 or croak "unable to run $APT_FTPARCHIVE release: $!";
+	system($APT_FTPARCHIVE, 'generate', $indexfile) == 0 or croak "unable to run $APT_FTPARCHIVE generate: $!";
+	system("$APT_FTPARCHIVE -c '$indexfile' release '$path' > '$releasefile'") == 0 or croak "unable to run $APT_FTPARCHIVE release: $!";
 
 	my $id       = $options->{'signing_id'};
 	my $password = $options->{'signing_password'};
