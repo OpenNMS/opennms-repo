@@ -6,6 +6,7 @@ use Data::Dumper;
 use Git;
 use JIRA::REST;
 use Try::Tiny;
+use URI::Escape;
 
 my $from = shift @ARGV;
 my $to   = shift @ARGV;
@@ -54,11 +55,18 @@ my $jira = JIRA::REST->new({
   url => 'https://issues.opennms.org/'
 });
 
+my @issues;
+
+my $output = "";
+
 for my $key (sort keys %$matches) {
   try {
     my $issue = $jira->GET("/issue/$key");
-    print "* [$key](https://issues.opennms.org/browse/$key)", ': ', $issue->{'fields'}->{'summary'}, "\n";
-#  } catch {
-#    print "error ($key): $err\n";
+    $output .= "* [$key](https://issues.opennms.org/browse/$key)", ': ', $issue->{'fields'}->{'summary'}, "\n";
+    push (@issues, $key);
   }
 }
+
+print "[view in JIRA](https://issues.opennms.org/browse/" . $issues[-1] . '?jql=' . uri_escape("issue in (" . join(',', @issues) . ")") . ")\n";
+print "\n";
+print "$output";
