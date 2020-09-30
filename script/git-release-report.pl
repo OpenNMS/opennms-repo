@@ -62,7 +62,7 @@ my $output = "";
 for my $key (sort keys %$matches) {
   try {
     my $issue = $jira->GET("/issue/$key");
-    $output .= "* [$key](https://issues.opennms.org/browse/$key)", ': ', $issue->{'fields'}->{'summary'}, "\n";
+    $output .= "* [$key](https://issues.opennms.org/browse/$key)" . ': ' . $issue->{'fields'}->{'summary'} . "\n";
     push (@issues, $key);
   }
 }
