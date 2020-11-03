@@ -192,8 +192,9 @@ pushd_q "${GIT_PREFIX}"
 	done
 
 	log "validating OIA"
+	OIA_COUNT="$(grep -c opennmsApiVersion pom.xml)"
 	OIA_SNAPSHOT_COUNT="$(grep opennmsApiVersion pom.xml | grep -c -- -SNAPSHOT)"
-	if [ "$OIA_SNAPSHOT_COUNT" -gt 0 ]; then
+	if [ "$OIA_SNAPSHOT_COUNT" -gt "$OIA_COUNT" ]; then
 		die "\${opennmsApiVersion} is set to a -SNAPSHOT version in pom.xml; OIA must be bumped to a release version before we can continue"
 		exit 1
 	fi
