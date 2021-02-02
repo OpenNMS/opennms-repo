@@ -178,7 +178,6 @@ pushd_q "${GIT_PREFIX}"
 	DOC_VERSION_COUNT="$(find opennms-doc/releasenotes/src/asciidoc -type f -print0 | xargs -0 cat | grep -c "${CURRENT_VERSION}" || :)"
 	if [ "$DOC_VERSION_COUNT" -eq 0 ]; then
 		die "the release notes don't contain an entry for ${CURRENT_VERSION}"
-		exit 1
 	fi
 
 	for CHANGELOG_FILE in debian/changelog opennms-assemblies/minion/src/main/filtered/debian/changelog opennms-assemblies/sentinel/src/main/filtered/debian/changelog; do
@@ -186,7 +185,6 @@ pushd_q "${GIT_PREFIX}"
 			DEB_VERSION_COUNT="$(grep -c "${CURRENT_VERSION}-" ${CHANGELOG_FILE} || :)"
 			if [ "$TYPE" = "horizon" ] && [ "$DEB_VERSION_COUNT" -eq 0 ]; then
 				die "${CHANGELOG_FILE} doesn't contain an entry for ${CURRENT_VERSION}"
-				exit 1
 			fi
 		fi
 	done
@@ -196,7 +194,6 @@ pushd_q "${GIT_PREFIX}"
 	OIA_SNAPSHOT_COUNT="$(grep opennmsApiVersion pom.xml | grep -c -- -SNAPSHOT)"
 	if [ "$OIA_SNAPSHOT_COUNT" -gt "$OIA_COUNT" ]; then
 		die "\${opennmsApiVersion} is set to a -SNAPSHOT version in pom.xml; OIA must be bumped to a release version before we can continue"
-		exit 1
 	fi
 
 	log "setting version to ${CURRENT_VERSION} in POMs and other relevant files"
