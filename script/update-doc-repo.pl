@@ -200,6 +200,8 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 	process_javadoc_docdir(File::Spec->catdir($DOCDIR, 'apidocs'));
 } elsif (-f File::Spec->catfile($DOCDIR, 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'allclasses-frame.html')) {
 	process_javadoc_docdir($DOCDIR);
+} elsif (-f File::Spec->catfile($DOCDIR, 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'allclasses-index.html')) {
+	process_javadoc_docdir(File::Spec->catdir($DOCDIR, 'apidocs'));
 } elsif (-f File::Spec->catfile($DOCDIR, 'index.html') and -f File::Spec->catfile($DOCDIR, 'globals.html')) {
 	process_basic_docdir($DOCDIR, 'opennms-js');
 } elsif (-f File::Spec->catfile($DOCDIR, '_', 'js', 'site.js')) {
