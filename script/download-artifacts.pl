@@ -61,7 +61,6 @@ our @EXTENSIONS = ('rpm', 'deb', 'oci', 'tgz', 'tar.gz');
 if ($extension ne 'all') {
   @EXTENSIONS = (split(',', $extension));
 }
-print "extensions: @EXTENSIONS\n";
 
 my $agent = LWP::UserAgent->new;
 $agent->default_header('Accept', 'application/json');
