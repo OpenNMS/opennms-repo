@@ -44,7 +44,7 @@ use vars qw(
 
 $DEBUG = 0;
 $SKIP_INDEX = 0;
-$ROOT = '/mnt/docs.opennms.org';
+$ROOT = '/opt/mecha/docs.opennms.org';
 
 $BOOTSTRAPVERSION = '3.3.4';
 $DESCRIPTIONS = {
@@ -258,6 +258,7 @@ sub get_projects {
 		next if ($entry =~ /^\@eaDir/);
 		next if ($entry =~ /^index\.html$/);
 		next if ($entry =~ /^(api|documentation|Minion-Events|OpenNMS|PRIS|SMNnepO)$/);
+		next if ($entry =~ /^opennms-style/);
 		my $path = File::Spec->catdir($projectsroot, $entry);
 		next if (-l $path);
 		next unless (-d $path);
@@ -643,23 +644,31 @@ sub write_html {
 		<style type="text/css">
 			  body {
 				  padding-top: 50px;
-				  background-color: #E9EBF9; /* cool gray 1 */
+				  background-color: #0A0C1B; /* chromatic black */
+				  background-image: url('opennms-style/art-assets/background-dark.png');
+				  background-size: cover;
+				  color: #E9EBF9; /* cool gray 1 */
 			  }
 			  h3 {
-				  color: #0A0C1B; /* chromatic black */
+				  color: #14D1DF; /* sky blue */
 			  }
 			  a, a:link, a:hover, a:active {
-				  color: #131736; /* dark blue */
+				  color: #E9EBF9; /* cool gray 1 */
 			  }
 			  a:visited {
-				  color: #0A0C1B; /* chromatic black */
+				  color: #B4B6C8; /* cool gray 2 */
 			  }
 			  li.project {
 				  list-style: none;
 			  }
 			  .release::before {
-				  content: "\a	";
+				  content: "^G  ";
 				  white-space: pre;
+			  }
+			  .navbar-brand img {
+				  height: 30px;
+				  width: 30px;
+				  margin-top: -5px;
 			  }
 			  .navbar-inverse {
 				  color: #14D1DF; /* sky blue */
@@ -690,7 +699,9 @@ sub write_html {
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					<a class="navbar-brand" href="$relative_top">Documentation</a>
+					<a class="navbar-brand" href="index.html">
+						<img src="opennms-style/art-assets/OpenNMS_Logo-Mark_Full-color.svg" alt="OpenNMS Documentation" />
+					</a>
 				</div>
 				<div id="navbar" class="collapse navbar-collapse">
 					<ul class="nav navbar-nav">
