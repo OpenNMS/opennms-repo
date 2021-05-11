@@ -645,7 +645,7 @@ sub write_html {
 			  body {
 				  padding-top: 50px;
 				  background-color: #0A0C1B; /* chromatic black */
-				  background-image: url('opennms-style/art-assets/background-dark.png');
+				  background-image: url('/opennms-style/art-assets/background-dark.png');
 				  background-size: cover;
 				  color: #E9EBF9; /* cool gray 1 */
 			  }
@@ -700,7 +700,7 @@ sub write_html {
 						<span class="icon-bar"></span>
 					</button>
 					<a class="navbar-brand" href="index.html">
-						<img src="opennms-style/art-assets/OpenNMS_Logo-Mark_Full-color.svg" alt="OpenNMS Documentation" />
+						<img src="/opennms-style/art-assets/OpenNMS_Logo-Mark_Full-color.svg" alt="OpenNMS Documentation" />
 					</a>
 				</div>
 				<div id="navbar" class="collapse navbar-collapse">
