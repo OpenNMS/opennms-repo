@@ -42,7 +42,7 @@ Repositories are expected to be in the form:
 
 our $VERSION = 2.9.13;
 our $APT_FTPARCHIVE = undef;
-our @ARCHITECTURES = qw(amd64 i386 arm64 armhf);
+our @ARCHITECTURES = qw(amd64 i386 arm64 armhf armel);
 
 =head1 CONSTRUCTOR
 
