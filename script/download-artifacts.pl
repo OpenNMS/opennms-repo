@@ -39,7 +39,7 @@ our $VAULT_MAPPING = [
   [ qr/-(docs|javadoc|xsds)\.tar\.gz$/                            => 'docs'       ],
   [ qr/(horizon|meridian|opennms)-[\d\.]+(-SNAPSHOT)?\.tar\.gz$/  => 'standalone' ],
   [ qr/(minion|sentinel)-[\d\.]+(-SNAPSHOT)?\.tar\.gz$/           => 'standalone' ],
-  [ qr/remote-poller-[\d\.]+(-SNAPSHOT)?\.tar\.gz$/               => 'standalone' ],
+  [ qr/remote-poller-client-[\d\.]+(-SNAPSHOT)?\.tar\.gz$/        => 'standalone' ],
 ];
 
 $CIRCLECI_API_ROOT = 'https://circleci.com/api/v1.1';
