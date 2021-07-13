@@ -198,10 +198,6 @@ sub get_artifacts_for_workspace_id($) {
 sub download_artifact($$) {
   my ($url, $filename) = @_;
 
-  if (not -d $download_to) {
-    make_path($download_to);
-  }
-
   my $output_dir = $download_to;
   if ($VAULT) {
     for my $check (@$VAULT_MAPPING) {
@@ -210,6 +206,10 @@ sub download_artifact($$) {
         last;
       }
     }
+  }
+
+  if (not -d $output_dir) {
+    make_path($output_dir);
   }
 
   my $output_file = File::Spec->catfile($output_dir, $filename);
