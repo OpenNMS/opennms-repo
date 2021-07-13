@@ -21,6 +21,7 @@ use vars qw(
   $INCLUDE_FAILED
   $MATCH
   $PRIME
+  $VAULT
   $WORKFLOW
 
   $CIRCLECI_API_ROOT
@@ -29,6 +30,17 @@ use vars qw(
 
 $INCLUDE_FAILED = 0;
 $PRIME = 0;
+$VAULT = 0;
+
+our $VAULT_MAPPING = [
+  [ qr/\.oci$/                                                    => 'oci'        ],
+  [ qr/\.rpm$/                                                    => 'rpm'        ],
+  [ qr/\.(changes|deb)$/                                          => 'deb'        ],
+  [ qr/-(docs|javadoc|xsds)\.tar\.gz$/                            => 'docs'       ],
+  [ qr/(horizon|meridian|opennms)-[\d\.]+(-SNAPSHOT)?\.tar\.gz$/  => 'standalone' ],
+  [ qr/(minion|sentinel)-[\d\.]+(-SNAPSHOT)?\.tar\.gz$/           => 'standalone' ],
+  [ qr/remote-poller-[\d\.]+(-SNAPSHOT)?\.tar\.gz$/               => 'standalone' ],
+];
 
 $CIRCLECI_API_ROOT = 'https://circleci.com/api/v1.1';
 $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms';
@@ -38,6 +50,7 @@ GetOptions(
   "prime"          => \$PRIME,
   "token=s"        => \$API_TOKEN,
   "include-failed" => \$INCLUDE_FAILED,
+  "vault-layout"   => \$VAULT,
   "workflow=s"     => \$WORKFLOW,
 ) or die "failed to get options for @ARGV\n";
 
@@ -46,7 +59,7 @@ my $branch      = shift(@ARGV);
 my $download_to = shift(@ARGV) || '.';
 
 if (not defined $branch) {
-  print "usage: $0 [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|rpm|deb|oci|tgz|tar.gz> <branch> [download-directory]\n\n";
+  print "usage: $0 [--vault-layout] [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|rpm|deb|oci|tgz|tar.gz> <branch> [download-directory]\n\n";
   exit(1);
 }
 
@@ -189,8 +202,18 @@ sub download_artifact($$) {
     make_path($download_to);
   }
 
-  my $output_file = File::Spec->catfile($download_to, $filename);
-  my $dl_string = "downloading $filename...";
+  my $output_dir = $download_to;
+  if ($VAULT) {
+    for my $check (@$VAULT_MAPPING) {
+      if ($filename =~ $check->[0]) {
+        $output_dir = File::Spec->catdir($output_dir, $check->[1]);
+        last;
+      }
+    }
+  }
+
+  my $output_file = File::Spec->catfile($output_dir, $filename);
+  my $dl_string = "downloading to ${output_file}...";
   print $dl_string;
   open FILEOUT, '>>', $output_file or die "\ncannot open $output_file for writing: $!\n";
   binmode FILEOUT;
