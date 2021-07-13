@@ -22,6 +22,8 @@ if [ "$1" != "--force" ]; then
 	fi
 fi
 
+# git less vim sudo openjdk-11-jdk-headless wget apt-transport-https gnupg bzip2 nsis adoptopenjdk-8-openj9
+
 cd "$TOPDIR"
 echo "- building source once to prime dependency:tree"
 "$TOPDIR/compile.pl" -Dmaven.test.skip.exec=true -Dbuild=all -Pbuild-bamboo -P'!checkstyle' -P'!enable.tarball' -Dbuild.skip.tarball=true install

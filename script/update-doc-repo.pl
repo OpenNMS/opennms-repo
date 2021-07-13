@@ -44,7 +44,7 @@ use vars qw(
 
 $DEBUG = 0;
 $SKIP_INDEX = 0;
-$ROOT = '/mnt/docs.opennms.org';
+$ROOT = '/opt/mecha/docs.opennms.org';
 
 $BOOTSTRAPVERSION = '3.3.4';
 $DESCRIPTIONS = {
@@ -201,6 +201,8 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 	process_javadoc_docdir(File::Spec->catdir($DOCDIR, 'apidocs'));
 } elsif (-f File::Spec->catfile($DOCDIR, 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'allclasses-frame.html')) {
 	process_javadoc_docdir($DOCDIR);
+} elsif (-f File::Spec->catfile($DOCDIR, 'index-all.html') and -f File::Spec->catfile($DOCDIR, 'allclasses-index.html')) {
+	process_javadoc_docdir($DOCDIR);
 } elsif (-f File::Spec->catfile($DOCDIR, 'index.html') and -f File::Spec->catfile($DOCDIR, 'globals.html')) {
 	process_basic_docdir($DOCDIR, 'opennms-js');
 } elsif (-f File::Spec->catfile($DOCDIR, '_', 'js', 'site.js')) {
@@ -257,6 +259,7 @@ sub get_projects {
 		next if ($entry =~ /^\@eaDir/);
 		next if ($entry =~ /^index\.html$/);
 		next if ($entry =~ /^(api|documentation|Minion-Events|OpenNMS|PRIS|SMNnepO)$/);
+		next if ($entry =~ /^opennms-style/);
 		my $path = File::Spec->catdir($projectsroot, $entry);
 		next if (-l $path);
 		next unless (-d $path);
@@ -638,19 +641,54 @@ sub write_html {
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>$title</title>
-		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/${BOOTSTRAPVERSION}/css/bootstrap.min.css">
-		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/${BOOTSTRAPVERSION}/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/${BOOTSTRAPVERSION}/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/${BOOTSTRAPVERSION}/css/bootstrap-theme.min.css">
 		<style type="text/css">
-			body {
-				padding-top: 50px;
-			}
-			li.project {
-				list-style: none;
-			}
-			.release::before {
-				content: "\\a        ";
-				white-space: pre;
-			}
+			  body {
+				  padding-top: 50px;
+				  background-color: #0A0C1B; /* chromatic black */
+				  background-image: url('/opennms-style/art-assets/background-dark.png');
+				  background-size: cover;
+				  color: #E9EBF9; /* cool gray 1 */
+			  }
+			  h3 {
+				  color: #14D1DF; /* sky blue */
+			  }
+			  a, a:link, a:hover, a:active {
+				  color: #E9EBF9; /* cool gray 1 */
+			  }
+			  a:visited {
+				  color: #B4B6C8; /* cool gray 2 */
+			  }
+			  li.project {
+				  list-style: none;
+			  }
+			  .release::before {
+				  content: "^G  ";
+				  white-space: pre;
+			  }
+			  .navbar-brand img {
+				  height: 30px;
+				  width: 30px;
+				  margin-top: -5px;
+			  }
+			  .navbar-inverse {
+				  color: #14D1DF; /* sky blue */
+				  background-color: #0A0C1B; /* chromatic black */
+				  background-image: none;
+			  }
+			  .navbar-inverse .navbar-brand {
+				  color: #14D1DF; /* sky blue */
+			  }
+			  .navbar-inverse .navbar-nav > li > a {
+				  color: #14D1DF; /* sky blue */
+			  }
+			  .dropdown-menu {
+				  background-color: #E9EBF9; /* cool gray 1 */
+			  }
+			  .dropdown-menu > li > a {
+				  color: #0A0C1B; /* chromatic black */
+			  }
 		</style>
 END
 
@@ -670,7 +708,9 @@ END
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					<a class="navbar-brand" href="$relative_top">Documentation</a>
+					<a class="navbar-brand" href="index.html">
+						<img src="/opennms-style/art-assets/OpenNMS_Logo-Mark_Full-color.svg" alt="OpenNMS Documentation" />
+					</a>
 				</div>
 				<div id="navbar" class="collapse navbar-collapse">
 					<ul class="nav navbar-nav">
@@ -755,13 +795,13 @@ END
 	print FILEOUT $text;
 	print FILEOUT <<END;
 		</div>
-		<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
-		<script src="//maxcdn.bootstrapcdn.com/bootstrap/${BOOTSTRAPVERSION}/js/bootstrap.min.js"></script>
+		<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/${BOOTSTRAPVERSION}/js/bootstrap.min.js"></script>
 		<script>
 			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
 			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+			})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 			ga('create', 'UA-2133604-19', 'auto');
 			ga('send', 'pageview');
 		</script>

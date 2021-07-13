@@ -22,7 +22,7 @@ fi
 export bamboo_buildKey="release-${CURRENT_VERSION}"
 
 if [ -e "$HOME/ci/environment" ]; then
-	# shellcheck disable=SC1090
+	# shellcheck disable=SC1090,SC1091
 	. "$HOME/ci/environment"
 fi
 
@@ -175,10 +175,13 @@ pushd_q "${GIT_PREFIX}"
 	exec_quiet git merge --no-edit "${TYPE}/${RELEASE_BRANCH}" || (git status; die "failed to merge ${TYPE}/${RELEASE_BRANCH} to ${MASTER_BRANCH}")
 
 	log "validating documentation"
-	DOC_VERSION_COUNT="$(find opennms-doc/releasenotes/src/asciidoc -type f -print0 | xargs -0 cat | grep -c "${CURRENT_VERSION}" || :)"
+	DOCDIR="opennms-doc/releasenotes/src/asciidoc"
+	if [ -d docs ] && [ -e "docs/antora.yml" ]; then
+		DOCDIR="docs/modules/releasenotes/pages"
+	fi
+	DOC_VERSION_COUNT="$(find "${DOCDIR}" -type f -print0 | xargs -0 cat | grep -c "${CURRENT_VERSION}" || :)"
 	if [ "$DOC_VERSION_COUNT" -eq 0 ]; then
 		die "the release notes don't contain an entry for ${CURRENT_VERSION}"
-		exit 1
 	fi
 
 	for CHANGELOG_FILE in debian/changelog opennms-assemblies/minion/src/main/filtered/debian/changelog opennms-assemblies/sentinel/src/main/filtered/debian/changelog; do
@@ -186,16 +189,15 @@ pushd_q "${GIT_PREFIX}"
 			DEB_VERSION_COUNT="$(grep -c "${CURRENT_VERSION}-" ${CHANGELOG_FILE} || :)"
 			if [ "$TYPE" = "horizon" ] && [ "$DEB_VERSION_COUNT" -eq 0 ]; then
 				die "${CHANGELOG_FILE} doesn't contain an entry for ${CURRENT_VERSION}"
-				exit 1
 			fi
 		fi
 	done
 
 	log "validating OIA"
+	OIA_COUNT="$(grep -c opennmsApiVersion pom.xml)"
 	OIA_SNAPSHOT_COUNT="$(grep opennmsApiVersion pom.xml | grep -c -- -SNAPSHOT)"
-	if [ "$OIA_SNAPSHOT_COUNT" -gt 0 ]; then
+	if [ "$OIA_SNAPSHOT_COUNT" -gt "$OIA_COUNT" ]; then
 		die "\${opennmsApiVersion} is set to a -SNAPSHOT version in pom.xml; OIA must be bumped to a release version before we can continue"
-		exit 1
 	fi
 
 	log "setting version to ${CURRENT_VERSION} in POMs and other relevant files"
@@ -204,11 +206,12 @@ pushd_q "${GIT_PREFIX}"
 		-print0 \
 		-name \*pom.xml \
 		-o -name features.xml \
-		-o -name \*.md \
-		-o -name \*.js \
 		-o -name \*.adoc \
 		-o -name \*.java \
+		-o -name \*.js \
 		-o -name \*.json \
+		-o -name \*.md \
+		-o -name \*.yml \
 		| xargs -0 perl -pi -e "s,${CURRENT_VERSION}.SNAPSHOT,${CURRENT_VERSION},g"
 
 	log "setting logs to WARN (excluding manager.log and root/defaultThreshold log4j2 entries)"

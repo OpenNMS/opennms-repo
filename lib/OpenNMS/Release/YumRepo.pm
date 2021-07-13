@@ -313,7 +313,7 @@ sub index($) {
 		if ($basedir =~ /^(.*)\/branches$/) {
 			$basedir = $1;
 		}
-		unshift(@args, '--deltas', '--num-deltas', '5', '--max-delta-rpm-size', '400000000');
+		unshift(@args, '--deltas', '--num-deltas', '5', '--max-delta-rpm-size', '1000000000');
 
 		my @packages = @{$self->find_all_packages()};
 
@@ -323,10 +323,10 @@ sub index($) {
 			push(@packages, @{$stable->find_all_packages()});
 		}
 
-		my $obsoletedir = File::Spec->catdir($basedir, 'obsolete', $self->platform);
-		if (-d $obsoletedir) {
-			my $obsolete = OpenNMS::Release::YumRepo->new($basedir, 'obsolete', $self->platform);
-			push(@packages, @{$obsolete->find_all_packages()});
+		my $oldstabledir = File::Spec->catdir($basedir, 'oldstable', $self->platform);
+		if (-d $oldstabledir) {
+			my $oldstable = OpenNMS::Release::YumRepo->new($basedir, 'oldstable', $self->platform);
+			push(@packages, @{$oldstable->find_all_packages()});
 		}
 
 		my $dirs;
