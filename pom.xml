@@ -60,7 +60,7 @@
     <mockitoVersion>2.8.47</mockitoVersion>
     <prettytimeVersion>3.2.7.Final</prettytimeVersion>
     <reflectionsVersion>0.9.10</reflectionsVersion>
-    <slf4jVersion>1.7.12</slf4jVersion>
+    <slf4jVersion>1.7.32</slf4jVersion>
   </properties>
 
   <dependencyManagement>
