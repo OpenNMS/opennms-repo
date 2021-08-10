@@ -35,7 +35,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <junitVersion>4.12</junitVersion>
-    <logbackVersion>1.1.3</logbackVersion>
+    <logbackVersion>1.2.0</logbackVersion>
     <mockitoVersion>1.10.19</mockitoVersion>
     <slf4jVersion>1.7.12</slf4jVersion>
     <args4jVersion>2.32</args4jVersion>
