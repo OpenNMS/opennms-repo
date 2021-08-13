@@ -39,7 +39,7 @@
     <mockitoVersion>1.10.19</mockitoVersion>
     <slf4jVersion>1.7.12</slf4jVersion>
     <args4jVersion>2.32</args4jVersion>
-    <bouncyCastleVersion>1.54</bouncyCastleVersion>
+    <bouncyCastleVersion>1.67</bouncyCastleVersion>
   </properties>
 
   <dependencyManagement>
