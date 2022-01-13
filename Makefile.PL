@@ -5,11 +5,12 @@ name           'OpenNMS-Release';
 all_from       'lib/OpenNMS/Release.pm';
 
 # Specific dependencies
-requires       'Git'                       => undef;
+requires       'DateTime::Format::ISO8601' => undef;
 requires       'Expect'                    => 1.20;
 requires       'File::NFSLock'             => undef;
 requires       'File::ShareDir'            => undef;
 requires       'File::Slurp'               => undef;
+requires       'Git'                       => undef;
 requires       'List::Compare'             => undef;
 requires       'Module::Load::Conditional' => undef;
 requires       'Net::SFTP::Foreign'        => undef;
