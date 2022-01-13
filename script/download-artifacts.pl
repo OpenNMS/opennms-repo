@@ -215,7 +215,7 @@ sub download_artifact($$) {
   my $output_file = File::Spec->catfile($output_dir, $filename);
   my $dl_string = "downloading to ${output_file}...";
   print $dl_string;
-  open FILEOUT, '>>', $output_file or die "\ncannot open $output_file for writing: $!\n";
+  open FILEOUT, '>', $output_file or die "\ncannot open $output_file for writing: $!\n";
   binmode FILEOUT;
   my $amount = 0;
   my $last_time = 0;
