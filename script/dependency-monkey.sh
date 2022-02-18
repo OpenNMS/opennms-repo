@@ -18,6 +18,21 @@ if [ -z "$WORKDIR" ]; then
 	WORKDIR="$MYDIR/work"
 fi
 
+function tearDown() {
+	exit_code="$?"
+	set +e
+	docker kill dependency-monkey       >/dev/null 2>&1 || :
+	docker kill dependency-monkey-proxy >/dev/null 2>&1 || :
+	sleep 1
+	docker rm dependency-monkey         >/dev/null 2>&1 || :
+	docker rm dependency-monkey-proxy   >/dev/null 2>&1 || :
+	sleep 1
+	docker network rm dependency-monkey >/dev/null 2>&1 || :
+	return "$exit_code"
+}
+
+trap tearDown EXIT
+
 mkdir -p "$WORKDIR"
 cd "$WORKDIR"
 
@@ -25,14 +40,16 @@ SOURCEDIR="$WORKDIR/monkey-source"
 M2DIR="$WORKDIR/m2"
 
 if [ -d "$SOURCEDIR" ]; then
+	echo "- cleaning up source tree and setting to branch=$BRANCH"
 	# we have an existing checkout, clean it up
-	pushd "$SOURCEDIR"
+	pushd "$SOURCEDIR" >/dev/null 2>&1
 		git clean -fdx
 		git fetch origin "$BRANCH"
 		git checkout "$BRANCH"
 		git reset --hard HEAD
-	popd
+	popd >/dev/null 2>&1
 else
+	echo "- cloning branch $BRANCH from github"
 	git clone --depth=1 --branch "$BRANCH" https://github.com/OpenNMS/opennms.git monkey-source
 fi
 
@@ -58,8 +75,20 @@ esac
 reset_m2dir() {
 	rm -rf "${M2DIR}"
 	mkdir -p "${M2DIR}"
+	if [ -d "${M2DIR}-pristine" ]; then
+		rsync -ar "${M2DIR}-pristine/" "${M2DIR}/"
+	fi
 	cat <<END >"${M2DIR}/settings.xml"
 <settings>
+  <proxies>
+    <proxy>
+      <id>proxy</id>
+      <active>true</active>
+      <host>dependency-monkey-proxy</host>
+      <port>3128</port>
+      <nonProxyHosts>localhost|*.local</nonProxyHosts>
+    </proxy>
+  </proxies>
   <profiles>
     <profile>
       <id>opennms-repos</id>
@@ -99,45 +128,57 @@ END
 DOCKER_CMD=(
 	docker run --name=dependency-monkey
 	--rm
+	--network dependency-monkey
 	-v "${SOURCEDIR}:/opt/build"
 	-v "${M2DIR}:/root/.m2"
 	-w "/opt/build"
 	-i
-	-t
 	"$BUILD_ENV"
 )
 BUILD_ARGS=(
+	-Dbuild=all
+	-Dbuild.skip.tarball=true
+	-DfailIfNoTests=false
+	-Djava.security.egd=file:/dev/./urandom
+	-Dmaven.test.skip.exec=true
+	-Dsmoke=true
+	-DupdatePolicy=never
+	-Passemblies
 	-Pbuild-bamboo
 	-Prun-expensive-tasks
 	-Psmoke
 	-P'!checkstyle'
 	-P'!enable.tarball'
-	-Dbuild=all
-	-Dbuild.skip.tarball=true
-	-Dmaven.test.skip.exec=true
-	-DupdatePolicy=never
 	--batch-mode
 	--fail-at-end
 )
 
 reset_m2dir
 
-# on second thought, not gonna do this because reactor order still matters, plugins
-# could be pulling in transient dependencies
-# echo "- priming m2 cache with plugin dependencies"
-# "${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" -Dsilent=true dependency:resolve-plugins
-# rsync -ar --delete "${M2DIR}/" "${M2DIR}-pristine/"
+echo "- configuring docker network"
+docker network create dependency-monkey
 
-#echo "- building source once to prime dependency:tree"
-#"${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" install
+echo "- starting up an HTTP proxy"
+docker run --network dependency-monkey --name=dependency-monkey-proxy -d -p 3128:3128 datadog/squid
+
+# echo "- priming m2 cache with top-level plugin dependencies"
+"${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" -Dsilent=true -N dependency:resolve dependency:resolve-plugins
+rsync -ar --delete "${M2DIR}/" "${M2DIR}-pristine/"
 
 echo "- generating list of bundles"
 "${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" org.opennms.maven.plugins:structure-maven-plugin:1.0:structure
 "${DOCKER_CMD[@]}" /bin/bash -c "cat target/structure-graph.json | jq -r '.[] | .groupId + \":\" + .artifactId' | sort -u > target/modules.txt"
 mv "${SOURCEDIR}/target/modules.txt" "${WORKDIR}"
 
-while read -r PROJECT; do
-	pushd "${SOURCEDIR}"
+PROJECTS=()
+while IFS= read -r LINE; do
+	PROJECTS+=("$LINE")
+done < "${WORKDIR}/modules.txt"
+
+for PROJECT in "${PROJECTS[@]}"; do
+	echo "- building project: $PROJECT"
+
+	pushd "${SOURCEDIR}" >/dev/null 2>&1
 
 		echo "- running 'git clean -fdx'"
 		git clean -fdx
@@ -146,8 +187,7 @@ while read -r PROJECT; do
 		reset_m2dir
 		echo "done"
 
-	popd
+	popd >/dev/null 2>&1
 
-	echo "- building project: $PROJECT"
 	"${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" --projects "$PROJECT" --also-make install
-done < "${WORKDIR}/modules.txt"
+done
