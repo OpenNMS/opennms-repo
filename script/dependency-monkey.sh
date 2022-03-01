@@ -80,47 +80,47 @@ reset_m2dir() {
 	fi
 	cat <<END >"${M2DIR}/settings.xml"
 <settings>
-  <proxies>
-    <proxy>
-      <id>proxy</id>
-      <active>true</active>
-      <host>dependency-monkey-proxy</host>
-      <port>3128</port>
-      <nonProxyHosts>localhost|*.local</nonProxyHosts>
-    </proxy>
-  </proxies>
-  <profiles>
-    <profile>
-      <id>opennms-repos</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <repositories>
-        <repository>
-          <id>opennms-repo</id>
-          <name>OpenNMS Repository</name>
-          <url>https://maven.opennms.org/content/groups/opennms.org-release/</url>
-        </repository>
-        <repository>
-          <id>central</id>
-          <name>Maven Central</name>
-          <url>https://repo1.maven.org/maven2/</url>
-        </repository>
-      </repositories>
-      <pluginRepositories>
-        <pluginRepository>
-          <id>opennms-repo</id>
-          <name>OpenNMS Repository</name>
-          <url>https://maven.opennms.org/content/groups/opennms.org-release/</url>
-        </pluginRepository>
-        <pluginRepository>
-          <id>central</id>
-          <name>Maven Central</name>
-          <url>https://repo1.maven.org/maven2/</url>
-        </pluginRepository>
-      </pluginRepositories>
-    </profile>
-  </profiles>
+	<proxies>
+		<proxy>
+			<id>proxy</id>
+			<active>true</active>
+			<host>dependency-monkey-proxy</host>
+			<port>3128</port>
+			<nonProxyHosts>localhost|*.local</nonProxyHosts>
+		</proxy>
+	</proxies>
+	<profiles>
+		<profile>
+			<id>opennms-repos</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<repositories>
+				<repository>
+					<id>opennms-repo</id>
+					<name>OpenNMS Repository</name>
+					<url>https://maven.opennms.org/content/groups/opennms.org-release/</url>
+				</repository>
+				<repository>
+					<id>central</id>
+					<name>Maven Central</name>
+					<url>https://repo1.maven.org/maven2/</url>
+				</repository>
+			</repositories>
+			<pluginRepositories>
+				<pluginRepository>
+					<id>opennms-repo</id>
+					<name>OpenNMS Repository</name>
+					<url>https://maven.opennms.org/content/groups/opennms.org-release/</url>
+				</pluginRepository>
+				<pluginRepository>
+					<id>central</id>
+					<name>Maven Central</name>
+					<url>https://repo1.maven.org/maven2/</url>
+				</pluginRepository>
+			</pluginRepositories>
+		</profile>
+	</profiles>
 </settings>
 END
 }
@@ -175,7 +175,12 @@ while IFS= read -r LINE; do
 	PROJECTS+=("$LINE")
 done < "${WORKDIR}/modules.txt"
 
+mkdir -p "${WORKDIR}/state"
+
 for PROJECT in "${PROJECTS[@]}"; do
+	if [ -e "${WORKDIR}/state/${PROJECT}" ]; then
+		continue
+	fi
 	echo "- building project: $PROJECT"
 
 	pushd "${SOURCEDIR}" >/dev/null 2>&1
@@ -190,4 +195,6 @@ for PROJECT in "${PROJECTS[@]}"; do
 	popd >/dev/null 2>&1
 
 	"${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" --projects "$PROJECT" --also-make install
+
+	touch "${WORKDIR}/state/${PROJECT}"
 done
