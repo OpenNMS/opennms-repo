@@ -45,7 +45,11 @@ if [ -d "$SOURCEDIR" ]; then
 	pushd "$SOURCEDIR" >/dev/null 2>&1
 		git clean -fdx
 		git fetch origin "$BRANCH"
-		git checkout "$BRANCH"
+		if git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+			git checkout "$BRANCH"
+		else
+			git checkout -b "$BRANCH" FETCH_HEAD
+		fi
 		git reset --hard HEAD
 	popd >/dev/null 2>&1
 else
@@ -167,7 +171,7 @@ rsync -ar --delete "${M2DIR}/" "${M2DIR}-pristine/"
 
 echo "- generating list of bundles"
 "${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" org.opennms.maven.plugins:structure-maven-plugin:1.0:structure
-"${DOCKER_CMD[@]}" /bin/bash -c "cat target/structure-graph.json | jq -r '.[] | .groupId + \":\" + .artifactId' | sort -u > target/modules.txt"
+"${DOCKER_CMD[@]}" /bin/bash -c "cat target/structure-graph.json | jq -r '.[] | .groupId + \":\" + .artifactId' > target/modules.txt"
 mv "${SOURCEDIR}/target/modules.txt" "${WORKDIR}"
 
 PROJECTS=()
