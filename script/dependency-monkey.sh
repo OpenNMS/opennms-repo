@@ -198,7 +198,10 @@ for PROJECT in "${PROJECTS[@]}"; do
 
 	popd >/dev/null 2>&1
 
-	"${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" --projects "$PROJECT" --also-make install
+	if ! "${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" --projects "$PROJECT" --also-make install; then
+		echo "FAILED build: $PROJECT"
+		exit 1
+	fi
 
 	touch "${WORKDIR}/state/${PROJECT}"
 done
