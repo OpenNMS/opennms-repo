@@ -59,6 +59,7 @@ script/smoke.pl
 script/sync-packagecloud.sh
 script/update-apt-repo.pl
 script/update-doc-repo.pl
+script/update-release-from-master.sh
 script/update-sourceforge-repo.pl
 script/update-yum-repo.pl
 share/generate-yum-repo-html.post
