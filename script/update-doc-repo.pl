@@ -72,6 +72,7 @@ $DESCRIPTIONS = {
 	'releasenotes'      => 'Release Notes',
 	'releases'          => 'Releases',
 	'sampler'           => 'Sampler',
+	'xsds',             => 'XML Schemas',
 };
 
 my $result = GetOptions(
@@ -293,7 +294,9 @@ sub get_projects {
 			return $a cmp $b;
 		}
 	} keys %$projects) {
-		push(@ret, $projects->{$project});
+		if ($project eq 'opennms') {
+			push(@ret, $projects->{$project});
+		}
 	}
 	return @ret;
 }
@@ -405,6 +408,7 @@ sub get_releases_for_project {
 sub get_branches_for_project {
 	my $project = shift;
 
+	return qw();
 	my @ret = sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} =~ /^(develop|foundation|master)$/ } @{$project->{'releases'}};
 	push(@ret, sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} !~ /^(develop|foundation|master)$/ } @{$project->{'releases'}});
 	return @ret;
