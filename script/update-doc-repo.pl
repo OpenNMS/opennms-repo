@@ -71,6 +71,7 @@ $DESCRIPTIONS = {
 	'releasenotes'      => 'Release Notes',
 	'releases'          => 'Releases',
 	'sampler'           => 'Sampler',
+	'xsds',             => 'XML Schemas',
 };
 
 my $result = GetOptions(
