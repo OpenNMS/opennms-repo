@@ -293,7 +293,9 @@ sub get_projects {
 			return $a cmp $b;
 		}
 	} keys %$projects) {
-		push(@ret, $projects->{$project});
+		if ($project eq 'opennms') {
+			push(@ret, $projects->{$project});
+		}
 	}
 	return @ret;
 }
