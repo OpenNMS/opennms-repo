@@ -405,6 +405,7 @@ sub get_releases_for_project {
 sub get_branches_for_project {
 	my $project = shift;
 
+	return qw();
 	my @ret = sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} =~ /^(develop|foundation|master)$/ } @{$project->{'releases'}};
 	push(@ret, sort { $a->{'name'} cmp $b->{'name'} } grep { $_->{'type'} eq 'branches' and $_->{'name'} !~ /^(develop|foundation|master)$/ } @{$project->{'releases'}});
 	return @ret;
@@ -503,8 +504,7 @@ sub update_project_indexes {
 	my $project  = shift;
 
 	my @releases = get_releases_for_project($project);
-	#my @branches = get_branches_for_project($project);
-	my @branches = qw();
+	my @branches = get_branches_for_project($project);
 
 	my $projecttext = "";
 
