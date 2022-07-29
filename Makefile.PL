@@ -17,6 +17,7 @@ requires       'Net::SFTP::Foreign'        => undef;
 requires       'version'                   => undef;
 recommends     'JSON::PP'                  => 4.04; # for download-artifacts.pl
 recommends     'LWP'                       => 6.43; # for download-artifacts.pl
+recommends     'RPM::VersionCompare'       => undef;
 test_requires  'Test::More'                => undef;
 
 install_script 'script/buildtool.pl';
