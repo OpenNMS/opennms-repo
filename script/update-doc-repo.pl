@@ -664,7 +664,7 @@ sub write_html {
 				  list-style: none;
 			  }
 			  .release::before {
-				  content: "^G  ";
+				  content: "  ";
 				  white-space: pre;
 			  }
 			  .navbar-brand img {
