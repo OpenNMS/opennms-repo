@@ -49,6 +49,7 @@ $ROOT = '/opt/mecha/docs.opennms.org';
 $BOOTSTRAPVERSION = '3.3.4';
 $DESCRIPTIONS = {
 	'branches'          => 'Development',
+	'documentation'     => 'Documentation',
 	'guide-admin'       => 'Admin',
 	'guide-development' => 'Developers',
 	'guide-concepts'    => 'Concepts',
