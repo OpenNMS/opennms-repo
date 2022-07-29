@@ -503,7 +503,8 @@ sub update_project_indexes {
 	my $project  = shift;
 
 	my @releases = get_releases_for_project($project);
-	my @branches = get_branches_for_project($project);
+	#my @branches = get_branches_for_project($project);
+	my @branches = qw();
 
 	my $projecttext = "";
 
