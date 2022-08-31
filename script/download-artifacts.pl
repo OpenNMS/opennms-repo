@@ -33,6 +33,7 @@ $PRIME = 0;
 $VAULT = 0;
 
 our $VAULT_MAPPING = [
+  [ qr/\.ya?ml$/                                                  => 'yml'        ],
   [ qr/\.xml$/                                                    => 'xml'        ],
   [ qr/\.oci$/                                                    => 'oci'        ],
   [ qr/\.rpm$/                                                    => 'rpm'        ],
@@ -60,7 +61,7 @@ my $branch      = shift(@ARGV);
 my $download_to = shift(@ARGV) || '.';
 
 if (not defined $branch) {
-  print "usage: $0 [--vault-layout] [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|rpm|deb|oci|tgz|tar.gz|xml> <branch> [download-directory]\n\n";
+  print "usage: $0 [--vault-layout] [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|rpm|deb|oci|tgz|tar.gz|xml|yml> <branch> [download-directory]\n\n";
   exit(1);
 }
 
@@ -72,7 +73,7 @@ if ($WORKFLOW) {
   $INCLUDE_FAILED = 1;
 }
 
-our @EXTENSIONS = ('rpm', 'deb', 'oci', 'tgz', 'tar.gz', 'xml');
+our @EXTENSIONS = ('rpm', 'deb', 'oci', 'tgz', 'tar.gz', 'xml', 'yaml', 'yml');
 if ($extension ne 'all') {
   @EXTENSIONS = (split(',', $extension));
 }
