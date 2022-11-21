@@ -62,13 +62,13 @@ BUILD_ENV=""
 
 case "$JDK_VERSION" in
 	8)
-		BUILD_ENV="opennms/build-env:8u322b06-3.8.4-b8247"
+		BUILD_ENV="opennms/build-env:8u322b06-3.8.4-b8770"
 		;;
 	11*)
-		BUILD_ENV="opennms/build-env:11.0.14_9-3.8.4-b8249"
+		BUILD_ENV="opennms/build-env:11.0.14_9-3.8.4-b8772"
 		;;
 	17*)
-		BUILD_ENV="opennms/build-env:17.0.2_8-3.8.4-b8248"
+		BUILD_ENV="opennms/build-env:17.0.3.0.7-3.8.6-b8771"
 		;;
 	*)
 		echo "unknown JDK version: $JDK_VERSION"
