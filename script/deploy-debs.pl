@@ -3,8 +3,6 @@
 use strict;
 use warnings;
 
-$|++;
-
 use Cwd qw(abs_path);
 use File::Basename;
 use File::Slurp;
@@ -52,17 +50,19 @@ if (-e $passfile) {
 	print STDERR "WARNING: $passfile does not exist!  New RPMs will not be signed!";
 }
 
-opendir(FILES, '.') or die "Unable to read current directory: $!";
-while (my $line = readdir(FILES)) {
+my $FILEDIR_HANDLE;
+
+opendir($FILEDIR_HANDLE, '.') or die "Unable to read current directory: $!";
+while (my $line = readdir($FILEDIR_HANDLE)) {
 	next if ($line =~ /^\.\.?$/);
 	chomp($line);
 	if ($line =~ /\.deb$/) {
-		push(@FILES_DEBS, $line);
+		push(@$FILEDIR_HANDLE_DEBS, $line);
 	} else {
 		print STDERR "WARNING: unmatched file: $line\n";
 	}
 }
-closedir(FILES) or die "Unable to close current directory: $!";
+closedir($FILEDIR_HANDLE) or die "Unable to close current directory: $!";
 
 my $repo_file = '.nightly';
 if (-e 'opennms-build-repo.txt') {

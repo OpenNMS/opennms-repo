@@ -3,8 +3,6 @@
 use strict;
 use warnings;
 
-$|++;
-
 use Cwd qw(abs_path cwd);
 use File::Path qw(mkpath remove_tree);
 use File::Spec;
@@ -20,14 +18,16 @@ use vars qw(
 my $dir = shift @ARGV || '.';
 $DESTPATH = shift @ARGV || '/mnt/docs.opennms.org/OpenNMS';
 
-opendir(DIR, $dir) or die "Unable to read from $dir: $!\n";
-while (my $entry = readdir(DIR)) {
+my $READ_HANDLE;
+
+opendir($READ_HANDLE, '<', $dir) or die "Unable to read from $dir: $!\n";
+while (my $entry = readdir($READ_HANDLE)) {
 	if ($entry =~ /^(guide-all-.*|opennms-.*-docs)\.tar\.(gz|bz2)$/) {
 		$TARBALL = abs_path(File::Spec->catfile($dir, $entry));
 		last;
 	}
 }
-closedir(DIR) or die "Unable to close $dir: $!\n";
+closedir($READ_HANDLE) or die "Unable to close $dir: $!\n";
 
 if (defined $TARBALL) {
 	print "* Found $TARBALL\n";
@@ -95,9 +95,10 @@ sub copy_dirs {
 	}
 
 	my $yeardir = File::Spec->catdir($to, $year);
-	opendir(DIR, $yeardir) or die "Failed to read directory '$yeardir': $!\n";
-	my @entries = sort { $b <=> $a } grep {!/^(\.\.?|latest)$/} readdir(DIR);
-	closedir(DIR) or die "Failed to close directory '$yeardir': $!\n";
+	my $YEARDIR_HANDLE;
+	opendir($YEARDIR_HANDLE, $yeardir) or die "Failed to read directory '$yeardir': $!\n";
+	my @entries = sort { $b <=> $a } grep {!/^(\.\.?|latest)$/} readdir($YEARDIR_HANDLE);
+	closedir($YEARDIR_HANDLE) or die "Failed to close directory '$yeardir': $!\n";
 
 	if (@entries > 0) {
 		my $newest = File::Spec->catdir($to, $year, $entries[0]);

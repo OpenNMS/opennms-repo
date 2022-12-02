@@ -62,7 +62,7 @@ sub new {
 	return $self;
 }
 
-sub new_with_base($) {
+sub new_with_base {
 	my $self = shift;
 	my $base = shift;
 
@@ -79,7 +79,7 @@ The path of the repository.
 
 =cut
 
-sub path() {
+sub path {
 	my $self = shift;
 	return $self->base;
 }
@@ -90,7 +90,7 @@ A convenient way of displaying the repository.
 
 =cut
 
-sub to_string() {
+sub to_string {
 	my $self = shift;
 	return $self->path;
 }
@@ -115,7 +115,7 @@ No-op, source repositories don't get indexed.
 
 =cut
 
-sub index($) {
+sub index {
 	return 1;
 }
 

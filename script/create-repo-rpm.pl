@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-$|++;
-
 use strict;
 use warnings;
 
@@ -68,14 +66,15 @@ my $repofiledir = defined $REPOFILEDIR? Cwd::abs_path($REPOFILEDIR) : File::Spec
 mkpath($repofiledir);
 
 my $existing_rpm = undef;
-opendir(DIR, $repofiledir) or die "Can't read from $repofiledir: $!\n";
-while (my $entry = readdir(DIR)) {
+my $REPO_DIR_HANDLE;
+opendir($REPO_DIR_HANDLE, $repofiledir) or die "Can't read from $repofiledir: $!\n";
+while (my $entry = readdir($REPO_DIR_HANDLE)) {
 	if ($entry =~ /^${rpmname}-/ and $entry =~ /\.rpm$/) {
 		my $filename = File::Spec->catfile($repofiledir, $entry);
 		$existing_rpm = OpenNMS::Release::RPMPackage->new($filename);
 	}
 }
-closedir(DIR) or die "Can't close directory $repofiledir: $!\n";
+closedir($REPO_DIR_HANDLE) or die "Can't close directory $repofiledir: $!\n";
 
 my $rpm_version = defined $existing_rpm? ($existing_rpm->version->version)     : $default_rpm_version;
 my $rpm_release = defined $existing_rpm? ($existing_rpm->version->release + 1) : $default_rpm_release;
@@ -133,7 +132,7 @@ sub create_repo_file {
 
 	my $repohandle = IO::Handle->new();
 	my $repofilename = File::Spec->catfile($outputdir, "${rpmname}-${platform}.repo");
-	open($repohandle, '>' . $repofilename) or die "unable to write to $repofilename: $!";
+	open($repohandle, '>', $repofilename) or die "unable to write to $repofilename: $!";
 
 	my $output = "";
 	for my $plat ('common', $platform) {

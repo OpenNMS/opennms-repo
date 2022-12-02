@@ -3,8 +3,6 @@
 use strict;
 use warnings;
 
-$|++;
-
 use Cwd qw(abs_path);
 use File::Basename;
 use File::ShareDir qw(:ALL);
@@ -67,37 +65,40 @@ if (-e $passfile) {
 	print STDERR "WARNING: $passfile does not exist!  New RPMs will not be signed!\n";
 }
 
-opendir(FILES, '.') or die "Unable to read current directory: $!";
-while (my $line = readdir(FILES)) {
+my $FILEDIR_HANDLE;
+opendir($FILEDIR_HANDLE, '<', '.') or die "Unable to read current directory: $!";
+while (my $line = readdir($FILEDIR_HANDLE)) {
 	next if ($line =~ /^\.\.?$/);
 	chomp($line);
 	if ($line =~ /^opennms-source-.*\.tar.(gz|bz2)$/) {
 		$FILE_SOURCE_TARBALL = $line;
 	} elsif ($line =~ /\.rpm$/) {
-		push(@FILES_RPMS, $line);
+		push(@$FILEDIR_HANDLE_RPMS, $line);
 	} else {
 		print STDERR "WARNING: unmatched file: $line\n";
 	}
 }
-closedir(FILES) or die "Unable to close current directory: $!";
+closedir($FILEDIR_HANDLE) or die "Unable to close current directory: $!";
 
 if ($NOTAR) {
 	print STDERR "WARNING: skipping tarball deployment\n";
 } else {
+	my $TAR_HANDLE;
+
 	my ($extension) = $FILE_SOURCE_TARBALL =~ /\.(gz|bz2)$/;
 	if ($extension eq 'bz2') {
-		open(TAR, "tar -tjf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
+		open($TAR_HANDLE, "-|", "tar -tjf $FILE_SOURCE_TARBALL") or die "Unable to run tar: $!";
 	} else {
-		open(TAR, "tar -tzf $FILE_SOURCE_TARBALL |") or die "Unable to run tar: $!";
+		open($TAR_HANDLE, "-|", "tar -tzf $FILE_SOURCE_TARBALL") or die "Unable to run tar: $!";
 	}
-	while (<TAR>) {
+	while (<$TAR_HANDLE>) {
 		chomp($_);
 		if (/\/\.nightly$/) {
 			$FILE_NIGHTLY = $_;
 			last;
 		}
 	}
-	close(TAR);
+	close($TAR_HANDLE);
 	die "Unable to find .nightly file in $FILE_SOURCE_TARBALL" unless (defined $FILE_NIGHTLY and $FILE_NIGHTLY ne "");
 	if ($extension eq 'bz2') {
 		chomp($RELEASE=`tar -xjf $FILE_SOURCE_TARBALL -O $FILE_NIGHTLY`);

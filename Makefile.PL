@@ -1,3 +1,5 @@
+use strict;
+
 use inc::Module::Install;
 
 # Define metadata

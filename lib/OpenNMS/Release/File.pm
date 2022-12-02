@@ -51,7 +51,7 @@ sub new {
 
 	$self->{PATH} = $path;
 
-	bless($self);
+	bless($self, "OpenNMS::Release::File");
 	return $self;
 }
 
@@ -74,7 +74,7 @@ Given a base directory, returns the path of this file, relative to that base pat
 
 =cut
 
-sub relative_path($) {
+sub relative_path {
 	my $self = shift;
 	my $base = shift;
 
@@ -85,7 +85,7 @@ sub relative_path($) {
 	if ($self->path =~ /^${base}\/?(.*)$/) {
 		return $1;
 	}
-	return undef;
+	return;
 }
 
 =head2 * equals($file)
@@ -94,7 +94,7 @@ Given a file, returns true if both files have the same name and version.
 
 =cut
 
-sub equals($) {
+sub equals {
 	my $this = shift;
 	my $that = shift;
 
@@ -107,7 +107,7 @@ Delete the file from the filesystem.
 
 =cut
 
-sub delete() {
+sub delete {
 	my $self = shift;
 	return CORE::unlink($self->path);
 }
@@ -118,7 +118,7 @@ Given a target path, copy the current file to that path.
 
 =cut
 
-sub copy($) {
+sub copy {
 	my $self = shift;
 	my $to   = shift;
 
@@ -138,7 +138,7 @@ Given a target path, hard link the current file to that path.
 
 =cut
 
-sub link($) {
+sub link {
 	my $self = shift;
 	my $to   = shift;
 
@@ -158,7 +158,7 @@ the source file's location.
 
 =cut
 
-sub symlink($) {
+sub symlink {
 	my $self = shift;
 	my $to   = shift;
 
@@ -178,12 +178,12 @@ Returns a string representation of the file, suitable for printing.
 
 =cut
 
-sub to_string() {
+sub to_string {
 	my $self = shift;
 	return $self->path;
 }
 
-sub _get_filename_for_target($) {
+sub _get_filename_for_target {
 	my $self = shift;
 	my $to   = shift;
 

@@ -46,14 +46,14 @@ sub new {
 
 	if (not defined $version or not defined $release) {
 		carp "You must pass at least a version and release!";
-		return undef;
+		return;
 	}
 
 	$self->{VERSION} = $version;
 	$self->{RELEASE} = $release;
 	$self->{EPOCH}   = $epoch;
 
-	bless($self);
+	bless($self, "OpenNMS::Release::Version");
 	return $self;
 }
 
@@ -76,7 +76,7 @@ The epoch.  If no epoch is set, returns the default epoch, 0.
 
 =cut
 
-sub epoch_int() {
+sub epoch_int {
 	my $self = shift;
 	return 0 unless (defined $self->epoch);
 	return $self->epoch;
@@ -225,7 +225,7 @@ Given a version object, returns true if both versions are the same.
 
 =cut
 
-sub equals($) {
+sub equals {
 	my $self      = shift;
 	my $compareto = shift;
 
@@ -239,7 +239,7 @@ given version.
 
 =cut
 
-sub is_newer_than($) {
+sub is_newer_than {
 	my $self      = shift;
 	my $compareto = shift;
 
@@ -253,7 +253,7 @@ given version.
 
 =cut
 
-sub is_older_than($) {
+sub is_older_than {
 	my $self      = shift;
 	my $compareto = shift;
 
@@ -266,7 +266,7 @@ Returns a string representation of the version, suitable for printing.
 
 =cut
 
-sub to_string() {
+sub to_string {
 	my $self = shift;
 	return $self->display_version;
 }

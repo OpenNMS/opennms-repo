@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+use strict;
+use warnings;
+
 use Fcntl qw(LOCK_EX LOCK_NB);
 use File::NFSLock qw(uncache);
 use File::Spec;

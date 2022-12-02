@@ -55,7 +55,7 @@ sub new {
 
 	if (not defined $path) {
 		carp "You did not provide a path!";
-		return undef;
+		return;
 	}
 
 	if (not defined $DEBSIGS) {
@@ -76,7 +76,7 @@ sub new {
 	$escaped_path =~ s/\'/\\\'/g;
 
 	my $handle = IO::Handle->new();
-	open($handle, "dpkg-deb -f '$escaped_path' package version architecture |") or croak "Unable to run dpkg-deb -f '$escaped_path': $!";
+	open($handle, "-|", "dpkg-deb -f '$escaped_path' package version architecture") or croak "Unable to run dpkg-deb -f '$escaped_path': $!";
 	my $d_package = <$handle>;
 	my $d_version = <$handle>;
 	my $d_architecture = <$handle>;
@@ -84,15 +84,15 @@ sub new {
 
 	if (not $d_package =~ s/^Package:\s*(.*?)\s*\r?\n?$/$1/) {
 		carp "Unable to determine package name from output: $d_package";
-		return undef;
+		return;
 	}
 	if (not $d_version =~ s/^Version:\s*(.*?)\s*\r?\n?$/$1/) {
 		carp "Unable to determine package version from output: $d_version";
-		return undef;
+		return;
 	}
 	if (not $d_architecture =~ s/^Architecture:\s*(.*?)\s*\r?\n?$/$1/) {
 		carp "Unable to determine package arch from output: $d_architecture";
-		return undef;
+		return;
 	}
 
 	my $name = $d_package;
@@ -119,7 +119,7 @@ Given a GPG id and password, sign (or resign) the Debian package.
 
 =cut
 
-sub sign ($$) {
+sub sign {
 	my $self         = shift;
 	my $gpg_id       = shift;
 	my $gpg_password = shift;

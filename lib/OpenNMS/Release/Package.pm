@@ -60,7 +60,7 @@ sub new {
 
 	if (not defined $version) {
 		carp "You must provide at least a path, name, and OpenNMS::Release::Version!";
-		return undef;
+		return;
 	}
 
 	$self->{NAME}    = $name;
@@ -143,7 +143,7 @@ Given a package, returns true if both packages have the same name and version.
 
 =cut
 
-sub equals($) {
+sub equals {
 	my $this = shift;
 	my $that = shift;
 
@@ -157,7 +157,7 @@ given package, and they have the same name.
 
 =cut
 
-sub is_newer_than($) {
+sub is_newer_than {
 	my $this = shift;
 	my $that = shift;
 
@@ -177,7 +177,7 @@ given package, and they have the same name.
 
 =cut
 
-sub is_older_than($) {
+sub is_older_than {
 	my $this = shift;
 	my $that = shift;
 
@@ -196,7 +196,7 @@ Delete the package from the filesystem.
 
 =cut
 
-sub delete() {
+sub delete {
 	my $self = shift;
 	return unlink($self->path);
 }
@@ -207,7 +207,7 @@ Given a GPG id and password, sign (or resign) the package.
 
 =cut
 
-sub sign ($$) {
+sub sign {
 	my $self         = shift;
 	my $gpg_id       = shift;
 	my $gpg_password = shift;
@@ -221,7 +221,7 @@ Returns a string representation of the package, suitable for printing.
 
 =cut
 
-sub to_string() {
+sub to_string {
 	my $self = shift;
 	return $self->name . '-' . $self->version->full_version;
 }
