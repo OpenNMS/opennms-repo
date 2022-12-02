@@ -163,7 +163,7 @@ echo "- configuring docker network"
 docker network create dependency-monkey
 
 echo "- starting up an HTTP proxy"
-docker run --network dependency-monkey --name=dependency-monkey-proxy -d -p 3128:3128 datadog/squid
+docker run --network dependency-monkey --name=dependency-monkey-proxy -d -p 3128:3128 ubuntu/squid:5.2-22.04_beta
 
 # echo "- priming m2 cache with top-level plugin dependencies"
 "${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" -Dsilent=true -N dependency:resolve dependency:resolve-plugins
