@@ -57,7 +57,7 @@ while (my $line = readdir($FILEDIR_HANDLE)) {
 	next if ($line =~ /^\.\.?$/);
 	chomp($line);
 	if ($line =~ /\.deb$/) {
-		push(@$FILEDIR_HANDLE_DEBS, $line);
+		push(@$FILES_DEBS, $line);
 	} else {
 		print STDERR "WARNING: unmatched file: $line\n";
 	}

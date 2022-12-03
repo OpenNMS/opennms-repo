@@ -73,7 +73,7 @@ while (my $line = readdir($FILEDIR_HANDLE)) {
 	if ($line =~ /^opennms-source-.*\.tar.(gz|bz2)$/) {
 		$FILE_SOURCE_TARBALL = $line;
 	} elsif ($line =~ /\.rpm$/) {
-		push(@$FILEDIR_HANDLE_RPMS, $line);
+		push(@$FILES_RPMS, $line);
 	} else {
 		print STDERR "WARNING: unmatched file: $line\n";
 	}

@@ -872,7 +872,7 @@ sub process_minion_asciidoc_docdir {
 		my ($name) = $entry =~ /^(.*?)\.html$/;
 		$name = lc($name);
 
-		my $target = File::Spec->catdir($INSTALL$DOCDIR_HANDLE, $name);
+		my $target = File::Spec->catdir($INSTALLDIR, $name);
 		mkpath($target);
 
 		symlink('../.images', File::Spec->catdir($target, 'images')) if (-d $images);
@@ -945,7 +945,7 @@ sub process_docbook_docdir {
 
 	my $common = File::Spec->catdir($from, 'common');
 	if (-d $common) {
-		my $tocommon = File::Spec->catdir($INSTALL$DIR_HANDLE, '.common');
+		my $tocommon = File::Spec->catdir($INSTALLDIR, '.common');
 		mkpath($tocommon);
 
 		find({
@@ -983,7 +983,7 @@ sub process_docbook_docdir {
 		do_debug("- Processing $name");
 
 		my $mappedname = (exists $mapping->{$name}? $mapping->{$name} : $name);
-		my $to = File::Spec->catdir($INSTALL$DIR_HANDLE, $mappedname);
+		my $to = File::Spec->catdir($INSTALLDIR, $mappedname);
 
 		for my $extension ('pdf', 'html') {
 			my $fromfile = File::Spec->catfile($from, $name . '.' . $extension);
