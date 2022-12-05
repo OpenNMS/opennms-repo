@@ -17,7 +17,7 @@ sub new {
 
 	$self->{PACKAGES} = {};
 
-	bless($self);
+	bless($self, "OpenNMS::Release::PackageSet");
 
 	if (@_) {
 		$self->add(@_);
@@ -26,12 +26,12 @@ sub new {
 	return $self;
 }
 
-sub _hash() {
+sub _hash {
 	my $self = shift;
 	return $self->{PACKAGES};
 }
 
-sub add(@) {
+sub add {
 	my $self = shift;
 
 	my @packages = ();
@@ -50,7 +50,7 @@ sub add(@) {
 	}
 }
 
-sub remove($) {
+sub remove {
 	my $self    = shift;
 	my $package = shift;
 
@@ -69,13 +69,13 @@ sub remove($) {
 	return $deleted;
 }
 
-sub set(@) {
+sub set {
 	my $self = shift;
 	$self->{PACKAGES} = {};
 	$self->add(@_);
 }
 
-sub has_newer_than($) {
+sub has_newer_than {
 	my $self = shift;
 	my $other = shift;
 
@@ -97,7 +97,7 @@ sub has_newer_than($) {
 	return 0;
 }
 
-sub find_all() {
+sub find_all {
 	my $self = shift;
 	my @ret = ();
 	for my $name (sort keys %{$self->_hash}) {
@@ -110,7 +110,7 @@ sub find_all() {
 	return \@ret;
 }
 
-sub find_newest() {
+sub find_newest {
 	my $self = shift;
 	my @ret = ();
 	for my $name (sort keys %{$self->_hash}) {
@@ -122,7 +122,7 @@ sub find_newest() {
 	return \@ret;
 }
 
-sub find_by_name($) {
+sub find_by_name {
 	my $self = shift;
 	my $name = shift;
 
@@ -133,7 +133,7 @@ sub find_by_name($) {
 	return \@ret;
 }
 
-sub find_newest_by_name($) {
+sub find_newest_by_name {
 	my $self = shift;
 	my $name = shift;
 
@@ -144,7 +144,7 @@ sub find_newest_by_name($) {
 	return \@ret;
 }
 
-sub find_newest_by_name_and_arch($$) {
+sub find_newest_by_name_and_arch {
 	my $self = shift;
 	my $name = shift;
 	my $arch = shift;
@@ -152,16 +152,16 @@ sub find_newest_by_name_and_arch($$) {
 	if (exists $self->_hash->{$name}->{$arch}) {
 		return $self->_hash->{$name}->{$arch}->[0];
 	}
-	return undef;
+	return;
 }
 
-sub find_obsolete() {
+sub find_obsolete {
 	my $self = shift;
 	my @ret = grep { $self->is_obsolete($_) } @{$self->find_all()};
 	return \@ret;
 }
 
-sub is_obsolete($) {
+sub is_obsolete {
 	my $self = shift;
 	my $package  = shift;
 

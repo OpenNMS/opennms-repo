@@ -2,7 +2,7 @@
 *.bak
 *.json
 *.old
-*.yml
+/*.yml
 .classpath
 .project
 .settings

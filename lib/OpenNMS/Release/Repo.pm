@@ -55,7 +55,7 @@ sub new {
 	$self->{BASE} = $base;
 	$self->{DIRTY} = 0;
 
-	bless($self);
+	bless($self, "OpenNMS::Release::Repo");
 	return $self;
 }
 
@@ -71,7 +71,7 @@ but with the new base path.
 
 =cut
 
-sub new_with_base($) {
+sub new_with_base {
 	croak "You must implement 'new_with_base' in your subclass!";
 }
 
@@ -125,14 +125,14 @@ sub copy {
 	my $self    = shift;
 	my $newbase = shift;
 	if (not defined $newbase) {
-		return undef;
+		return;
 	}
 
 	if (not defined $RSYNC) {
 		$RSYNC = find_executable('rsync');
 		if (not defined $RSYNC) {
 			carp "Unable to locate \`rsync\`: $!";
-			return undef;
+			return;
 		}
 	}
 
@@ -210,7 +210,7 @@ sub create_temporary {
 	return $self->copy($newbase);
 }
 
-sub _get_fs_for_path($) {
+sub _get_fs_for_path {
 	my $self = shift;
 	my $path = shift;
 
@@ -220,22 +220,23 @@ sub _get_fs_for_path($) {
 		$DF = find_executable('df');
 		if (not defined $DF) {
 			carp "unable to locate \`df\`: $!";
-			return undef;
+			return;
 		}
 	}
 
 	if ($? == 0) {
-		open(OUTPUT, "$DF -h '$path' |") or croak "unable to run 'df -h $path': $!";
-		<OUTPUT>;
-		my $output = <OUTPUT>;
-		close(OUTPUT);
+		my $OUTPUT;
+		open($OUTPUT, "-|", "$DF -h '$path'") or croak "unable to run 'df -h $path': $!";
+		<$OUTPUT>;
+		my $output = <$OUTPUT>;
+		close($OUTPUT);
 
 		my @entries = split(/\s+/, $output);
 		if ($entries[0] =~ /^\//) {
 			return $entries[0];
 		}
 	}
-	return undef;
+	return;
 }
 
 =item * _packageset
@@ -258,12 +259,12 @@ sub packageset {
 	return $self->{PACKAGESET};
 }
 
-sub clear_cache() {
+sub clear_cache {
 	my $self = shift;
 	return delete $self->{PACKAGESET};
 }
 
-sub _add_to_packageset($) {
+sub _add_to_packageset {
 	my $self    = shift;
 	my $package = shift;
 
@@ -305,7 +306,7 @@ sub delete {
 	return 1;
 }
 
-sub _get_final_path($$) {
+sub _get_final_path {
 	my $self    = shift;
 	my $topath  = shift;
 
@@ -319,7 +320,7 @@ sub _get_final_path($$) {
 	}
 }
 
-sub delete_package($) {
+sub delete_package {
 	my $self    = shift;
 	my $package = shift;
 
@@ -329,7 +330,7 @@ sub delete_package($) {
 	return $ret;
 }
 
-sub copy_package($$) {
+sub copy_package {
 	my $self    = shift;
 	my $package = shift;
 	my $topath  = shift;
@@ -348,7 +349,7 @@ sub copy_package($$) {
 	return $newpackage;
 }
 
-sub link_package($$) {
+sub link_package {
 	my $self    = shift;
 	my $package = shift;
 	my $topath  = shift;
@@ -367,7 +368,7 @@ sub link_package($$) {
 	return $newpackage;
 }
 
-sub symlink_package($$) {
+sub symlink_package {
 	my $self    = shift;
 	my $package = shift;
 	my $topath  = shift;
@@ -392,7 +393,7 @@ the package into C<$repo-E<gt>path>/opennms/i386/C<package_filename>.
 
 =cut
 
-sub install_package($$) {
+sub install_package {
 	my $self    = shift;
 	my $package = shift;
 	my $topath  = shift;
@@ -408,7 +409,7 @@ newest existing version of that package.
 
 =cut
 
-sub share_package($$) {
+sub share_package {
 	my $self      = shift;
 	my $from_repo = shift;
 	my $package   = shift;
@@ -437,7 +438,7 @@ exists, then share the newest package.
 
 =cut
 
-sub share_all_packages($) {
+sub share_all_packages {
 	my $self      = shift;
 	my $from_repo = shift;
 
@@ -525,7 +526,7 @@ sub find_newest_package_by_name {
 	my $arch      = shift;
 
 	my $newest = $self->packageset->find_newest_by_name($name);
-	return undef unless (defined $newest);
+	return unless (defined $newest);
 
 	if (not defined $arch) {
 		carp "WARNING: No architecture specified. This is probably not what you want.\n";
@@ -536,7 +537,7 @@ sub find_newest_package_by_name {
 				return $package;
 			}
 		}
-		return undef;
+		return;
 	}
 }
 
@@ -650,7 +651,7 @@ Takes the same options as the index method.
 
 =cut
 
-sub index_if_necessary($) {
+sub index_if_necessary {
 	my $self    = shift;
 	my $options = shift;
 
@@ -671,7 +672,7 @@ Returns the repository object to be manipulated inside the transaction.
 
 =cut
 
-sub begin() {
+sub begin {
 	my $self = shift;
 
 	if (exists $self->{ORIGINAL_REPO}) {
@@ -692,7 +693,7 @@ Returns the committed repository object.
 
 =cut
 
-sub commit($) {
+sub commit {
 	my $self    = shift;
 	my $options = shift;
 
@@ -722,7 +723,7 @@ Returns the original, unmodified repository object.
 
 =cut
 
-sub abort() {
+sub abort {
 	my $self = shift;
 
 	my $original = delete $self->{ORIGINAL_REPO};
@@ -738,7 +739,7 @@ A convenient way of displaying the repository.
 
 =cut
 
-sub to_string() {
+sub to_string {
 	my $self = shift;
 	return $self->path;
 }

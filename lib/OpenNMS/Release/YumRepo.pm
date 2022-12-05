@@ -80,11 +80,11 @@ sub new {
 
 	if (not defined $release) {
 		carp "You did not specify a release!";
-		return undef;
+		return;
 	}
 	if (not defined $platform) {
 		carp "You did not specify a platform!";
-		return undef;
+		return;
 	}
 
 	if (not defined $CREATEREPO) {
@@ -94,7 +94,7 @@ sub new {
 		}
 
 		my $handle = IO::Handle->new();
-		open($handle, "$CREATEREPO --help 2>&1 |") or croak "unable to run $CREATEREPO: $!";
+		open($handle, "-|", "$CREATEREPO --help 2>&1") or croak "unable to run $CREATEREPO: $!";
 		while (<$handle>) {
 			if (/--checksum=SUMTYPE/) {
 				$CREATEREPO_USE_CHECKSUM = 1;
@@ -115,7 +115,7 @@ sub new {
 	return $self;
 }
 
-sub new_with_base($) {
+sub new_with_base {
 	my $self = shift;
 	my $base = shift;
 
@@ -131,7 +131,7 @@ of OpenNMS::Release::YumRepo objects representing the repositories found.
 
 =cut
 
-sub find_repos($) {
+sub find_repos {
 	my $class = shift;
 	my $base = shift;
 
@@ -195,7 +195,7 @@ The path of the repository (base + release + platform).
 
 =cut
 
-sub path() {
+sub path {
 	my $self = shift;
 	return File::Spec->catdir($self->base, $self->release, $self->platform);
 }
@@ -206,7 +206,7 @@ The path of the release directory (base + release).
 
 =cut
 
-sub releasedir() {
+sub releasedir {
 	my $self = shift;
 	return File::Spec->catdir($self->base, $self->release);
 }
@@ -259,7 +259,7 @@ sub _packageset {
 	return OpenNMS::Release::PackageSet->new(\@packages);
 }
 
-sub cachedir() {
+sub cachedir {
 	my $self = shift;
 	return File::Spec->catdir($self->base, "caches", $self->release, $self->platform);
 }
@@ -284,7 +284,7 @@ If either of the signing options are not passed, we do not sign the repository.
 
 =cut
 
-sub index($) {
+sub index {
 	my $self    = shift;
 	my $options = shift;
 
@@ -362,7 +362,7 @@ Takes a true/false value.
 
 =cut
 
-sub enable_deltas($) {
+sub enable_deltas {
 	my $self    = shift;
 	$CREATEREPO_USE_DELTAS = shift;
 }

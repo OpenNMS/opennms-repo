@@ -48,7 +48,7 @@ check that it is executable, and barring that, look for it in the path.
 
 =cut
 
-sub find_executable($) {
+sub find_executable {
 	my $name = shift;
 
 	my $envname = uc($name);
@@ -64,7 +64,7 @@ sub find_executable($) {
 			return $file;
 		}
 	}
-	return undef;
+	return;
 }
 
 =item * read_properties($file)
@@ -78,7 +78,7 @@ sub read_properties {
 	my $return = {};
 
 	my $input = IO::Handle->new();
-	open ($input, $file) or die "unable to read from $file: $!";
+	open ($input, '<', $file) or die "unable to read from $file: $!";
 	while (<$input>) {
 		chomp;
 		next if (/^\s*$/);
@@ -100,7 +100,7 @@ sub slurp {
 	my $file = shift;
 
 	my $input = IO::Handle->new();
-	open ($input, $file) or die "unable to read from $file: $!";
+	open ($input, '<', $file) or die "unable to read from $file: $!";
 	local $/ = undef;
 	my $ret = <$input>;
 	close ($input);
@@ -118,7 +118,7 @@ sub spit {
 	my $contents = shift;
 
 	my $output = IO::Handle->new();
-	open ($output, '>' . $file) or die "unable to write to $file: $!";
+	open ($output, '>', $file) or die "unable to write to $file: $!";
 	print $output $contents;
 	return close($output);
 }

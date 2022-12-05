@@ -49,7 +49,7 @@ our $VAULT_MAPPING = [
 $CIRCLECI_API_ROOT = 'https://circleci.com/api/v1.1';
 $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms';
 
-sub usage() {
+sub usage {
   print "usage: $0 [--vault-layout] [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|deb|rpm|oci|json|tgz|tar.gz|xml|yml> <branch> [download-directory]\n\n";
   exit(1);
 }
@@ -103,7 +103,7 @@ my $decoded = $json->decode($response->decoded_content);
 my $workspaces = {};
 my $workflows = [];
 
-sub toEpoch($) {
+sub toEpoch {
   my $datetime = shift;
   if (not defined $datetime) {
     print STDERR "WARNING: toEpoch() expected a value, but value is undefined.\n";
@@ -162,14 +162,14 @@ for my $entry (sort { toEpoch($b->{'start_time'}) - toEpoch($a->{'start_time'}) 
   $workflow->{'builds'}->{$job_name} = $build_num;
 }
 
-sub get_filename_from_url($) {
+sub get_filename_from_url {
   my $url = shift;
 
   my ($filename) = $url =~ /^.*\/([^\/]+)$/;
   return $filename;
 }
 
-sub url_matches($) {
+sub url_matches {
   my $url = shift;
   my $filename = get_filename_from_url($url);
 
@@ -200,7 +200,7 @@ sub url_matches($) {
   return 0;
 }
 
-sub get_artifacts_for_workflow($) {
+sub get_artifacts_for_workflow {
   my $workflow = shift;
   my $jobs = {};
 
@@ -219,7 +219,7 @@ sub get_artifacts_for_workflow($) {
   return $jobs;
 }
 
-sub get_matching_artifacts_for_workspace_id($) {
+sub get_matching_artifacts_for_workspace_id {
   my $workspace_id = shift;
   my $workspace = $workspaces->{$workspace_id};
   if (not defined $workspace) {
@@ -252,7 +252,7 @@ sub get_matching_artifacts_for_workspace_id($) {
   return $artifacts;
 }
 
-sub download_artifact($) {
+sub download_artifact {
   my $url = shift;
   my $filename = get_filename_from_url($url);
 
@@ -273,8 +273,9 @@ sub download_artifact($) {
   my $output_file = File::Spec->catfile($output_dir, $filename);
   my $dl_string = "downloading to ${output_file}...";
   print $dl_string;
-  open FILEOUT, '>', $output_file or die "\ncannot open $output_file for writing: $!\n";
-  binmode FILEOUT;
+  my $FILEOUT_HANDLE;
+  open($FILEOUT_HANDLE, '>', $output_file) or die "\ncannot open $output_file for writing: $!\n";
+  binmode $FILEOUT_HANDLE;
   my $amount = 0;
   my $last_time = 0;
   my $request = HTTP::Request->new(GET => $url);
@@ -289,9 +290,9 @@ sub download_artifact($) {
       printf "\r\%s \%.1fMB", $dl_string, $mb;
     }
 
-    print FILEOUT $data;
+    print $FILEOUT_HANDLE $data;
   }, 1024 * 64);
-  close FILEOUT;
+  close($FILEOUT_HANDLE);
   if (not $dl_response->is_success) {
     unlink($output_file);
     die " failed: ", $dl_response->status_line, "\n";

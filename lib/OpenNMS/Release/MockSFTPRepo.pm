@@ -61,14 +61,14 @@ sub _packageset {
 	
 }
 
-sub _delete_package($) {
+sub _delete_package {
 	my $self    = shift;
 	my $package = shift;
 
 	#carp "(mock)_delete_package(" . $package->to_string . ")";
 }
 
-sub _add_package($$) {
+sub _add_package {
 	my $self    = shift;
 	my $from    = shift;
 	my $to      = shift;

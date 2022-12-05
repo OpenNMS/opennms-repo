@@ -1,0 +1,26 @@
+version: 2.1
+
+
+jobs:
+  lint:
+    docker:
+      - image: cimg/base:2022.12
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: check Perl for lint errors
+          command: |
+            sudo apt-get update
+            sudo apt-get -y install libperl-critic-perl
+            perlcritic script lib
+      - run:
+          name: check Shell scripts for lint errors
+          command: shellcheck script/*.sh
+
+workflows:
+  version: 2.1
+
+  test:
+    jobs:
+      - lint

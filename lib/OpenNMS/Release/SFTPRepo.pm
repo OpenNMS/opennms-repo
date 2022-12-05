@@ -74,7 +74,7 @@ sub new {
 	return $self;
 }
 
-sub new_with_base($) {
+sub new_with_base {
 	my $self = shift;
 	my $base = shift;
 
@@ -99,7 +99,7 @@ The path of the repository.
 
 =cut
 
-sub path() {
+sub path {
 	my $self = shift;
 	return $self->base;
 }
@@ -110,7 +110,7 @@ The host to connect to.
 
 =cut
 
-sub host() {
+sub host {
 	my $self = shift;
 	return $self->{HOST};
 }
@@ -121,7 +121,7 @@ A convenient way of displaying the repository.
 
 =cut
 
-sub to_string() {
+sub to_string {
 	my $self = shift;
 	return 'sftp://' . $self->host . '/' . $self->path;
 }
@@ -173,7 +173,7 @@ sub delete {
 	return 1;
 }
 
-sub _delete_package($) {
+sub _delete_package {
 	my $self    = shift;
 	my $package = shift;
 
@@ -186,7 +186,7 @@ sub _delete_package($) {
 	return 1;
 }
 
-sub _add_package($) {
+sub _add_package {
 	my $self    = shift;
 	my $from    = shift;
 	my $to      = shift;
@@ -204,7 +204,7 @@ sub _add_package($) {
 	return 1;
 }
 
-sub delete_package($) {
+sub delete_package {
 	my $self    = shift;
 	my $package = shift;
 
@@ -218,7 +218,7 @@ sub delete_package($) {
 	return 1;
 }
 
-sub copy_package($$) {
+sub copy_package {
 	my $self    = shift;
 	my $from    = shift;
 	my $topath  = shift;
@@ -240,12 +240,12 @@ sub copy_package($$) {
 }
 
 # no link, just copy
-sub link_package($$) {
+sub link_package {
 	shift->copy_package(@_);
 }
 
 # no symlink, just copy
-sub symlink_package($$) {
+sub symlink_package {
 	shift->copy_package(@_);
 }
 
@@ -347,7 +347,7 @@ No-op, remote repositories don't get indexed.
 
 =cut
 
-sub index($) {
+sub index {
 	return 1;
 }
 

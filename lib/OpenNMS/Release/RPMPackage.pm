@@ -56,7 +56,7 @@ sub new {
 
 	if (not defined $path) {
 		carp "You did not provide a path!";
-		return undef;
+		return;
 	}
 
 	if (not defined $RPMSIGN) {
@@ -85,7 +85,7 @@ sub new {
 		return bless($class->SUPER::new($path, $name, $version, $arch), $class);
 	} else {
 		carp "File was invalid! ($output)";
-		return undef;
+		return;
 	}
 }
 
@@ -97,7 +97,7 @@ Given a GPG id and password, sign (or resign) the RPM.
 
 =cut
 
-sub sign ($$) {
+sub sign {
 	my $self	 = shift;
 	my $gpg_id       = shift;
 	my $gpg_password = shift;
@@ -125,7 +125,7 @@ Get the description of the RPM.
 
 =cut
 
-sub description() {
+sub description {
 	my $self = shift;
 
 	my $output = IO::Handle->new();

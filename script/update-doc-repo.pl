@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-$|++;
+use 5.26;
 
 use strict;
 use warnings;
@@ -148,8 +148,9 @@ LOCK: while(time() < $timeout) {
 
 	# if we get a lock, update the lock file
 	if ($lock) {
-		open(FILE, ">$lockfile") || die "Failed to lock $ROOT: $!\n";
-		print FILE localtime(time());
+		my $LOCK_HANDLE;
+		open($LOCK_HANDLE, ">", "$lockfile") || die "Failed to lock $ROOT: $!\n";
+		print $LOCK_HANDLE localtime(time());
 		$lock->uncache;
 		do_log("- got lock -- updating documentation");
 		last LOCK;
@@ -218,9 +219,10 @@ if (-d File::Spec->catdir($DOCDIR, 'releasenotes') and -d File::Spec->catdir($DO
 }
 
 my $versionfile = File::Spec->catfile($INSTALLDIR, '.version.txt');
-open (FILEOUT, '>', $versionfile) or die "Failed to open $versionfile for writing: $!\n";
-print FILEOUT $VERSION;
-close(FILEOUT) or die "Failed to close $versionfile: $!\n";
+my $VERSION_FILE_HANDLE;
+open ($VERSION_FILE_HANDLE, '>', $versionfile) or die "Failed to open $versionfile for writing: $!\n";
+print $VERSION_FILE_HANDLE $VERSION;
+close($VERSION_FILE_HANDLE) or die "Failed to close $versionfile: $!\n";
 
 if (not $SKIP_INDEX) {
 	@PROJECTS = get_projects($ROOT);
@@ -256,8 +258,9 @@ sub get_projects {
 
 	do_debug("! Getting projects from $projectsroot:");
 	my $projects = {};
-	opendir(DIR, $projectsroot) or die "Failed to open $projectsroot for reading: $!\n";
-	while (my $entry = readdir(DIR)) {
+	my $PROJECT_HANDLE;
+	opendir($PROJECT_HANDLE, $projectsroot) or die "Failed to open $projectsroot for reading: $!\n";
+	while (my $entry = readdir($PROJECT_HANDLE)) {
 		next if ($entry =~ /^\./);
 		next if ($entry =~ /^\@eaDir/);
 		next if ($entry =~ /^index\.html$/);
@@ -276,7 +279,7 @@ sub get_projects {
 		do_debug("! * Found: ", $project->{'description'});
 		$projects->{$entry} = $project;
 	}
-	closedir(DIR) or die "Failed to close $projectsroot: $!\n";
+	closedir($PROJECT_HANDLE) or die "Failed to close $projectsroot: $!\n";
 
 	for my $project (sort keys %$projects) {
 		my $releases = get_releases($projects->{$project});
@@ -305,15 +308,17 @@ sub get_releases {
 	my @releases;
 
 	do_debug("! Getting release types for project " . $project->{'description'});
-	opendir(DIR, $project->{'path'}) or die "Failed to open " . $project->{'path'} . " for reading: $!\n";
-	for my $entry (sort readdir(DIR)) {
+	my $RELEASES_HANDLE;
+	opendir($RELEASES_HANDLE, $project->{'path'}) or die "Failed to open " . $project->{'path'} . " for reading: $!\n";
+	for my $entry (sort readdir($RELEASES_HANDLE)) {
 		next unless ($entry =~ /^(branches|releases)$/);
 		do_debug("! * Found release type: $entry");
 		do_debug("! * Searching for releases:");
 
 		my $releasesdir = File::Spec->catdir($project->{'path'}, $entry);
-		opendir(RELEASESDIR, $releasesdir) or die "Failed to open $releasesdir for reading: $!\n";
-		for my $releaseentry (sort readdir(RELEASESDIR)) {
+		my $RELEASE_HANDLE;
+		opendir($RELEASE_HANDLE, '<', $releasesdir) or die "Failed to open $releasesdir for reading: $!\n";
+		for my $releaseentry (sort readdir($RELEASE_HANDLE)) {
 			next if ($releaseentry =~ /^\./);
 			next if ($releaseentry =~ /^\@eaDir/);
 			next if ($releaseentry =~ /^index\.html$/);
@@ -332,19 +337,21 @@ sub get_releases {
 
 			my $versionfile = File::Spec->catfile($releasedir, '.version.txt');
 			if (-e $versionfile) {
-				open(VERSIONFILE, '<', $versionfile) or die "Failed to open $versionfile for reading: $!\n";
-				my $version = <VERSIONFILE>;
+				my $VERSION_HANDLE;
+				open($VERSION_HANDLE, '<', $versionfile) or die "Failed to open $versionfile for reading: $!\n";
+				my $version = <$VERSION_HANDLE>;
 				chomp($version);
 				if (defined $version and $version ne "") {
 					$release->{'version'} = $version;
 				}
+				close($VERSION_HANDLE);
 			}
 
 			push(@releases, $release);
 		}
-		closedir(RELEASESDIR) or die "Failed to close $releasesdir: $!\n";
+		closedir($RELEASE_HANDLE) or die "Failed to close $releasesdir: $!\n";
 	}
-	closedir(DIR) or die "Failed to close " . $project->{'path'} . "\n";
+	closedir($RELEASES_HANDLE) or die "Failed to close " . $project->{'path'} . "\n";
 
 	for my $release (@releases) {
 		my $docs = get_docs_for_release($release);
@@ -360,8 +367,9 @@ sub get_docs_for_release {
 
 	my $display = $release->{'type'} . '/' . $release->{'name'};
 	do_debug("! Finding documentation in $display...");
-	opendir(DIR, $release->{'path'}) or die "Failed to open " . $release->{'path'} . " for reading: $!\n";
-	for my $entry (sort readdir(DIR)) {
+	my $DOCS_HANDLE;
+	opendir($DOCS_HANDLE, $release->{'path'}) or die "Failed to open " . $release->{'path'} . " for reading: $!\n";
+	for my $entry (sort readdir($DOCS_HANDLE)) {
 		next if ($entry =~ /^\./);
 		next if ($entry =~ /^\@eaDir/);
 		next if ($entry =~ /^index\.html$/);
@@ -395,13 +403,15 @@ sub get_docs_for_release {
 
 		$docs->{$entry} = $doc;
 	}
+	closedir($DOCS_HANDLE) or die "Failed to close " . $release->{'path'} . ": $!\n";
 
 	return $docs;
 }
 
 sub get_releases_for_project {
 	my $project = shift;
-	return sort { versioncmp($b->{'name'}, $a->{'name'}) } grep { $_->{'type'} eq 'releases' } @{$project->{'releases'}};
+	my @releases = sort { versioncmp($b->{'name'}, $a->{'name'}) } grep { $_->{'type'} eq 'releases' } @{$project->{'releases'}};
+	return @releases;
 }
 
 sub get_branches_for_project {
@@ -416,7 +426,8 @@ sub get_branches_for_project {
 sub update_indexes {
 	do_log("- updating indexes...");
 
-	opendir(DIR, $ROOT) or die "Failed to open $ROOT for reading: $!\n";
+	my $ROOT_HANDLE;
+	opendir($ROOT_HANDLE, '<', $ROOT) or die "Failed to open $ROOT for reading: $!\n";
 
 	my $roottext = "<h3>OpenNMS Projects</h3>\n<ul>\n";
 	for my $project (@PROJECTS) {
@@ -499,7 +510,7 @@ sub get_release {
 	if (@matching > 0) {
 		return $matching[0];
 	}
-	return undef;
+	return;
 }
 
 sub update_project_indexes {
@@ -637,8 +648,10 @@ sub write_html {
 	my @dirs = File::Spec->splitdir($top_relative);
 	my $current_project = shift @dirs;
 
-	open(FILEOUT, '+>', $file .'.new') or die "Failed to open $file for writing: $!\n";
-	print FILEOUT <<END;
+	my $FILEOUT_HANDLE;
+
+	open($FILEOUT_HANDLE, '+>', $file .'.new') or die "Failed to open $file for writing: $!\n";
+	print $FILEOUT_HANDLE <<END;
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -716,12 +729,12 @@ END
 
 	for my $project (@PROJECTS) {
 		if ($project->{'name'} eq $current_project) {
-			print FILEOUT "<li class=\"dropdown active\">";
+			print $FILEOUT_HANDLE "<li class=\"dropdown active\">";
 		} else {
-			print FILEOUT "<li class=\"dropdown\">";
+			print $FILEOUT_HANDLE "<li class=\"dropdown\">";
 		}
-		print FILEOUT "<a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">" . $project->{'description'} . " <span class=\"caret\"></span></a>\n";
-		print FILEOUT "<ul class=\"dropdown-menu\" role=\"menu\">\n";
+		print $FILEOUT_HANDLE "<a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">" . $project->{'description'} . " <span class=\"caret\"></span></a>\n";
+		print $FILEOUT_HANDLE "<ul class=\"dropdown-menu\" role=\"menu\">\n";
 
 		my @releases = get_releases_for_project($project);
 		my @branches = get_branches_for_project($project);
@@ -734,22 +747,22 @@ END
 				$active = " class=\"active\"";
 			}
 
-			print FILEOUT "<li$active>" . get_link("<strong>Releases</strong>", $releaseslink, $dirname) . "</li>\n";
-			#print FILEOUT "<li class=\"divider\"></li>\n";
+			print $FILEOUT_HANDLE "<li$active>" . get_link("<strong>Releases</strong>", $releaseslink, $dirname) . "</li>\n";
+			#print $FILEOUT_HANDLE "<li class=\"divider\"></li>\n";
 			for my $release (@releases) {
 				my $releaselink = File::Spec->catfile($release->{'path'}, 'index.html');
 				$active = "";
 				if ($releaselink eq $file) {
 					$active = " class=\"active\"";
 				}
-				print FILEOUT "<li${active}>" . get_link($release->{'name'}, $releaselink, $dirname) . "</li>\n";
+				print $FILEOUT_HANDLE "<li${active}>" . get_link($release->{'name'}, $releaselink, $dirname) . "</li>\n";
 				last if (++$count == 5);
 			}
 			if (@releases > 5) {
-				print FILEOUT "<li>" . get_link("more...", $releaseslink, $dirname) . "</li>\n";
+				print $FILEOUT_HANDLE "<li>" . get_link("more...", $releaseslink, $dirname) . "</li>\n";
 			}
 			if (@branches > 0) {
-				print FILEOUT "<li class=\"divider\"></li>\n";
+				print $FILEOUT_HANDLE "<li class=\"divider\"></li>\n";
 			}
 		}
 
@@ -760,11 +773,11 @@ END
 				$active = " class=\"active\"";
 			}
 
-			print FILEOUT "<li$active>" . get_link("<strong>Branches</strong>", $brancheslink, $dirname) . "</li>\n";
-			#print FILEOUT "<li class=\"divider\"></li>\n";
+			print $FILEOUT_HANDLE "<li$active>" . get_link("<strong>Branches</strong>", $brancheslink, $dirname) . "</li>\n";
+			#print $FILEOUT_HANDLE "<li class=\"divider\"></li>\n";
 			for my $branch (@branches) {
 				if ($branch->{'name'} !~ /^(develop|foundation|master)$/) {
-					print FILEOUT "<li>" . get_link("more...", $brancheslink, $dirname) . "</li>\n";
+					print $FILEOUT_HANDLE "<li>" . get_link("more...", $brancheslink, $dirname) . "</li>\n";
 					last;
 				}
 
@@ -773,15 +786,15 @@ END
 				if ($branchlink eq $file) {
 					$active = " class=\"active\"";
 				}
-				print FILEOUT "<li${active}>" . get_link($branch->{'name'}, $branchlink, $dirname) . "</li>\n";
+				print $FILEOUT_HANDLE "<li${active}>" . get_link($branch->{'name'}, $branchlink, $dirname) . "</li>\n";
 			}
 		}
 
-		print FILEOUT "</ul>\n";
-		print FILEOUT "</li>\n";
+		print $FILEOUT_HANDLE "</ul>\n";
+		print $FILEOUT_HANDLE "</li>\n";
 	}
 
-	print FILEOUT <<END;
+	print $FILEOUT_HANDLE <<END;
 					</ul>
 				</div>
 			</div>
@@ -790,8 +803,8 @@ END
 		<div class="container">
 END
 
-	print FILEOUT $text;
-	print FILEOUT <<END;
+	print $FILEOUT_HANDLE $text;
+	print $FILEOUT_HANDLE <<END;
 		</div>
 		<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/${BOOTSTRAPVERSION}/js/bootstrap.min.js"></script>
@@ -806,7 +819,7 @@ END
 	</body>
 </html>
 END
-	close(FILEOUT) or die "Failed to close ${file}.new: $!\n";
+	close($FILEOUT_HANDLE) or die "Failed to close ${file}.new: $!\n";
 	chmod(0644, "${file}.new") or die "Failed to change ownership of ${file}.new: $!\n";
 
 	if (-e $file) {
@@ -825,9 +838,10 @@ sub process_basic_docdir {
 sub process_opennms_asciidoc_docdir {
 	my $docdir = shift;
 
-	opendir(DIR, $docdir) or die "Failed to open $docdir for reading: $!\n";
-	my @guides = sort grep { !/^(\.\.?|\@eaDir)$/ } readdir(DIR);
-	closedir(DIR) or die "Failed to close $docdir: $!\n";
+	my $DOCDIR_HANDLE;
+	opendir($DOCDIR_HANDLE, $docdir) or die "Failed to open $docdir for reading: $!\n";
+	my @guides = sort grep { !/^(\.\.?|\@eaDir)$/ } readdir($DOCDIR_HANDLE);
+	closedir($DOCDIR_HANDLE) or die "Failed to close $docdir: $!\n";
 
 	for my $dir (@guides) {
 		copy_doc_directory(File::Spec->catdir($docdir, $dir), $dir);
@@ -852,8 +866,9 @@ sub process_minion_asciidoc_docdir {
 		system('rsync', '-rl', '--no-compress', '--delete', $files.'/', $filedir.'/') == 0 or die "Failed to sync $files to $filedir: $!\n";
 	}
 
-	opendir(DIR, $docdir) or die "Failed to open $docdir for reading: $!\n";
-	for my $entry (sort { lc($a) cmp lc($b) } grep { /\.html$/ } readdir(DIR)) {
+	my $DOCDIR_HANDLE;
+	opendir($DOCDIR_HANDLE, $docdir) or die "Failed to open $docdir for reading: $!\n";
+	for my $entry (sort { lc($a) cmp lc($b) } grep { /\.html$/ } readdir($DOCDIR_HANDLE)) {
 		my ($name) = $entry =~ /^(.*?)\.html$/;
 		$name = lc($name);
 
@@ -869,7 +884,7 @@ sub process_minion_asciidoc_docdir {
 
 		symlink('index.html', File::Spec->catfile($target, $name.'.html'));
 	}
-	closedir(DIR);
+	closedir($DOCDIR_HANDLE);
 }
 
 sub copy_doc_directory {
@@ -922,9 +937,11 @@ sub process_docbook_docdir {
 
 	my $from = File::Spec->catdir($docdir);
 
-	opendir(DIR, $from) or die "Failed to open $from for reading: $!\n";
-	my @files = sort grep { /\.(pdf|html)$/ } readdir(DIR);
-	closedir(DIR) or die "Failed to close $from: $!\n";
+	my $DIR_HANDLE;
+
+	opendir($DIR_HANDLE, $from) or die "Failed to open $from for reading: $!\n";
+	my @files = sort grep { /\.(pdf|html)$/ } readdir($DIR_HANDLE);
+	closedir($DIR_HANDLE) or die "Failed to close $from: $!\n";
 
 	my $common = File::Spec->catdir($from, 'common');
 	if (-d $common) {
@@ -1029,7 +1046,7 @@ END
 }
 
 # from Sort::Versions 1.5
-sub versioncmp( $$ ) {
+sub versioncmp {
 	my @A = ($_[0] =~ /([-.]|\d+|[^-.\d]+)/g);
 	my @B = ($_[1] =~ /([-.]|\d+|[^-.\d]+)/g);
 
