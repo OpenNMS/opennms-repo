@@ -32,6 +32,7 @@ function tearDown() {
 }
 
 trap tearDown EXIT
+tearDown || :
 
 mkdir -p "$WORKDIR"
 cd "$WORKDIR"
@@ -135,6 +136,8 @@ DOCKER_CMD=(
 	docker run --name=dependency-monkey
 	--platform linux/amd64
 	--rm
+	--interactive
+	--tty
 	--network dependency-monkey
 	-v "${SOURCEDIR}:/opt/build"
 	-v "${M2DIR}:/root/.m2"
