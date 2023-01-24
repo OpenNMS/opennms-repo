@@ -18,6 +18,7 @@ use URI::Escape;
 
 use vars qw(
   $API_TOKEN
+  $CI
   $HELP
   $INCLUDE_FAILED
   $MATCH
@@ -29,6 +30,7 @@ use vars qw(
   $PROJECT_ROOT
 );
 
+$CI = 0;
 $HELP = 0;
 $INCLUDE_FAILED = 0;
 $PRIME = 0;
@@ -62,6 +64,7 @@ GetOptions(
   "include-failed" => \$INCLUDE_FAILED,
   "vault-layout"   => \$VAULT,
   "workflow=s"     => \$WORKFLOW,
+  "ci"             => \$CI,
 ) or die "failed to get options for @ARGV\n";
 
 my $extension   = shift(@ARGV);
@@ -273,6 +276,9 @@ sub download_artifact {
   my $output_file = File::Spec->catfile($output_dir, $filename);
   my $dl_string = "downloading to ${output_file}...";
   print $dl_string;
+  if ($CI) {
+    print "\n";
+  }
   my $FILEOUT_HANDLE;
   open($FILEOUT_HANDLE, '>', $output_file) or die "\ncannot open $output_file for writing: $!\n";
   binmode $FILEOUT_HANDLE;
@@ -287,7 +293,9 @@ sub download_artifact {
     if ($time != $last_time) {
       $last_time = $time;
       my $mb = scalar($amount / 1024 / 1024);
-      printf "\r\%s \%.1fMB", $dl_string, $mb;
+      if (not $CI) {
+        printf "\r\%s \%.1fMB", $dl_string, $mb;
+      }
     }
 
     print $FILEOUT_HANDLE $data;
@@ -297,7 +305,11 @@ sub download_artifact {
     unlink($output_file);
     die " failed: ", $dl_response->status_line, "\n";
   }
-  print "\r\e[K$dl_string done\n";
+  if ($CI) {
+    print "finished downloading ${output_file}\n";
+  } else {
+    print "\r\e[K$dl_string done\n";
+  }
 }
 
 for my $workflow (@$workflows) {
