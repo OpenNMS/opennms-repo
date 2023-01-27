@@ -85,10 +85,6 @@ if ($rpm_release < 100) {
 print "- generating YUM repository RPM $rpmname, version $rpm_version-$rpm_release:\n";
 
 my $platform_descriptions = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
-my $gpgfile               = File::Spec->catfile($repofiledir, 'OPENNMS-GPG-KEY');
-
-# first, we make sure OPENNMS-GPG-KEY is up-to-date with the key we're signing with
-create_gpg_file($SIGNING_ID, $SIGNING_PASSWORD, $gpgfile);
 
 # then, create the .repo files
 create_repo_file($release, $platform, $repofiledir, $platform_descriptions->{$platform}, $scrubbed_release, $rpmname);
@@ -104,16 +100,6 @@ my $repofiles_rpm_filename = install_rpm_to_repofiles($generated_rpm_filename, $
 
 # copy *that* to the real repository
 #install_rpm_to_repo($repofiles_rpm_filename, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
-
-sub create_gpg_file {
-	my $SIGNING_ID       = shift;
-	my $SIGNING_PASSWORD = shift;
-	my $outputfile       = shift;
-
-	print "- writing GPG key to $outputfile... ";
-	gpg_write_key($SIGNING_ID, $SIGNING_PASSWORD, $outputfile);
-	print "done.\n";
-}
 
 sub create_repo_file {
 	my $release          = shift;
