@@ -34,6 +34,7 @@ $CI = 0;
 $HELP = 0;
 $INCLUDE_FAILED = 0;
 $PRIME = 0;
+$REPO = "opennms";
 $VAULT = 0;
 
 our $VAULT_MAPPING = [
@@ -52,7 +53,7 @@ $CIRCLECI_API_ROOT = 'https://circleci.com/api/v1.1';
 $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms';
 
 sub usage {
-  print "usage: $0 [--ci] [--vault-layout] [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|deb|rpm|oci|json|tgz|tar.gz|xml|yml> <branch> [download-directory]\n\n";
+  print "usage: $0 [--ci] [--vault-layout] [--repo=repo] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|deb|rpm|oci|json|tgz|tar.gz|xml|yml> <branch> [download-directory]\n\n";
   exit(1);
 }
 
@@ -60,6 +61,7 @@ GetOptions(
   "help"           => \$HELP,
   "match=s"        => \$MATCH,
   "prime"          => \$PRIME,
+  "repo"           => \$REPO,
   "token=s"        => \$API_TOKEN,
   "include-failed" => \$INCLUDE_FAILED,
   "vault-layout"   => \$VAULT,
@@ -76,8 +78,9 @@ if ($HELP or not defined $branch) {
 }
 
 if ($PRIME) {
-  $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms-prime';
+  $REPO='opennms-prime';
 }
+$PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/' . $REPO;
 
 if ($WORKFLOW) {
   $INCLUDE_FAILED = 1;
