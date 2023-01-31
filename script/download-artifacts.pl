@@ -62,7 +62,7 @@ GetOptions(
   "help"           => \$HELP,
   "match=s"        => \$MATCH,
   "prime"          => \$PRIME,
-  "repo"           => \$REPO,
+  "repo=s"         => \$REPO,
   "token=s"        => \$API_TOKEN,
   "include-failed" => \$INCLUDE_FAILED,
   "vault-layout"   => \$VAULT,
