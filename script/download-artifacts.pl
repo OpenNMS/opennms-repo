@@ -23,6 +23,7 @@ use vars qw(
   $INCLUDE_FAILED
   $MATCH
   $PRIME
+  $REPO
   $VAULT
   $WORKFLOW
 
