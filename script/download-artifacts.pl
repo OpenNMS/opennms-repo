@@ -25,6 +25,7 @@ use vars qw(
   $PRIME
   $REPO
   $VAULT
+  $WAIT_TIME
   $WORKFLOW
 
   $CIRCLECI_API_ROOT
@@ -37,6 +38,7 @@ $INCLUDE_FAILED = 0;
 $PRIME = 0;
 $REPO = "opennms";
 $VAULT = 0;
+$WAIT_TIME = 10; # seconds to wait between downloads
 
 our $VAULT_MAPPING = [
   [ qr/\.ya?ml$/                                                  => 'yml'        ],
@@ -343,6 +345,7 @@ for my $workflow (@$workflows) {
   for my $filename (keys %$artifacts) {
     my $url = $artifacts->{$filename};
     download_artifact($url);
+    sleep $WAIT_TIME;
   }
 
   exit(0);
