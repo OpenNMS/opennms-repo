@@ -42,6 +42,8 @@ my $lockfile = File::Spec->catfile($base, '.generate-yum-repo-html.lock');
 my $lock;
 my $timeout = time() + (60 * 60); # 60 minutes
 
+my $LOCK_HANDLE;
+
 LOCK: while(time() < $timeout) {
 	do_log("* waiting for lock...");
 
@@ -54,7 +56,6 @@ LOCK: while(time() < $timeout) {
 
 	# if we get a lock, update the lock file
 	if ($lock) {
-		my $LOCK_HANDLE;
 		open($LOCK_HANDLE, '>', "$lockfile") || die "Failed to lock $base: $!\n";
 		print $LOCK_HANDLE localtime(time());
 		$lock->uncache;
@@ -151,7 +152,7 @@ END {
 	if (defined $lockfile and defined $lock) {
 		do_log("* cleaning up lock...");
 		unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
-		close(FILE) or die "Failed to close $lockfile: $!\n";
+		close($LOCK_HANDLE) or die "Failed to close $lockfile: $!\n";
 		$lock->unlock();
 	}
 }
