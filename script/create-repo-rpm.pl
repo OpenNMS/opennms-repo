@@ -135,7 +135,7 @@ name=${description} (${release_description})
 baseurl=${baseurl}
 enabled=1
 gpgcheck=1
-gpgkey=file:///etc/yum.repos.d/${rpmname}-${platform}.gpg
+gpgkey=https://yum.opennms.org/OPENNMS-GPG-KEY
 
 END
 	}
