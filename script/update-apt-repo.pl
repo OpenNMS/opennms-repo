@@ -143,9 +143,9 @@ sub update_repo {
 	$to_repo->replace($from_repo) or die "Unable to replace " . $from_repo->to_string . " with " . $to_repo->to_string . "!";
 }
 
-if (defined $SIGNING_ID and defined $SIGNING_PASSWORD) {
-	gpg_write_key($SIGNING_ID, $SIGNING_PASSWORD, File::Spec->catfile($BASE, 'OPENNMS-GPG-KEY'));
-}
+#if (defined $SIGNING_ID and defined $SIGNING_PASSWORD) {
+#	gpg_write_key($SIGNING_ID, $SIGNING_PASSWORD, File::Spec->catfile($BASE, 'OPENNMS-GPG-KEY'));
+#}
 
 sub display {
 	my $package = shift;
