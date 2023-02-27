@@ -74,7 +74,7 @@ if (not $ALL) {
 	}
 
 	if (not defined $SUBDIRECTORY) {
-		usage("You must specify a subdirectory.");
+		$SUBDIRECTORY = 'opennms';
 	}
 }
 
@@ -149,7 +149,7 @@ if (defined $BRANCH) {
 #	my $repo = $releases->{$RELEASE}->{$PLATFORM};
 #	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
 #} else {
-	for my $release (@sync_order) {
+	for my $release (keys %$releases) {
 		next unless (exists $releases->{$release});
 
 		for my $platform (sort keys %{$releases->{$release}}) {
