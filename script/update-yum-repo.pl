@@ -307,15 +307,15 @@ sub sync_repo {
 	my $temp_repo = $to_repo->create_temporary;
 	print "done.\n";
 
-	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
-	my $num_shared = $temp_repo->share_all_packages($from_repo);
-	print $num_shared . " RPMS updated.\n";
-
-	if (!$NO_OBSOLETE) {
-		print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
-		my $num_removed = $temp_repo->delete_obsolete_packages(\&only_snapshot);
-		print $num_removed . " RPMs removed.\n";
-	}
+#	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
+#	my $num_shared = $temp_repo->share_all_packages($from_repo);
+#	print $num_shared . " RPMS updated.\n";
+#
+#	if (!$NO_OBSOLETE) {
+#		print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
+#		my $num_removed = $temp_repo->delete_obsolete_packages(\&only_snapshot);
+#		print $num_removed . " RPMs removed.\n";
+#	}
 
 	print "- indexing repo: " . $temp_repo->to_string . "... ";
 	$temp_repo->enable_deltas(0) if ($NO_DELTAS);
