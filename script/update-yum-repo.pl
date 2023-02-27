@@ -145,10 +145,10 @@ if (defined $BRANCH) {
 }
 
 # finally, update any platforms that need it
-if ($NO_SYNC) {
-	my $repo = $releases->{$RELEASE}->{$PLATFORM};
-	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
-} else {
+#if ($NO_SYNC) {
+#	my $repo = $releases->{$RELEASE}->{$PLATFORM};
+#	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+#} else {
 	for my $release (@sync_order) {
 		next unless (exists $releases->{$release});
 
@@ -158,7 +158,7 @@ if ($NO_SYNC) {
 			sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
 		}
 	}
-}
+#}
 
 sub update_platform {
 	my $orig_repo        = shift;

@@ -88,13 +88,13 @@ if ($ALL) {
 
 my @sync_order = map { $_->release } @all_repositories;
 
-if (not $NO_SYNC) {
-	for my $orig_repo (@$scan_repositories) {
-		print "* syncing ", $orig_repo->to_string, "... ";
-		sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
-		print "done\n";
-	}
-}
+#if (not $NO_SYNC) {
+#	for my $orig_repo (@$scan_repositories) {
+#		print "* syncing ", $orig_repo->to_string, "... ";
+#		sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+#		print "done\n";
+#	}
+#}
 
 if (defined $BRANCH) {
 	print "* syncing base to $BRANCH branch repo:\n";
