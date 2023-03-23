@@ -40,6 +40,10 @@ $REPO = "opennms";
 $VAULT = 0;
 $WAIT_TIME = 10; # seconds to wait between downloads
 
+if ($ENV{'CIRCLE_TOKEN'}) {
+  $API_TOKEN = $ENV{'CIRCLE_TOKEN'};
+}
+
 our $VAULT_MAPPING = [
   [ qr/\.ya?ml$/                                                  => 'yml'        ],
   [ qr/\.xml$/                                                    => 'xml'        ],

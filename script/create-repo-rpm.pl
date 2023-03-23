@@ -124,13 +124,18 @@ sub create_repo_file {
 	for my $plat ('common', $platform) {
 		my $description = $platform_descriptions->{$plat};
 
+		my $subplat = $plat;
+		if ($plat =~ /^rhel/) {
+			$plat = 'rhel$releasever';
+			$subplat = 'rhel';
+		}
 		my $baseurl = 'https://yum.opennms.org/' . $release . '/' . $plat;
 		if ($BRANCH) {
 			$baseurl = 'https://yum.opennms.org/branches/' . $scrubbed_release . '/' . $plat;
 		}
 
 		$output .= <<END;
-[${rpmname}-${plat}]
+[${rpmname}-${subplat}]
 name=${description} (${release_description})
 baseurl=${baseurl}
 enabled=1
