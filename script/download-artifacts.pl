@@ -44,6 +44,10 @@ if ($ENV{'CIRCLE_TOKEN'}) {
   $API_TOKEN = $ENV{'CIRCLE_TOKEN'};
 }
 
+if ($ENV{'CIRCLE_WORKFLOW_ID'}) {
+  $WORKFLOW = $ENV{'CIRCLE_WORKFLOW_ID'};
+}
+
 our $VAULT_MAPPING = [
   [ qr/\.ya?ml$/                                                  => 'yml'        ],
   [ qr/\.xml$/                                                    => 'xml'        ],
