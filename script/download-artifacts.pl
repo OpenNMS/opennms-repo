@@ -38,7 +38,7 @@ $INCLUDE_FAILED = 0;
 $PRIME = 0;
 $REPO = "opennms";
 $VAULT = 0;
-$WAIT_TIME = 10; # seconds to wait between downloads
+$WAIT_TIME = 5; # seconds to wait between downloads
 
 if ($ENV{'CIRCLE_TOKEN'}) {
   $API_TOKEN = $ENV{'CIRCLE_TOKEN'};
@@ -77,6 +77,7 @@ GetOptions(
   "include-failed" => \$INCLUDE_FAILED,
   "vault-layout"   => \$VAULT,
   "workflow=s"     => \$WORKFLOW,
+  "wait=i"         => \$WAIT_TIME,
   "ci"             => \$CI,
 ) or die "failed to get options for @ARGV\n";
 
