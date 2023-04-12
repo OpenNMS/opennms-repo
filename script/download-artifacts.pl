@@ -300,7 +300,7 @@ sub download_artifact {
   my $last_time = 0;
   my $request = HTTP::Request->new(GET => $url);
 
-  my $request_callback = \sub {
+  my $request_callback = sub {
     my ($data, $response, $protocol) = @_;
     $amount += length($data);
 
