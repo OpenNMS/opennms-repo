@@ -20,7 +20,7 @@ $DESTPATH = shift @ARGV || '/mnt/docs.opennms.org/OpenNMS';
 
 my $READ_HANDLE;
 
-opendir($READ_HANDLE, '<', $dir) or die "Unable to read from $dir: $!\n";
+opendir($READ_HANDLE, $dir) or die "Unable to read from $dir: $!\n";
 while (my $entry = readdir($READ_HANDLE)) {
 	if ($entry =~ /^(guide-all-.*|opennms-.*-docs)\.tar\.(gz|bz2)$/) {
 		$TARBALL = abs_path(File::Spec->catfile($dir, $entry));

@@ -317,7 +317,7 @@ sub get_releases {
 
 		my $releasesdir = File::Spec->catdir($project->{'path'}, $entry);
 		my $RELEASE_HANDLE;
-		opendir($RELEASE_HANDLE, '<', $releasesdir) or die "Failed to open $releasesdir for reading: $!\n";
+		opendir($RELEASE_HANDLE, $releasesdir) or die "Failed to open $releasesdir for reading: $!\n";
 		for my $releaseentry (sort readdir($RELEASE_HANDLE)) {
 			next if ($releaseentry =~ /^\./);
 			next if ($releaseentry =~ /^\@eaDir/);
@@ -427,7 +427,7 @@ sub update_indexes {
 	do_log("- updating indexes...");
 
 	my $ROOT_HANDLE;
-	opendir($ROOT_HANDLE, '<', $ROOT) or die "Failed to open $ROOT for reading: $!\n";
+	opendir($ROOT_HANDLE, $ROOT) or die "Failed to open $ROOT for reading: $!\n";
 
 	my $roottext = "<h3>OpenNMS Projects</h3>\n<ul>\n";
 	for my $project (@PROJECTS) {

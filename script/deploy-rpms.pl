@@ -66,7 +66,7 @@ if (-e $passfile) {
 }
 
 my $FILEDIR_HANDLE;
-opendir($FILEDIR_HANDLE, '<', '.') or die "Unable to read current directory: $!";
+opendir($FILEDIR_HANDLE, '.') or die "Unable to read current directory: $!";
 while (my $line = readdir($FILEDIR_HANDLE)) {
 	next if ($line =~ /^\.\.?$/);
 	chomp($line);
