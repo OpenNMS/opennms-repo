@@ -38,7 +38,7 @@ $INCLUDE_FAILED = 0;
 $PRIME = 0;
 $REPO = "opennms";
 $VAULT = 0;
-$WAIT_TIME = 5; # seconds to wait between downloads
+$WAIT_TIME = 2; # seconds
 
 if ($ENV{'CIRCLE_TOKEN'}) {
   $API_TOKEN = $ENV{'CIRCLE_TOKEN'};
@@ -77,7 +77,6 @@ GetOptions(
   "include-failed" => \$INCLUDE_FAILED,
   "vault-layout"   => \$VAULT,
   "workflow=s"     => \$WORKFLOW,
-  "wait=i"         => \$WAIT_TIME,
   "ci"             => \$CI,
 ) or die "failed to get options for @ARGV\n";
 
@@ -300,7 +299,8 @@ sub download_artifact {
   my $amount = 0;
   my $last_time = 0;
   my $request = HTTP::Request->new(GET => $url);
-  my $dl_response = $agent->request($request, sub {
+
+  my $request_callback = \sub {
     my ($data, $response, $protocol) = @_;
     $amount += length($data);
 
@@ -314,7 +314,22 @@ sub download_artifact {
     }
 
     print $FILEOUT_HANDLE $data;
-  }, 1024 * 64);
+  };
+  my $dl_response = $agent->request($request, $request_callback, 1024 * 64);
+  while ($dl_response->code == 429) {
+    print "\r\e[K$dl_string retrying... ";
+    my $wait = $dl_response->header('Retry-After');
+    if ($wait) {
+      if ($wait !~ /^\d+$/) {
+        $wait = HTTP::Date::str2time($wait) - time();
+      }
+    } else {
+      $wait = $WAIT_TIME;
+      $WAIT_TIME = int(($WAIT_TIME * 1.3) + 0.5);
+    }
+    sleep($wait);
+    $dl_response = $agent->request($request, $request_callback, 1024 * 64);
+  }
   close($FILEOUT_HANDLE);
   if (not $dl_response->is_success) {
     unlink($output_file);
@@ -354,7 +369,6 @@ for my $workflow (@$workflows) {
   for my $filename (keys %$artifacts) {
     my $url = $artifacts->{$filename};
     download_artifact($url);
-    sleep $WAIT_TIME;
   }
 
   exit(0);
