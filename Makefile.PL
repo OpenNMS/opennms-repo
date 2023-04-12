@@ -1,3 +1,5 @@
+use strict;
+
 use inc::Module::Install;
 
 # Define metadata
@@ -28,6 +30,7 @@ install_script 'script/dependency-monkey.sh';
 install_script 'script/deploy-debs.pl';
 install_script 'script/deploy-docs.pl';
 install_script 'script/deploy-rpms.pl';
+install_script 'script/dockertags.sh';
 install_script 'script/download-artifacts.pl';
 install_script 'script/download-packagecloud.sh';
 install_script 'script/exec-nfs-exclusive-lock.pl';

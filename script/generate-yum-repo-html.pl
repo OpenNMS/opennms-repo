@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-$|++;
-
 use strict;
 use warnings;
 
@@ -44,6 +42,8 @@ my $lockfile = File::Spec->catfile($base, '.generate-yum-repo-html.lock');
 my $lock;
 my $timeout = time() + (60 * 60); # 60 minutes
 
+my $LOCK_HANDLE;
+
 LOCK: while(time() < $timeout) {
 	do_log("* waiting for lock...");
 
@@ -56,8 +56,8 @@ LOCK: while(time() < $timeout) {
 
 	# if we get a lock, update the lock file
 	if ($lock) {
-		open(FILE, ">$lockfile") || die "Failed to lock $base: $!\n";
-		print FILE localtime(time());
+		open($LOCK_HANDLE, '>', "$lockfile") || die "Failed to lock $base: $!\n";
+		print $LOCK_HANDLE localtime(time());
 		$lock->uncache;
 		do_log("* got lock -- generating yum repo HTML");
 		last LOCK;
@@ -140,9 +140,10 @@ for my $release (@display_order) {
 $index_text .= "<p>Index generated: " . localtime(time()) . "</p>";
 $index_text .= slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.post'));
 
-open (FILEOUT, ">$base/index.html") or die "unable to write to $base/index.html: $!";
-print FILEOUT $index_text;
-close (FILEOUT);
+my $FILEOUT_HANDLE;
+open ($FILEOUT_HANDLE, '>', "$base/index.html") or die "unable to write to $base/index.html: $!";
+print $FILEOUT_HANDLE $index_text;
+close ($FILEOUT_HANDLE);
 chmod(0644, "$base/index.html");
 
 END {
@@ -151,7 +152,7 @@ END {
 	if (defined $lockfile and defined $lock) {
 		do_log("* cleaning up lock...");
 		unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
-		close(FILE) or die "Failed to close $lockfile: $!\n";
+		close($LOCK_HANDLE) or die "Failed to close $lockfile: $!\n";
 		$lock->unlock();
 	}
 }

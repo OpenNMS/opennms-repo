@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-$|++;
-
 use strict;
 use warnings;
 
@@ -90,13 +88,13 @@ if ($ALL) {
 
 my @sync_order = map { $_->release } @all_repositories;
 
-if (not $NO_SYNC) {
-	for my $orig_repo (@$scan_repositories) {
-		print "* syncing ", $orig_repo->to_string, "... ";
-		sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
-		print "done\n";
-	}
-}
+#if (not $NO_SYNC) {
+#	for my $orig_repo (@$scan_repositories) {
+#		print "* syncing ", $orig_repo->to_string, "... ";
+#		sync_repos($BASE, $orig_repo, $SIGNING_ID, $SIGNING_PASSWORD);
+#		print "done\n";
+#	}
+#}
 
 if (defined $BRANCH) {
 	print "* syncing base to $BRANCH branch repo:\n";
@@ -145,9 +143,9 @@ sub update_repo {
 	$to_repo->replace($from_repo) or die "Unable to replace " . $from_repo->to_string . " with " . $to_repo->to_string . "!";
 }
 
-if (defined $SIGNING_ID and defined $SIGNING_PASSWORD) {
-	gpg_write_key($SIGNING_ID, $SIGNING_PASSWORD, File::Spec->catfile($BASE, 'OPENNMS-GPG-KEY'));
-}
+#if (defined $SIGNING_ID and defined $SIGNING_PASSWORD) {
+#	gpg_write_key($SIGNING_ID, $SIGNING_PASSWORD, File::Spec->catfile($BASE, 'OPENNMS-GPG-KEY'));
+#}
 
 sub display {
 	my $package = shift;
@@ -236,15 +234,15 @@ sub sync_repo {
 
 	my $temp_repo = $to_repo->create_temporary;
 
-	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
-	my $num_shared = $temp_repo->share_all_packages($from_repo);
-	print $num_shared . " packages updated.\n";
-
-	if (!$NO_OBSOLETE) {
-		print "- removing obsolete packages from repo: " . $temp_repo->to_string . "... ";
-		my $num_removed = $temp_repo->delete_obsolete_packages(\&not_opennms);
-		print $num_removed . " packages removed.\n";
-	}
+#	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
+#	my $num_shared = $temp_repo->share_all_packages($from_repo);
+#	print $num_shared . " packages updated.\n";
+#
+#	if (!$NO_OBSOLETE) {
+#		print "- removing obsolete packages from repo: " . $temp_repo->to_string . "... ";
+#		my $num_removed = $temp_repo->delete_obsolete_packages(\&not_opennms);
+#		print $num_removed . " packages removed.\n";
+#	}
 
 	print "- indexing repo: " . $temp_repo->to_string . "... ";
 	my $indexed = $temp_repo->index_if_necessary({ signing_id => $signing_id, signing_password => $signing_password });

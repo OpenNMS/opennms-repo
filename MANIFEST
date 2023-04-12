@@ -46,6 +46,7 @@ script/dependency-monkey.sh
 script/deploy-debs.pl
 script/deploy-docs.pl
 script/deploy-rpms.pl
+script/dockertags.sh
 script/download-artifacts.pl
 script/download-packagecloud.sh
 script/exec-nfs-exclusive-lock.pl

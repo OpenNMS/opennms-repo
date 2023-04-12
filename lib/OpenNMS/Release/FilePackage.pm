@@ -49,7 +49,7 @@ sub new {
 
 	if (not defined $path) {
 		carp "You did not provide a path!";
-		return undef;
+		return;
 	}
 
 	my $name	= undef;
@@ -75,7 +75,7 @@ sub new {
 		$type        = 'zip';
 	} else {
 		carp "Unable to determine if $filename is a supported file";
-		return undef;
+		return;
 	}
 
 	if ($filename =~ /^(.*)-(\d[^-]*?)-(\d[^-]*?)$/) {

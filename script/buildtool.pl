@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-$|++;
-
 use strict;
 use warnings;
 
@@ -26,17 +24,6 @@ use vars qw(
 	$GIT
 	$GITDIR
 );
-
-sub usage();
-sub get_branch_name();
-sub get_stored_value($);
-sub get_current_timestamp();
-sub get_current_revision();
-sub get_current_githash();
-sub get_build_id();
-sub has_hash_changed();
-sub update_file($$);
-sub update_build_state();
 
 $PROJECT = shift @ARGV;
 $COMMAND = shift @ARGV;
@@ -77,7 +64,7 @@ if ($COMMAND eq 'get') {
 
 exit 0;
 
-sub usage() {
+sub usage {
 	print STDERR <<END;
 usage: $0 <project_name> <command> [branch_name [git_directory]]
 
@@ -92,7 +79,7 @@ END
 	exit 1;
 }
 
-sub get_branch_name() {
+sub get_branch_name {
 	my $ret = $GIT->command_oneline('name-rev', 'HEAD');
 	if ($ret =~ /^HEAD\s+(.*)\s*$/) {
 		my $name = $1;
@@ -102,12 +89,10 @@ sub get_branch_name() {
 			$name =~ s/[^[:alnum:]]+/-/g;
 			return $name;
 		}
-	} else {
-		return undef;
 	}
 }
 
-sub get_stored_value($) {
+sub get_stored_value {
 	my $file = shift;
 
 	return 0 unless (-e $file);
@@ -118,7 +103,7 @@ sub get_stored_value($) {
 	return $value ne ""? $value : 0;
 }
 
-sub get_current_timestamp() {
+sub get_current_timestamp {
 	my ($ret) = $GIT->command('log', '--pretty=format:%cd', '--date=short', '-1');
 	if ($ret =~ /^(?:Date:\s*)?(\d\d\d\d)\-(\d\d)\-(\d\d)\s*$/m) {
 		return $1 . $2 . $3;
@@ -127,7 +112,7 @@ sub get_current_timestamp() {
 	}
 }
 
-sub get_current_revision() {
+sub get_current_revision {
 	my $stored_revision   = get_stored_value($REVISIONFILE);
 	my $stored_timestamp  = get_stored_value($TIMESTAMPFILE);
 	my $current_timestamp = get_current_timestamp();
@@ -139,7 +124,7 @@ sub get_current_revision() {
 	}
 }
 
-sub get_current_githash() {
+sub get_current_githash {
 	my ($ret) = $GIT->command('show');
 	($ret) = split(/\r?\n/, $ret);
 	if ($ret =~ /^commit\s+(\S+)\s*$/m) {
@@ -149,11 +134,11 @@ sub get_current_githash() {
 	}
 }
 
-sub get_build_id() {
+sub get_build_id {
 	return '0.' . get_current_timestamp() . '.' . get_current_revision();
 }
 
-sub has_hash_changed() {
+sub has_hash_changed {
 	return 1 if (not -e $GITHASHFILE);
 
 	my $stored = get_stored_value($GITHASHFILE);
@@ -162,17 +147,17 @@ sub has_hash_changed() {
 	return $stored ne $current;
 }
 
-sub update_file($$) {
+sub update_file {
 	my $filename = shift;
 	my $contents = shift;
 
 	my $handle = IO::Handle->new();
-	open($handle, '>' . $filename) or die "unable to write to $filename: $!";
+	open($handle, '>', $filename) or die "unable to write to $filename: $!";
 	print $handle $contents;
 	close($handle);
 }
 
-sub update_build_state() {
+sub update_build_state {
 	update_file($TIMESTAMPFILE, get_current_timestamp());
 	update_file($REVISIONFILE,  get_current_revision());
 	update_file($GITHASHFILE,   get_current_githash());

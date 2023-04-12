@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-$|++;
-
 use strict;
 use warnings;
 
@@ -76,7 +74,7 @@ if (not $ALL) {
 	}
 
 	if (not defined $SUBDIRECTORY) {
-		usage("You must specify a subdirectory.");
+		$SUBDIRECTORY = 'opennms';
 	}
 }
 
@@ -162,11 +160,11 @@ if (defined $BRANCH) {
 }
 
 # finally, update any platforms that need it
-if ($NO_SYNC) {
-	my $repo = $releases->{$RELEASE}->{$PLATFORM};
-	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
-} else {
-	for my $release (@sync_order) {
+#if ($NO_SYNC) {
+#	my $repo = $releases->{$RELEASE}->{$PLATFORM};
+#	update_platform($repo, $RESIGN, $SIGNING_ID, $SIGNING_PASSWORD, $SUBDIRECTORY, @RPMS);
+#} else {
+	for my $release (keys %$releases) {
 		next unless (exists $releases->{$release});
 
 		for my $platform (sort keys %{$releases->{$release}}) {
@@ -175,7 +173,7 @@ if ($NO_SYNC) {
 			sync_repos($BASE, $repo, $SIGNING_ID, $SIGNING_PASSWORD);
 		}
 	}
-}
+#}
 
 sub update_platform {
 	my $orig_repo        = shift;
@@ -324,15 +322,15 @@ sub sync_repo {
 	my $temp_repo = $to_repo->create_temporary;
 	print "done.\n";
 
-	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
-	my $num_shared = $temp_repo->share_all_packages($from_repo);
-	print $num_shared . " RPMS updated.\n";
-
-	if (!$NO_OBSOLETE) {
-		print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
-		my $num_removed = $temp_repo->delete_obsolete_packages(\&only_snapshot);
-		print $num_removed . " RPMs removed.\n";
-	}
+#	print "- sharing from repo: " . $from_repo->to_string . " to " . $temp_repo->to_string . "... ";
+#	my $num_shared = $temp_repo->share_all_packages($from_repo);
+#	print $num_shared . " RPMS updated.\n";
+#
+#	if (!$NO_OBSOLETE) {
+#		print "- removing obsolete RPMs from repo: " . $temp_repo->to_string . "... ";
+#		my $num_removed = $temp_repo->delete_obsolete_packages(\&only_snapshot);
+#		print $num_removed . " RPMs removed.\n";
+#	}
 
 	print "- indexing repo: " . $temp_repo->to_string . "... ";
 	$temp_repo->enable_deltas(0) if ($NO_DELTAS);

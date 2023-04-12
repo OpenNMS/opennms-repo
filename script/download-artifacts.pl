@@ -18,21 +18,39 @@ use URI::Escape;
 
 use vars qw(
   $API_TOKEN
+  $CI
+  $HELP
   $INCLUDE_FAILED
   $MATCH
   $PRIME
+  $REPO
   $VAULT
+  $WAIT_TIME
   $WORKFLOW
 
   $CIRCLECI_API_ROOT
   $PROJECT_ROOT
 );
 
+$CI = 0;
+$HELP = 0;
 $INCLUDE_FAILED = 0;
 $PRIME = 0;
+$REPO = "opennms";
 $VAULT = 0;
+$WAIT_TIME = 5; # seconds to wait between downloads
+
+if ($ENV{'CIRCLE_TOKEN'}) {
+  $API_TOKEN = $ENV{'CIRCLE_TOKEN'};
+}
+
+if ($ENV{'CIRCLE_WORKFLOW_ID'}) {
+  $WORKFLOW = $ENV{'CIRCLE_WORKFLOW_ID'};
+}
 
 our $VAULT_MAPPING = [
+  [ qr/\.ya?ml$/                                                  => 'yml'        ],
+  [ qr/\.xml$/                                                    => 'xml'        ],
   [ qr/\.oci$/                                                    => 'oci'        ],
   [ qr/\.rpm$/                                                    => 'rpm'        ],
   [ qr/\.(changes|deb)$/                                          => 'deb'        ],
@@ -45,33 +63,42 @@ our $VAULT_MAPPING = [
 $CIRCLECI_API_ROOT = 'https://circleci.com/api/v1.1';
 $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms';
 
+sub usage {
+  print "usage: $0 [--ci] [--vault-layout] [--repo=repo] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|deb|rpm|oci|json|tgz|tar.gz|xml|yml> <branch> [download-directory]\n\n";
+  exit(1);
+}
+
 GetOptions(
+  "help"           => \$HELP,
   "match=s"        => \$MATCH,
   "prime"          => \$PRIME,
+  "repo=s"         => \$REPO,
   "token=s"        => \$API_TOKEN,
   "include-failed" => \$INCLUDE_FAILED,
   "vault-layout"   => \$VAULT,
   "workflow=s"     => \$WORKFLOW,
+  "wait=i"         => \$WAIT_TIME,
+  "ci"             => \$CI,
 ) or die "failed to get options for @ARGV\n";
 
 my $extension   = shift(@ARGV);
 my $branch      = shift(@ARGV);
 my $download_to = shift(@ARGV) || '.';
 
-if (not defined $branch) {
-  print "usage: $0 [--vault-layout] [--prime] [--include-failed] [--token=circle-api-token] [--workflow=hash] [--match=match] <all|rpm|deb|oci|tgz|tar.gz> <branch> [download-directory]\n\n";
-  exit(1);
+if ($HELP or not defined $branch) {
+  usage();
 }
 
 if ($PRIME) {
-  $PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/opennms-prime';
+  $REPO='opennms-prime';
 }
+$PROJECT_ROOT = $CIRCLECI_API_ROOT . '/project/gh/OpenNMS/' . $REPO;
 
 if ($WORKFLOW) {
   $INCLUDE_FAILED = 1;
 }
 
-our @EXTENSIONS = ('rpm', 'deb', 'oci', 'tgz', 'tar.gz');
+our @EXTENSIONS = ('deb', 'rpm', 'oci', 'json', 'tgz', 'tar.gz', 'xml', 'yaml', 'yml');
 if ($extension ne 'all') {
   @EXTENSIONS = (split(',', $extension));
 }
@@ -94,7 +121,7 @@ my $decoded = $json->decode($response->decoded_content);
 my $workspaces = {};
 my $workflows = [];
 
-sub toEpoch($) {
+sub toEpoch {
   my $datetime = shift;
   if (not defined $datetime) {
     print STDERR "WARNING: toEpoch() expected a value, but value is undefined.\n";
@@ -102,7 +129,6 @@ sub toEpoch($) {
   }
   return DateTime::Format::ISO8601->parse_datetime($datetime)->epoch();
 }
-
 
 # sort newest to oldest
 for my $entry (sort { toEpoch($b->{'start_time'}) - toEpoch($a->{'start_time'}) } @$decoded) {
@@ -154,7 +180,45 @@ for my $entry (sort { toEpoch($b->{'start_time'}) - toEpoch($a->{'start_time'}) 
   $workflow->{'builds'}->{$job_name} = $build_num;
 }
 
-sub get_artifacts_for_workflow($) {
+sub get_filename_from_url {
+  my $url = shift;
+
+  my ($filename) = $url =~ /^.*\/([^\/]+)$/;
+  return $filename;
+}
+
+sub url_matches {
+  my $url = shift;
+  my $filename = get_filename_from_url($url);
+
+  my ($filepart, $ext);
+  for my $try (@EXTENSIONS) {
+    my $quoted = quotemeta($try);
+    if ($filename =~ qr(^(.*)\.${quoted}$)) {
+      $filepart = $1;
+      $ext = $try;
+    }
+    if (defined $filepart and defined $ext) {
+      if (grep { $_ eq $ext } @EXTENSIONS) {
+        if (defined $MATCH) {
+          my $quoted = quotemeta($MATCH);
+          if ($filepart =~ /${quoted}/i) {
+            # print "${filename} matches \"$MATCH\", extension \"${ext}\". Downloading.\n";
+            return 1;
+          }
+        } else {
+          # print "${filename} matches extension \"${ext}\". Downloading.\n";
+          return 1;
+        }
+      }
+    }
+  }
+
+  # print "${filename} does not match --match=\"${MATCH}\", extensions=\"@{EXTENSIONS}\". Skipping.\n";
+  return 0;
+}
+
+sub get_artifacts_for_workflow {
   my $workflow = shift;
   my $jobs = {};
 
@@ -173,7 +237,7 @@ sub get_artifacts_for_workflow($) {
   return $jobs;
 }
 
-sub get_artifacts_for_workspace_id($) {
+sub get_matching_artifacts_for_workspace_id {
   my $workspace_id = shift;
   my $workspace = $workspaces->{$workspace_id};
   if (not defined $workspace) {
@@ -181,22 +245,34 @@ sub get_artifacts_for_workspace_id($) {
     exit(1);
   }
 
-  my $jobs = {};
+  my $artifacts = {};
 
   for my $workflow (@{$workspace->{'workflows'}}) {
-    #print "workflow:", Dumper($workflow), "\n";
+    # print "workflow:", Dumper($workflow), "\n";
     my $ret = get_artifacts_for_workflow($workflow);
-    #print "artifacts:", Dumper($ret), "\n";
+    # print "artifacts:", Dumper($ret), "\n";
     for my $key (keys %{$ret}) {
-      $jobs->{$key} = $ret->{$key};
+      for my $url (@{$ret->{$key}}) {
+        my $filename = get_filename_from_url($url);
+        if ($artifacts->{$filename}) {
+          # print "already matched from a previous workflow: ", $filename, "\n";
+          next;
+        }
+        if (url_matches($url)) {
+          $artifacts->{$filename} = $url;
+        }
+      }
     }
   }
 
-  return $jobs;
+  # print "matched artifacts: ", Dumper($artifacts), "\n";
+
+  return $artifacts;
 }
 
-sub download_artifact($$) {
-  my ($url, $filename) = @_;
+sub download_artifact {
+  my $url = shift;
+  my $filename = get_filename_from_url($url);
 
   my $output_dir = $download_to;
   if ($VAULT) {
@@ -215,8 +291,12 @@ sub download_artifact($$) {
   my $output_file = File::Spec->catfile($output_dir, $filename);
   my $dl_string = "downloading to ${output_file}...";
   print $dl_string;
-  open FILEOUT, '>', $output_file or die "\ncannot open $output_file for writing: $!\n";
-  binmode FILEOUT;
+  if ($CI) {
+    print "\n";
+  }
+  my $FILEOUT_HANDLE;
+  open($FILEOUT_HANDLE, '>', $output_file) or die "\ncannot open $output_file for writing: $!\n";
+  binmode $FILEOUT_HANDLE;
   my $amount = 0;
   my $last_time = 0;
   my $request = HTTP::Request->new(GET => $url);
@@ -228,17 +308,23 @@ sub download_artifact($$) {
     if ($time != $last_time) {
       $last_time = $time;
       my $mb = scalar($amount / 1024 / 1024);
-      printf "\r\%s \%.1fMB", $dl_string, $mb;
+      if (not $CI) {
+        printf "\r\%s \%.1fMB", $dl_string, $mb;
+      }
     }
 
-    print FILEOUT $data;
+    print $FILEOUT_HANDLE $data;
   }, 1024 * 64);
-  close FILEOUT;
+  close($FILEOUT_HANDLE);
   if (not $dl_response->is_success) {
     unlink($output_file);
     die " failed: ", $dl_response->status_line, "\n";
   }
-  print "\r\e[K$dl_string done\n";
+  if ($CI) {
+    print "finished downloading ${output_file}\n";
+  } else {
+    print "\r\e[K$dl_string done\n";
+  }
 }
 
 for my $workflow (@$workflows) {
@@ -258,45 +344,17 @@ for my $workflow (@$workflows) {
     next;
   }
 
-  my $artifacts = get_artifacts_for_workspace_id($workspace->{'id'});
-  my @jobs = keys %$artifacts;
-  if (@jobs < 1) {
+  my $artifacts = get_matching_artifacts_for_workspace_id($workspace->{'id'});
+  if ((keys %$artifacts) < 1) {
     print "WARNING: workspace for workflow ", $id, " passed, but does not contain any artifacts. Skipping.\n";
     next;
   }
 
-  for my $job (@jobs) {
-    for my $artifact (@{$artifacts->{$job}}) {
-      my ($filename) = $artifact =~ /^.*\/([^\/]+)$/;
-      my ($filepart, $ext);
-      for my $try (@EXTENSIONS) {
-        my $quoted = quotemeta($try);
-        if ($filename =~ qr(^(.*)\.${quoted}$)) {
-          $filepart = $1;
-          $ext = $try;
-        # } else {
-        #   print "no match: $filename / $quoted\n";
-        }
-      }
-      if (defined $filepart and defined $ext) {
-        if (grep { $_ eq $ext } @EXTENSIONS) {
-          # print "extension matched: $filepart / $ext\n";
-          if (defined $MATCH) {
-            my $quoted = quotemeta($MATCH);
-            if ($filepart =~ /${quoted}/i) {
-              print "$filepart matches \"$MATCH\". Downloading.\n";
-              download_artifact($artifact, $filename);
-            # } else {
-            #   print "$filepart does not match $MATCH. Skipping.\n";
-            }
-          } else {
-            download_artifact($artifact, $filename);
-          }
-        # } else {
-        #   print "$filename DOES NOT match: @EXTENSIONS / $filepart / $ext\n";
-        }
-      }
-    }
+  # print "Downloading all matching artifacts: ", Dumper($artifacts), "\n";
+  for my $filename (keys %$artifacts) {
+    my $url = $artifacts->{$filename};
+    download_artifact($url);
+    sleep $WAIT_TIME;
   }
 
   exit(0);

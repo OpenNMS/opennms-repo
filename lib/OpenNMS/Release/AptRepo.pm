@@ -71,7 +71,7 @@ sub new {
 
 	if (not defined $release) {
 		carp "You did not specify a release!";
-		return undef;
+		return;
 	}
 
 	if (not defined $APT_FTPARCHIVE) {
@@ -86,7 +86,7 @@ sub new {
 	return $self;
 }
 
-sub new_with_base($) {
+sub new_with_base {
 	my $self = shift;
 	my $base = shift;
 
@@ -102,7 +102,7 @@ of OpenNMS::Release::AptRepo objects representing the repositories found.
 
 =cut
 
-sub find_repos($) {
+sub find_repos {
 	my $class = shift;
 	my $base = shift;
 
@@ -154,7 +154,7 @@ The path of the repository (base + release).
 
 =cut
 
-sub path() {
+sub path {
 	my $self = shift;
 	return File::Spec->catdir($self->base, 'dists', $self->release);
 }
@@ -165,7 +165,7 @@ The path of the release directory (base + release).
 
 =cut
 
-sub releasedir() {
+sub releasedir {
 	my $self = shift;
 	return File::Spec->catdir($self->base, 'dists', $self->release);
 }
@@ -239,7 +239,7 @@ sub install_package {
 	return $self->copy_package($package, $topath);
 }
 
-sub cachedir() {
+sub cachedir {
 	my $self = shift;
 	return File::Spec->catdir($self->path, ".ftparchive");
 }
@@ -264,7 +264,7 @@ If either of the signing options are not passed, we do not sign the repository.
 
 =cut
 
-sub index($) {
+sub index {
 	my $self    = shift;
 	my $options = shift;
 
@@ -304,12 +304,12 @@ sub index($) {
 	return 1;
 }
 
-sub indexfile() {
+sub indexfile {
 	my $self = shift;
 	return File::Spec->catfile($self->base, $self->release . '.conf');
 }
 
-sub _delete_dead_symlinks() {
+sub _delete_dead_symlinks {
 	my $self = shift;
 
 	find({ wanted => sub {
@@ -334,7 +334,7 @@ sub _delete_dead_symlinks() {
 	return 1;
 }
 
-sub _symlink_packages() {
+sub _symlink_packages {
 	my $self = shift;
 
 	# first, make sure the arch dirs exist
@@ -358,7 +358,7 @@ sub _symlink_packages() {
 	return 1;
 }
 
-sub create_indexfile() {
+sub create_indexfile {
 	my $self = shift;
 
 	my $outputfile = IO::Handle->new();
@@ -367,7 +367,7 @@ sub create_indexfile() {
 	my $filepath = dirname($filename);
 	mkpath($filepath);
 
-	open ($outputfile, '>' . $filename) or croak "Unable to write to $filename: $!";
+	open ($outputfile, '>', $filename) or croak "Unable to write to $filename: $!";
 
 	my @found_arches = qw();
 

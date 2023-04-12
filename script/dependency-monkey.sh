@@ -32,6 +32,7 @@ function tearDown() {
 }
 
 trap tearDown EXIT
+tearDown || :
 
 mkdir -p "$WORKDIR"
 cd "$WORKDIR"
@@ -43,32 +44,34 @@ if [ -d "$SOURCEDIR" ]; then
 	echo "- cleaning up source tree and setting to branch=$BRANCH"
 	# we have an existing checkout, clean it up
 	pushd "$SOURCEDIR" >/dev/null 2>&1
-		git clean -fdx
-		git fetch origin "$BRANCH"
+		git fetch origin "${BRANCH}"
 		if git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
-			git checkout "$BRANCH"
+			git checkout "${BRANCH}"
 		else
-			git checkout -b "$BRANCH" FETCH_HEAD
+			git checkout -b "${BRANCH}"
 		fi
-		git reset --hard HEAD
+		git reset --hard "origin/${BRANCH}"
 	popd >/dev/null 2>&1
 else
 	echo "- cloning branch $BRANCH from github"
-	git clone --depth=1 --branch "$BRANCH" https://github.com/OpenNMS/opennms.git monkey-source
+	git clone https://github.com/OpenNMS/opennms.git monkey-source
 fi
+pushd "${SOURCEDIR}" >/dev/null 2>&1
+	git clean -fdx
+popd
 
 JDK_VERSION="$(grep '<source>' "$SOURCEDIR/pom.xml" | sed -e 's,[[:space:]]*<[^>]*>[[:space:]]*,,g' -e 's,^1\.,,')"
 BUILD_ENV=""
 
 case "$JDK_VERSION" in
 	8)
-		BUILD_ENV="opennms/build-env:8u322b06-3.8.4-b8247"
+		BUILD_ENV="opennms/build-env:8u322b06-3.8.4-b8770"
 		;;
 	11*)
-		BUILD_ENV="opennms/build-env:11.0.14_9-3.8.4-b8249"
+		BUILD_ENV="opennms/build-env:11.0.14_9-3.8.4-b8772"
 		;;
 	17*)
-		BUILD_ENV="opennms/build-env:17.0.2_8-3.8.4-b8248"
+		BUILD_ENV="opennms/build-env:17.0.3.0.7-3.8.6-b8771"
 		;;
 	*)
 		echo "unknown JDK version: $JDK_VERSION"
@@ -103,7 +106,7 @@ reset_m2dir() {
 				<repository>
 					<id>opennms-repo</id>
 					<name>OpenNMS Repository</name>
-					<url>https://maven.opennms.org/content/groups/opennms.org-release/</url>
+					<url>https://maven.opennms.org/repository/everything/</url>
 				</repository>
 				<repository>
 					<id>central</id>
@@ -115,7 +118,7 @@ reset_m2dir() {
 				<pluginRepository>
 					<id>opennms-repo</id>
 					<name>OpenNMS Repository</name>
-					<url>https://maven.opennms.org/content/groups/opennms.org-release/</url>
+					<url>https://maven.opennms.org/repository/everything/</url>
 				</pluginRepository>
 				<pluginRepository>
 					<id>central</id>
@@ -131,7 +134,10 @@ END
 
 DOCKER_CMD=(
 	docker run --name=dependency-monkey
+	--platform linux/amd64
 	--rm
+	--interactive
+	--tty
 	--network dependency-monkey
 	-v "${SOURCEDIR}:/opt/build"
 	-v "${M2DIR}:/root/.m2"
@@ -163,7 +169,7 @@ echo "- configuring docker network"
 docker network create dependency-monkey
 
 echo "- starting up an HTTP proxy"
-docker run --network dependency-monkey --name=dependency-monkey-proxy -d -p 3128:3128 datadog/squid
+docker run --network dependency-monkey --name=dependency-monkey-proxy -d -p 3128:3128 ubuntu/squid:5.2-22.04_beta
 
 # echo "- priming m2 cache with top-level plugin dependencies"
 "${DOCKER_CMD[@]}" ./compile.pl "${BUILD_ARGS[@]}" -Dsilent=true -N dependency:resolve dependency:resolve-plugins

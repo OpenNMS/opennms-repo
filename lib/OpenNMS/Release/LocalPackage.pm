@@ -54,7 +54,7 @@ sub new {
 
 	if (not -e $self->path) {
 		carp "package path " . $self->path . " does not exist!";
-		return undef;
+		return;
 	}
 
 	return $self;
