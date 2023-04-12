@@ -237,7 +237,7 @@ END {
 	if (defined $lockfile and defined $lock) {
 		do_log("- cleaning up lock...");
 		unlink($lockfile) or die "Failed to remove $lockfile: $!\n";
-		close(FILE) or die "Failed to close $lockfile: $!\n";
+		close($LOCK_HANDLE) or die "Failed to close $lockfile: $!\n";
 		$lock->unlock();
 	}
 }
