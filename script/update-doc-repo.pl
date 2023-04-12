@@ -131,6 +131,7 @@ if (not defined $BRANCH or $BRANCH eq "") {
 }
 
 my $lockfile = File::Spec->catfile($ROOT, '.update-doc-repo.lock');
+my $LOCK_HANDLE;
 
 ### set up a lock - lasts until object loses scope
 my $lock;
@@ -148,7 +149,6 @@ LOCK: while(time() < $timeout) {
 
 	# if we get a lock, update the lock file
 	if ($lock) {
-		my $LOCK_HANDLE;
 		open($LOCK_HANDLE, ">", "$lockfile") || die "Failed to lock $ROOT: $!\n";
 		print $LOCK_HANDLE localtime(time());
 		$lock->uncache;
