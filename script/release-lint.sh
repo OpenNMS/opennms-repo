@@ -37,7 +37,7 @@ FAILURES=0
 printf "* checking for SNAPSHOT remnants... "
 if [ "$(git grep -l -- -SNAPSHOT | grep -v -E '\.md$' | wc -l)" -gt 0 ]; then
   echo "FAILED"
-  TEMPFILE="$(mktemp -t release-lint)"
+  TEMPFILE="$(mktemp -t release-lint-XXXXXXXX)"
   git grep -l -- -SNAPSHOT | grep -v -E '\.md$' >"${TEMPFILE}"
   echo "  - the following files still contain '-SNAPSHOT':"
   cat "${TEMPFILE}" | while read -r LINE; do
