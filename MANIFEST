@@ -54,6 +54,7 @@ script/generate-yum-repo-html.pl
 script/nightly.pl
 script/opennms-release.pl
 script/opennms-do-release.sh
+script/release-lint.sh
 script/remove-obsolete-rpms.sh
 script/sign-package.pl
 script/smoke.pl

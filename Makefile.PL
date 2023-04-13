@@ -38,6 +38,7 @@ install_script 'script/generate-yum-repo-html.pl';
 install_script 'script/nightly.pl';
 install_script 'script/opennms-release.pl';
 install_script 'script/opennms-do-release.sh';
+install_script 'script/release-lint.sh';
 install_script 'script/remove-obsolete-rpms.sh';
 install_script 'script/sign-package.pl';
 install_script 'script/smoke.pl';
