@@ -45,6 +45,29 @@ if [ "$(git grep -l -- -SNAPSHOT | grep -v -E '\.md$' | wc -l)" -gt 0 ]; then
   done
   _failed_file_count="$(wc -l < "${TEMPFILE}")"
   FAILURES=$((FAILURES+_failed_file_count))
+else
+  echo "ok"
+fi
+
+if [ -e package-lock.json ]; then
+  echo "* checking for JavaScript audit failures..."
+  if [ ! -d node_modules ]; then
+    echo "  * running 'npm ci'"
+    npm --no-color ci 2>&1 | grep -v -E 'WARN (deprecated|EBADENGINE)' | while read -r LINE; do
+      echo "    * $LINE"
+    done
+  fi
+  echo "  * running 'npm audit --omit dev'"
+  TEMPFILE="$(mktemp -t release-lint-XXXXXXXX)"
+  if npm audit --omit dev >"${TEMPFILE}" 2>&1; then
+    echo "  * no JavaScript audit failures found"
+  else
+    echo '  ! audit failed:'
+    while read -r LINE; do
+      echo "    $LINE"
+    done < "${TEMPFILE}"
+    FAILURES=$((FAILURES++))
+  fi
 fi
 
 echo ""
