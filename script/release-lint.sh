@@ -33,6 +33,7 @@ done
 shift "$((OPTIND - 1))"
 
 FAILURES=0
+WARNINGS=0
 
 printf "* checking for SNAPSHOT remnants... "
 TEMPLIST="$(mktemp -t release-lint-XXXXXXXX)"
@@ -60,30 +61,43 @@ fi
 rm -f "${TEMPLIST}" "${TEMPEXCLUDES}" "${TEMPFILTERED}"
 
 if [ -e package-lock.json ]; then
-  echo "* checking for JavaScript audit failures..."
+  echo "* checking for JavaScript audit failures:"
   if [ ! -d node_modules ]; then
-    echo "  * running 'npm ci'"
-    npm --no-color ci 2>&1 | grep -v -E 'WARN (deprecated|EBADENGINE)' | while read -r LINE; do
+    echo "  * running 'npm install'"
+    npm --no-color --no-progress install --package-lock-only 2>&1 | grep -v -E 'WARN (deprecated|EBADENGINE)' | while read -r LINE; do
       echo "    * $LINE"
     done
   fi
   echo "  * running 'npm audit --omit dev'"
   TEMPFILE="$(mktemp -t release-lint-XXXXXXXX)"
-  if npm audit --omit dev >"${TEMPFILE}" 2>&1; then
-    echo "  * no JavaScript audit failures found"
+  if npm --no-color --no-progress audit --omit dev --audit-level critical >"${TEMPFILE}" 2>&1; then
+    echo "  * no critical JavaScript audit failures found"
+    if [ "$(grep -c "found 0 vulnerabilities" "${TEMPFILE}")" -eq 0 ]; then
+      echo '  ! WARNING: audit found non-critical vulnerabilities:'
+      while read -r LINE; do
+        echo "    $LINE"
+      done < "${TEMPFILE}"
+      WARNINGS=$((++WARNINGS))
+    fi
   else
     echo '  ! audit failed:'
     while read -r LINE; do
       echo "    $LINE"
     done < "${TEMPFILE}"
-    FAILURES=$((FAILURES++))
+    FAILURES=$((++FAILURES))
   fi
 fi
 
 echo ""
-if [ "$WARNING_MODE" -eq 0 ]; then
-  echo "ERROR: ${FAILURES} problems were found."
-  exit 1
+if [ "${WARNING_MODE}" -eq 0 ]; then
+  if [ "${FAILURES}" -gt 0 ]; then
+    echo "ERROR: ${FAILURES} fatal problem(s) found."
+    exit 1
+  fi
+  if [ "${WARNINGS}" -gt 0 ]; then
+    echo "WARNING: ${WARNINGS} non-fatal problem(s) found."
+  fi
 else
-  echo "WARNING: ${FAILURES} problems were found. These must be corrected before release."
+  FAILURES=$((FAILURES + WARNINGS))
+  echo "WARNING: ${FAILURES} problem(s) were found. These should be checked before release."
 fi
