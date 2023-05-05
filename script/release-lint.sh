@@ -35,19 +35,29 @@ shift "$((OPTIND - 1))"
 FAILURES=0
 
 printf "* checking for SNAPSHOT remnants... "
-if [ "$(git grep -l -- -SNAPSHOT | grep -v -E '\.md$' | wc -l)" -gt 0 ]; then
+TEMPLIST="$(mktemp -t release-lint-XXXXXXXX)"
+TEMPEXCLUDES="$(mktemp -t release-lint-excludes-XXXXXXXX)"
+TEMPFILTERED="$(mktemp -t release-lint-filtered-XXXXXXXX)"
+git grep -l -- -SNAPSHOT | sort -u >"${TEMPLIST}"
+if [ -e .release-lint-excludes ]; then
+  sort -u < .release-lint-excludes >"${TEMPEXCLUDES}"
+else
+  printf "" >"${TEMPEXCLUDES}"
+fi
+comm -2 -3 "${TEMPLIST}" "${TEMPEXCLUDES}" >"${TEMPFILTERED}"
+
+if [ -s "${TEMPFILTERED}" ]; then
   echo "FAILED"
-  TEMPFILE="$(mktemp -t release-lint-XXXXXXXX)"
-  git grep -l -- -SNAPSHOT | grep -v -E '\.md$' >"${TEMPFILE}"
   echo "  - the following files still contain '-SNAPSHOT':"
-  cat "${TEMPFILE}" | while read -r LINE; do
+  cat "${TEMPFILTERED}" | while read -r LINE; do
     echo "    * ${LINE}"
   done
-  _failed_file_count="$(wc -l < "${TEMPFILE}")"
+  _failed_file_count="$(wc -l < "${TEMPFILTERED}")"
   FAILURES=$((FAILURES+_failed_file_count))
 else
   echo "ok"
 fi
+rm -f "${TEMPLIST}" "${TEMPEXCLUDES}" "${TEMPFILTERED}"
 
 if [ -e package-lock.json ]; then
   echo "* checking for JavaScript audit failures..."
