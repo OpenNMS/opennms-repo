@@ -39,7 +39,7 @@ printf "* checking for SNAPSHOT remnants... "
 TEMPLIST="$(mktemp -t release-lint-XXXXXXXX)"
 TEMPEXCLUDES="$(mktemp -t release-lint-excludes-XXXXXXXX)"
 TEMPFILTERED="$(mktemp -t release-lint-filtered-XXXXXXXX)"
-git grep -l -- -SNAPSHOT | sort -u >"${TEMPLIST}"
+(git grep -l -- -SNAPSHOT 2>/dev/null || :) | sort -u >"${TEMPLIST}"
 if [ -e .release-lint-excludes ]; then
   sort -u < .release-lint-excludes >"${TEMPEXCLUDES}"
 else
