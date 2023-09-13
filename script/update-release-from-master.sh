@@ -46,7 +46,7 @@ else
     git checkout -b "${RELEASE_BRANCH}" "${ORIGIN}/${RELEASE_BRANCH}"
 fi
 
-echo "* merging master branch master-${MAJORVERSION}.x"
+echo "* merging master branch master-${MAJORVERSION}"
 git merge --no-edit "${ORIGIN}/${MASTER_BRANCH}"
 
 COMMITHASH="$(git log -n 1 '--pretty=format:%H' .version.txt)"
