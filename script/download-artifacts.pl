@@ -14,6 +14,7 @@ use HTTP::Request;
 use JSON::PP qw();
 use LWP;
 use LWP::Protocol::https;
+use LWP::UserAgent::Determined;
 use URI::Escape;
 
 use vars qw(
@@ -102,9 +103,13 @@ if ($extension ne 'all') {
   @EXTENSIONS = (split(',', $extension));
 }
 
-my $agent = LWP::UserAgent->new;
+my $agent = LWP::UserAgent::Determined->new;
 $agent->default_header('Accept', 'application/json');
 $agent->ssl_opts(verify_hostname => 0);
+
+# fallback retries
+$agent->timing("10,30,90,180");
+$agent->codes_to_determinate()->{429} = 1;
 
 if (defined $API_TOKEN) {
   $agent->default_header('Circle-Token', $API_TOKEN);
