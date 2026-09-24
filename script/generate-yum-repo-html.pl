@@ -10,6 +10,7 @@ use File::NFSLock qw(uncache);
 use File::ShareDir qw(:ALL);
 use File::Slurp;
 use File::Spec;
+use Getopt::Long qw(:config gnu_getopt);
 use version;
 
 use OpenNMS::Util 2.7.0;
@@ -18,11 +19,17 @@ use OpenNMS::Release::YumRepo 2.0.0;
 
 print $0 . ' ' . version->new($OpenNMS::Release::VERSION) . "\n";
 
+my $GPG_ID = 'opennms@opennms.org';
+
+my $result = GetOptions(
+	"g|gpg-id=s" => \$GPG_ID,
+);
+
 my $base = shift @ARGV;
 my $PASSWORD = undef;
 
 if (not defined $base or not -d $base) {
-	print "usage: $0 <repository_base>\n\n";
+	print "usage: $0 [-g <gpg_id>] <repository_base>\n\n";
 	exit 1;
 }
 
@@ -30,8 +37,6 @@ my $index_text = slurp(dist_file('OpenNMS-Release', 'generate-yum-repo-html.pre'
 
 my $release_descriptions  = read_properties(dist_file('OpenNMS-Release', 'release.properties'));
 my $platform_descriptions = read_properties(dist_file('OpenNMS-Release', 'platform.properties'));
-
-my $using_agent = OpenNMS::Util->get_gpg_version() >= 2;
 
 my @display_order  = split(/\s*,\s*/, $release_descriptions->{order_display});
 my @platform_order = split(/\s*,\s*/, $platform_descriptions->{order_display});
@@ -119,7 +124,7 @@ for my $release (@display_order) {
 
 		if ($platform ne "common" and not -e "$base/repofiles/$rpmname") {
 			print STDERR "WARNING: repo RPM does not exist for $release/$platform... creating.\n";
-			system("create-repo-rpm.pl", "-s", ($using_agent? '' : $PASSWORD), $base, $release, $platform) == 0 or die "Failed to create repo RPM: $!\n";
+			system("create-repo-rpm.pl", "-g", $GPG_ID, "-s", $PASSWORD, $base, $release, $platform) == 0 or die "Failed to create repo RPM: $!\n";
 		}
 
 		if (-e "$base/repofiles/$rpmname") {

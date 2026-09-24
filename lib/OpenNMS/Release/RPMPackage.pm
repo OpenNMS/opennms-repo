@@ -6,11 +6,11 @@ use warnings;
 
 use Carp;
 use Cwd;
-use Expect;
 use File::Basename;
 use File::Copy qw();
 use IO::Handle;
 use IPC::Open2;
+use POSIX qw(dup2);
 
 use base qw(OpenNMS::Release::LocalPackage);
 
@@ -104,19 +104,43 @@ sub sign {
 
 	system($RPMSIGN, '--delsign', $self->path) == 0 or die "Can't run $RPMSIGN --delsign on " . $self->to_string;
 
-	my $expect = Expect->new();
-	$expect->raw_pty(1);
-	$expect->spawn($RPMSIGN, '--quiet', "--define=_gpg_name $gpg_id", '--resign', $self->path) or die "Can't spawn $RPMSIGN: $!";
+	# Pass the passphrase to gpg over stdin rather than trying to answer an
+	# interactive pinentry prompt: modern gpg-agent draws its passphrase
+	# prompt based on the (possibly stale) GPG_TTY env var rather than the
+	# signing child's actual controlling terminal, so a pty-scraping approach
+	# can silently fail to deliver the passphrase at all. Stdin (rather than
+	# an arbitrary fd like 3) is used because rpmsign's internal exec of gpg
+	# isn't guaranteed to propagate arbitrary inherited file descriptors,
+	# only the standard 0/1/2. This requires %__gpg_sign_cmd in .rpmmacros
+	# to pass `--pinentry-mode loopback --passphrase-fd 0` to gpg, and
+	# gpg-agent.conf to have `allow-loopback-pinentry` set.
+	pipe(my $pass_read, my $pass_write) or die "unable to create passphrase pipe: $!";
+	$pass_write->autoflush(1);
 
-	$expect->expect(60, [
-		qr/Enter pass phrase:\s*/ => sub {
-			my $exp = shift;
-			$exp->send($gpg_password . "\n");
-			exp_continue;
-		}
-	]);
-	$expect->soft_close();
-	return $expect->exitstatus() == 0;
+	my $pid = fork();
+	die "unable to fork: $!" unless defined $pid;
+
+	if ($pid == 0) {
+		close($pass_write);
+		dup2(fileno($pass_read), 0) or die "unable to dup passphrase fd: $!";
+		close($pass_read);
+		exec($RPMSIGN, '--quiet', "--define=_gpg_name $gpg_id", '--resign', $self->path)
+			or die "unable to exec $RPMSIGN: $!";
+	}
+
+	close($pass_read);
+	# rpmsign invokes the signing command more than once per --resign (it
+	# does a preliminary pass to size the signature before the real one), and
+	# each invocation reads the passphrase from the same inherited stdin. A
+	# pipe is single-consume, so one invocation reads up to the first
+	# newline and stops there; without repeating it, the next invocation
+	# hits EOF and gets an effectively empty passphrase. Write it several
+	# times so every invocation gets its own line.
+	print $pass_write "$gpg_password\n" for (1..5);
+	close($pass_write);
+
+	waitpid($pid, 0);
+	return $? == 0;
 }
 
 =head1 * description()

@@ -16,3 +16,4 @@ debian/files
 debian/*.log
 debian/libopennms-release-perl.substvars
 debian/libopennms-release-perl
+.DS_Store

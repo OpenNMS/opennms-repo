@@ -292,7 +292,7 @@ pushd_q "${GIT_PREFIX}"
 
 	git_clean
 
-	if [ "$TYPE" = "horizon" ]; then
+	if [ "$TYPE" = "horizon" ] || { [ "$TYPE" = "meridian" ] && [ "$MAJOR_VERSION" -gt 2025 ]; }; then
 		log "building Debian packages"
 		exec_quiet ./makedeb.sh -a -n -s "${SIGNINGPASS}" -M 1
 		exec_quiet mkdir -p "${ARTIFACT_DIR}/deb"
